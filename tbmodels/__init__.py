@@ -10,8 +10,8 @@ The :mod:`z2pack.em.tb` module contains classes related to tight-binding
 effective models.
 """
 
+from ._version import *
 from ._tb_model import Model
-from ._tb_system import System
 from ._hr_model import HrModel
 from ._builder import Builder
 

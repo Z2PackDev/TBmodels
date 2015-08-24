@@ -28,7 +28,7 @@ tbmodels/ptools/.gitignore
 tbmodels/ptools/*.py
 !tbmodels/ptools/__init__.py  
 !tbmodels/ptools/replace.py  
-# !tbmodels/ptools/csv_parser.py  
+!tbmodels/ptools/csv_parser.py  
 # !tbmodels/ptools/parse_dict.py  
 # !tbmodels/ptools/string_tools.py  
 

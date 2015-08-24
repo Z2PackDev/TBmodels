@@ -16,10 +16,6 @@ consider citing it (not yet published).
 
 .. ~ TODO!
 
-.. toctree::
-    :hidden:
-    
-    TBModels online <http://tbmodels.ethz.ch/online/>
 
 News
 ====

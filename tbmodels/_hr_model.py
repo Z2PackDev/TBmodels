@@ -5,7 +5,7 @@
 # Date:    05.05.2015 12:04:36 CEST
 # File:    _hr_hamilton.py
 
-from ...ptools.csv_parser import read_file
+from .ptools.csv_parser import read_file
 from ._tb_model import Model
 
 class HrModel(Model):
