@@ -1,0 +1,27 @@
+# examples are provided via GitHub
+prune examples
+
+# tests are used for development only
+prune tests
+
+# Documentation is provided on http://z2pack.ethz.ch/doc
+prune doc
+
+# selectively include ptools
+prune z2pack/ptools
+prune futures
+include z2pack/ptools/__init__.py
+include z2pack/ptools/parse_dict.py
+include z2pack/ptools/string_tools.py
+include z2pack/ptools/logger.py
+include z2pack/ptools/csv_parser.py
+
+# installation related
+exclude MANIFEST.in
+
+# local setup (Cluster)
+exclude decorator.py
+
+# License & README
+include README.md
+include LICENSE.txt

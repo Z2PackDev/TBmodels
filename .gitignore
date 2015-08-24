@@ -1,0 +1,40 @@
+# Python binaries
+*.pyc
+*.pyo
+*__pycache__*
+
+# hidden files garbage
+*~
+TODO
+.fuse*
+
+# ab-initio/doc build files and example results
+*.pdf
+build
+examples/tb/results
+
+# Installation/setup related
+dist
+*egg**
+MANIFEST
+*.tar.gz
+files*.txt
+
+# ignoring the ptools git
+tbmodels/ptools/.git
+tbmodels/ptools/.gitignore
+
+# selectively choose ptools
+tbmodels/ptools/*.py
+!tbmodels/ptools/__init__.py  
+!tbmodels/ptools/replace.py  
+# !tbmodels/ptools/csv_parser.py  
+# !tbmodels/ptools/parse_dict.py  
+# !tbmodels/ptools/string_tools.py  
+
+# debug folder
+debug
+
+# testing files from Brutus
+lsf.*
+decorator.py
