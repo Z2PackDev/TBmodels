@@ -9,10 +9,10 @@ import re
 import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../')
-import z2pack
+import tbmodels
 # for create_tests
 try:
-    from z2pack.ptools.replace import *
+    from tbmodels.ptools.replace import *
 except ImportError:
     pass
 
@@ -86,7 +86,7 @@ def assertWccConv(TestCase, x, y, epsilon = 1e-6):
     """
     assert(len(x) == len(y))
     for x_wcc, y_wcc in zip(x, y):
-        TestCase.assertTrue(z2pack._core._convcheck(x_wcc, y_wcc, epsilon))
+        TestCase.assertTrue(tbmodels._core._convcheck(x_wcc, y_wcc, epsilon))
 
 class CommonTestCase(unittest.TestCase):
     def __init__(self, *args, **kwargs):

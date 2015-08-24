@@ -11,7 +11,7 @@ Welcome!
 ========
 Lorem ipsum dolor...
 
-If you use TBModels or its online interface for your research, please
+If you use TBModels for your research, please
 consider citing it (not yet published).
 
 .. ~ TODO!

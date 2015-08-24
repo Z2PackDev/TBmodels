@@ -12,12 +12,13 @@ import numpy as np
 class HrHamiltonTestCase(CommonTestCase):
     
     def testH(self):
-        H = z2pack.tb.HrHamilton('./samples/hr_hamilton.dat', 28)
-        M = in_place_replace(H._get_m([[0.4, 0, x] for x in np.linspace(0, 1, 3)]))
-        self.assertFullAlmostEqual(H._get_m([[0.4, 0, x] for x in np.linspace(0, 1, 3)]), M)
+        model = tbmodels.HrModel('./samples/hr_hamilton.dat', occ=28)
+        k = [0.412351236, 0.872372, 0.31235123]
+        H = in_place_replace(list(model.hamilton(k)))
+        self.assertFullAlmostEqual(model.hamilton(k), H)
         
     def test_error(self):
-        self.assertRaises(ValueError, z2pack.tb.HrHamilton, './samples/hr_hamilton.dat', 28, [[1., 1., 1.]])
+        self.assertRaises(ValueError, tbmodels.HrModel, './samples/hr_hamilton.dat', occ=28, pos=[[1., 1., 1.]])
 
 if __name__ == "__main__":
     unittest.main()
