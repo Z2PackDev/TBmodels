@@ -24,18 +24,18 @@ class TrsTestCase(BuildDirTestCase):
 
         # add hopping between different atoms
         builder.add_hopping(((0, 0), (1, 0)),
-                           tbmodels.vectors.combine([0, -1], [0, -1], 0),
+                           tbmodels.helpers.combine([0, -1], [0, -1], 0),
                            t1,
                            phase=[1, -1j, 1j, -1])
 
         # add hopping between neighbouring orbitals of the same type
         builder.add_hopping(((0, 0), (0, 0)),
-                           tbmodels.vectors.neighbours([0, 1],
+                           tbmodels.helpers.neighbours([0, 1],
                                                         forward_only=True),
                            t2,
                            phase=[1])
         builder.add_hopping(((1, 0), (1, 0)),
-                           tbmodels.vectors.neighbours([0, 1],
+                           tbmodels.helpers.neighbours([0, 1],
                                                         forward_only=True),
                            -t2,
                            phase=[1])

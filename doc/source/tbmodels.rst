@@ -1,13 +1,13 @@
 .. _tbmodels:
 
-TBModels Module
-===============
-.. automodule:: tbmodels
-    :members:
-    :imported-members:
+Documentation
+=============
 
-Functions for creating connecting vectors
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automodule:: z2pack.tb.vectors
-    :members:
-    :imported-members:
+.. toctree::
+    :maxdepth:  2
+
+    model.rst
+    builder.rst
+    helpers.rst
+
+
