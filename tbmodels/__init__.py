@@ -6,8 +6,7 @@
 # File:    __init__.py (z2pack.tb)
 
 r"""
-The :mod:`z2pack.em.tb` module contains classes related to tight-binding
-effective models.
+TBModels is a tool for creating / loading and manipulating tight-binding models.
 """
 
 from ._version import *

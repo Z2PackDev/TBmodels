@@ -5,9 +5,12 @@
 # Date:    02.06.2015 17:50:33 CEST
 # File:    _tb_model.py
 
-from __future__ import division
+from __future__ import division, print_function
+
+from phys.bands import EigenVal
 
 import copy
+import warnings
 import itertools
 import numpy as np
 import scipy.linalg as la
@@ -114,6 +117,17 @@ class Model(object):
             H += self._hamilton_parts[i].toarray() * np.exp(2j * np.pi * np.dot(G, k))
         return np.array(H)
 
+    def eigenval(self, k):
+        """
+        Returns the eigenvalues at a given k point.
+
+        :param k:   k-point
+        :type k:    list
+
+        :returns:   list of EigenVal objects
+        """
+        return EigenVal(la.eigh(self.hamilton(k))[0], self.occ)
+
     def _precompute(self):
         """
         Precomputes the matrices of H belonging to a given G.
@@ -144,6 +158,96 @@ class Model(object):
         del self._on_site
 
     #-------------------CREATING DERIVED MODELS-------------------------#
+    #~ def mixing(self, mixin_model, mixin_strength, in_place=False):
+        #~ """
+        #~ Creates an interpolation between this model and a given other model. For this interpolation to have any physical sense, the bases w.r.t. which the two models are defined must be identical.
+        #~ """
+        #~ raise NotImplementedError
+
+    
+    def __add__(self, model):
+        if not isinstance(model, Model):
+            raise ValueError('Invalid argument type for Model.__add__: {}'.format(type(model)))
+
+        # ---- consistency checks ----
+        # check if the occupation number matches
+        if self.occ != model.occ:
+            raise ValueError('Error when adding Models: occupation numbers ({0}, {1}) don\'t match'.format(self.occ, model.occ))
+
+        # check if the number of orbitals matches
+        if len(self._on_site) != len(model._on_site):
+            raise ValueError('Error when adding Models: the number of orbitals ({0}, {1}) doesn\'t match'.format(len(self._on_site), len(model._on_site)))
+
+        # TODO: maybe use TolerantTuple for this purpose
+        # check if the unit cells match
+        uc_match = True
+        if self._uc is None or model._uc is None:
+            if model._uc is not self._uc:
+                uc_match = False
+        else:
+            tolerance = 1e-6
+            for v1, v2 in zip(self._uc, model._uc):
+                if not uc_match:
+                    break
+                for x1, x2 in zip(v1, v2):
+                    if abs(x1 - x2) > tolerance:
+                        uc_match = False
+                        break
+        if not uc_match:
+            raise ValueError('Error when adding Models: unit cells don\'t match.\nModel 1: {0}\nModel 2: {1}'.format(self._uc, model._uc))
+
+        # check if the positions match
+        pos_match = True
+        tolerance = 1e-6
+        for v1, v2 in zip(self.pos, model.pos):
+            if not pos_match:
+                break
+            for x1, x2 in zip(v1, v2):
+                if abs(x1 - x2) > tolerance:
+                    pos_match = False
+                    break
+        if not pos_match:
+            raise ValueError('Error when adding Models: positions don\'t match.\nModel 1: {0}\nModel 2: {1}'.format(self.pos, model.pos))
+
+        # ---- main part ----
+        new_occ = self.occ
+        new_pos = copy.deepcopy(self.pos)
+        new_on_site = [e1 + e2 for e1, e2 in zip(self._on_site, model._on_site)]
+        new_uc = copy.deepcopy(self._uc)
+        new_hop = []
+        for hop in self._hop:
+            new_hop.append(copy.deepcopy(hop))
+        for hop in model._hop:
+            new_hop.append(copy.deepcopy(hop))
+        # -------------------
+        return self._create_model(in_place=False, on_site=new_on_site, pos=new_pos, hop=new_hop, occ=new_occ, add_cc=False, uc=new_uc)
+
+    def __radd__(self, model):
+        """
+        Addition is commutative.
+        """
+        return self.__add__(model)
+
+    def __mul__(self, x):
+        """
+        Multiply on-site energies and hopping parameter strengths by a constant factor.
+        """
+        new_occ = self.occ
+        new_pos = copy.deepcopy(self.pos)
+        new_on_site = [energy * x for energy in self._on_site]
+        new_uc = copy.deepcopy(self._uc)
+        new_hop = []
+        for i0, i1, G, t in self._hop:
+            new_hop.append([i0, i1, G, t * x])
+
+        return self._create_model(in_place=False, on_site=new_on_site, pos=new_pos, hop=new_hop, occ=new_occ, add_cc=False, uc=new_uc)
+
+    def __rmul__(self, x):
+        """
+        Multiplication with constant factors is commutative.
+        """
+        return self.__mul__(x)
+
     def supercell(self, dim, periodic=[True, True, True], passivation=None, in_place=False):
         r"""
         Creates a tight-binding model which describes a supercell.
@@ -230,7 +334,6 @@ class Model(object):
                     tmp_on_site += np.array(passivation(*_edge_detect_pos([i, j, k], dim)), dtype=float)
                     new_on_site.extend(tmp_on_site)
 
-        return self._create_model(in_place, on_site=new_on_site, pos=new_pos, hop=new_hop, occ=new_occ, add_cc=False, uc=new_uc)
 
     def trs(self, in_place=False):
         """
