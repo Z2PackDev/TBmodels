@@ -7,7 +7,7 @@
 
 from __future__ import division, print_function
 
-from phys.bands import EigenVal
+from mtools.bands import EigenVal
 
 import copy
 import warnings
