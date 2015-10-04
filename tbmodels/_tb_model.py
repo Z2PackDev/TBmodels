@@ -7,98 +7,45 @@
 
 from __future__ import division, print_function
 
+from ._bare_model import BareModel
 from mtools.bands import EigenVal
 
 import copy
 import warnings
+import decorator
 import itertools
 import numpy as np
 import scipy.linalg as la
 import scipy.sparse as sparse
 
 class Model(object):
-    r"""
-    Describes a tight-binding model.
-
-    :param on_site: On-site energies of the orbitals.
-    :type on_site:  list
-
-    :param hop: Hopping terms. Each hopping terms is a list
-        [O1, O2, G, t] where O1 and O2 are the indices of the two orbitals
-        involved, G is the reciprocal lattice vector indicating the UC
-        where O2 is located (if O1 is located in the home UC), and t
-        is the hopping strength.
-    :type hop: list
-
-    :param pos:   Positions of the orbitals. By default (positions = ``None``),
-        all orbitals are put at the origin.
-    :type pos:    list
-
-    :param occ: Number of occupied states. Default: Half the number of orbitals.
-    :type occ:  int
-
-    :param add_cc:  Determines whether the complex conjugates of the hopping
-        parameters are added automatically. Default: ``True``.
-    :type add_cc:   bool
-
-    :param uc: Unit cell of the system. The lattice vectors :math:`a_i` are to be given as column vectors. By default, no unit cell is specified, meaning an Error will occur when adding electromagnetic field.
-    :type uc: 3x3 matrix
-    """
-    def __init__(self, on_site, hop, pos=None, occ=None, add_cc=True, uc=None):
-        self._create_model(True, on_site, hop, pos, occ, add_cc, uc)
-
-    def _create_model(self, in_place, on_site, hop, pos=None, occ=None, add_cc=True, uc=None):
-        """
-        Creates a new model if in_place=False and modifies the current one else.
-        """
-        if in_place:
-            if uc is None:
-                self._uc = None
-            else:
-                self._uc = np.array(uc)
-            self._on_site = np.array(on_site, dtype=float)
-
-            # take pos if given, else default to [0., 0., 0.] * number of orbitals
-            if pos is None:
-                self.pos = [np.array([0., 0., 0.]) for _ in range(len(self._on_site))]
-                uc_offset = [np.array([0, 0, 0], dtype=int) for _ in range(len(self._on_site))]
-            # all positions are mapped into the home unit cell
-            elif len(pos) == len(self._on_site):
-                self.pos = [np.array(p) % 1 for p in pos]
-                uc_offset = [np.array(np.floor(p), dtype=int) for p in pos]
-            else:
-                raise ValueError('invalid argument for "pos": must be either None or of the same length as the number of orbitals (on_site)')
-
-            # adding hoppings and complex conjugates if required
-            self._hop = [[i0, i1, np.array(G, dtype=int) + uc_offset[i1] - uc_offset[i0], t] for i0, i1, G, t in hop]
-            if add_cc:
-                self._hop.extend([[i1, i0, -np.array(G, dtype=int) - uc_offset[i1] + uc_offset[i0], t.conjugate()] for i0, i1, G, t in hop])
-
-            # take occ if given, else default to half the number of orbitals
-            if occ is None:
-                self.occ = int(len(on_site) / 2)
-            else:
-                self.occ = int(occ)
-            # for the precomputation of Hamilton terms
-            self._unchanged = False
-            return
+    # I will patch the sparse array classes to have array properties.
+    def __init__(self, hoppings, occ=None, pos=None, uc=None):
+        # reading in hopping matrices
+        if len(hoppings) == 0:
+            raise ValueError('Empty hoppings dictionary supplied.')
+        self.hoppings = {tuple(key): np.array(value) for key, value in G_dict.items()}
+        self.size = self._G_dict.items()[0].shape[0]
+        for h_array in self.hoppings.values():
+            if not h_array.shape() == (self.size, self.size):
+                raise ValueError('Hopping matrices of inconsistent sizes supplied.')
+                
+        # positions and the unit cell
+        if pos is None:
+            self.pos = [np.array([0., 0., 0.]) for _ in range(self.size)]
+        if uc is None:
+            self.uc = None
         else:
-            return Model(on_site, hop, pos, occ, add_cc, uc)
+            self.uc = np.array(uc)
 
-    def __setattr__(self, name, value):
-        """
-        Force the hamilton precomputation to be re-done when something changes.
-        """
-        if name in ['_hop', '_on_site']:
-            self._unchanged = False
-        super(Model, self).__setattr__(name, value)
+        # number of occupied states
+        self.occ = None if (occ is None) else int(occ)
 
     def add_hop(self, hop):
         """
         Adds additional hopping terms. This can be useful for example if the Model was created as a :class:`HrModel` , but additional terms such as spin-orbit coupling need to be added.
         """
         self._hop.extend(hop)
-
 
     def hamilton(self, k):
         """
@@ -109,13 +56,7 @@ class Model(object):
 
         :returns:   2D numpy array
         """
-        if not self._unchanged:
-            self._precompute()
-        k = np.array(k)
-        H = copy.deepcopy(self._hamilton_diag)
-        for i, G in enumerate(self._G_list):
-            H += self._hamilton_parts[i].toarray() * np.exp(2j * np.pi * np.dot(G, k))
-        return np.array(H)
+        return self.bare_model.hamilton(k)
 
     def eigenval(self, k):
         """
@@ -126,36 +67,11 @@ class Model(object):
 
         :returns:   list of EigenVal objects
         """
-        return EigenVal(la.eigh(self.hamilton(k))[0], self.occ)
-
-    def _precompute(self):
-        """
-        Precomputes the matrices of H belonging to a given G.
-        """
-        self._hamilton_diag = np.array(np.diag(self._on_site), dtype=complex)
-        G_key = lambda x: tuple(x[2])
-        self._G_list = list(sorted(list(set([tuple(G_key(x)) for x in self._hop]))))
-        self._hamilton_parts = []
-        num_hop_added = 0
-        G_splitted_hop = [list(x) for _, x in itertools.groupby(sorted(self._hop, key=G_key), key=G_key)]
-        for G_group in G_splitted_hop:
-            tmp_hamilton_parts = np.zeros_like(self._hamilton_diag, dtype=complex)
-            for i0, i1, _, t in G_group:
-                tmp_hamilton_parts[i0, i1] += t
-                num_hop_added += 1
-            self._hamilton_parts.append(sparse.coo_matrix(tmp_hamilton_parts, dtype=complex))
-        assert num_hop_added == len(self._hop)
-        self._unchanged = True
+        return self.bare_model.eigenval(k)
 
 
-    def strip(self):
-        """
-        Precomputes the Hamiltonian and then DELETES the variables needed for precomputation. This should only be used if memory usage is a problem and the Model does not change at all afterwards.
-        """
-        if not self._unchanged:
-            self._precompute()
-        del self._hop
-        del self._on_site
+    def to_hr(self):
+        raise NotImplementedError # TODO
 
     #-------------------CREATING DERIVED MODELS-------------------------#
     #~ def mixing(self, mixin_model, mixin_strength, in_place=False):
@@ -248,6 +164,7 @@ class Model(object):
         """
         return self.__mul__(x)
 
+    @_modifying
     def supercell(self, dim, periodic=[True, True, True], passivation=None, in_place=False):
         r"""
         Creates a tight-binding model which describes a supercell.
@@ -333,8 +250,10 @@ class Model(object):
                     tmp_on_site = copy.deepcopy(self._on_site)
                     tmp_on_site += np.array(passivation(*_edge_detect_pos([i, j, k], dim)), dtype=float)
                     new_on_site.extend(tmp_on_site)
+        return self._create_model(in_place, on_site=new_on_site, pos=new_pos, hop=new_hop, occ=new_occ, add_cc=False, uc=new_uc)
 
 
+    @_modifying
     def trs(self, in_place=False):
         """
         Adds a time-reversal image of the current model.
@@ -352,6 +271,7 @@ class Model(object):
             new_hop.append([i1 + idx_offset, i0 + idx_offset, -G, t])
         return self._create_model(in_place, on_site=new_on_site, pos=new_pos, hop=new_hop, occ=new_occ, add_cc=False, uc=self._uc)
 
+    @_modifying
     def change_uc(self, uc, in_place=False):
         """
         Creates a new model with a different unit cell. The new unit cell must have the same volume as the previous one, i.e. the number of atoms per unit cell stays the same, and cannot change chirality.
@@ -373,6 +293,7 @@ class Model(object):
 
         return self._create_model(in_place, on_site=self._on_site, pos=new_pos, hop=new_hop, occ=self.occ, add_cc=False, uc=new_uc)
 
+    @_modifying
     def em_field(self, scalar_pot, vec_pot, prefactor_scalar=1, prefactor_vec=7.596337572e-6, mode_scalar='relative', mode_vec='relative', in_place=False):
         r"""
         Creates a model including an electromagnetic field described by a scalar potential :math:`\Phi(\mathbf{r})` and a vector potential :math:`\mathbf{A}(\mathbf{r})` .
