@@ -20,7 +20,7 @@ class HrModel(HoppingsListModel):
         zero entries. Default: ``None`` (no hopping entries are excluded).
     :type h_cutoff: float
 
-    :param kwargs: Keyword arguments are passed to :class:`Model` . For ``add_cc``, the default is ``False`` (unlike in :class:`Model` ).
+    :param kwargs: Keyword arguments are passed to :class:`Model` . For ``add_cc``, the default is ``False`` (unlike in :class:`HoppingsListModel`).
     """
     def __init__(self, hr_file, h_cutoff=None, **kwargs):
 
