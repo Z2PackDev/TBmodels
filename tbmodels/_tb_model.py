@@ -145,88 +145,101 @@ class Model(object):
         #~ raise NotImplementedError
 
     
-    #~ def __add__(self, model):
-        #~ if not isinstance(model, Model):
-            #~ raise ValueError('Invalid argument type for Model.__add__: {}'.format(type(model)))
-#~ 
-        #~ # ---- consistency checks ----
-        #~ # check if the occupation number matches
-        #~ if self.occ != model.occ:
-            #~ raise ValueError('Error when adding Models: occupation numbers ({0}, {1}) don\'t match'.format(self.occ, model.occ))
-#~ 
-        #~ # check if the size of the hopping matrices match
-        #~ if len(self.size) != len(model.size):
-            #~ raise ValueError('Error when adding Models: the number of states ({0}, {1}) doesn\'t match'.format(len(self.size), len(model.size)))
-#~ 
-        #~ # TODO: maybe use TolerantTuple for this purpose
-        #~ # check if the unit cells match
-        #~ uc_match = True
-        #~ if self.uc is None or model.uc is None:
-            #~ if model.uc is not self.uc:
-                #~ uc_match = False
-        #~ else:
-            #~ tolerance = 1e-6
-            #~ for v1, v2 in zip(self.uc, model.uc):
-                #~ if not uc_match:
-                    #~ break
-                #~ for x1, x2 in zip(v1, v2):
-                    #~ if abs(x1 - x2) > tolerance:
-                        #~ uc_match = False
-                        #~ break
-        #~ if not uc_match:
-            #~ raise ValueError('Error when adding Models: unit cells don\'t match.\nModel 1: {0}\nModel 2: {1}'.format(self._uc, model._uc))
-#~ 
-        #~ # check if the positions match
-        #~ pos_match = True
-        #~ tolerance = 1e-6
-        #~ for v1, v2 in zip(self.pos, model.pos):
-            #~ if not pos_match:
-                #~ break
-            #~ for x1, x2 in zip(v1, v2):
-                #~ if abs(x1 - x2) > tolerance:
-                    #~ pos_match = False
-                    #~ break
-        #~ if not pos_match:
-            #~ raise ValueError('Error when adding Models: positions don\'t match.\nModel 1: {0}\nModel 2: {1}'.format(self.pos, model.pos))
-#~ 
-        #~ # ---- main part ----
-        #~ new_occ = self.occ
-        #~ new_pos = copy.deepcopy(self.pos)
-        #~ new_on_site = [e1 + e2 for e1, e2 in zip(self._on_site, model._on_site)]
-        #~ new_uc = copy.deepcopy(self._uc)
-        #~ new_hop = []
-        #~ for hop in self._hop:
-            #~ new_hop.append(copy.deepcopy(hop))
-        #~ for hop in model._hop:
-            #~ new_hop.append(copy.deepcopy(hop))
-        #~ # -------------------
-        #~ return self._create_model(in_place=False, on_site=new_on_site, pos=new_pos, hop=new_hop, occ=new_occ, add_cc=False, uc=new_uc)
-#~ 
-    #~ def __radd__(self, model):
-        #~ """
-        #~ Addition is commutative.
-        #~ """
-        #~ return self.__add__(model)
-#~ 
-    #~ def __mul__(self, x):
-        #~ """
-        #~ Multiply on-site energies and hopping parameter strengths by a constant factor.
-        #~ """
-        #~ new_occ = self.occ
-        #~ new_pos = copy.deepcopy(self.pos)
-        #~ new_on_site = [energy * x for energy in self._on_site]
-        #~ new_uc = copy.deepcopy(self._uc)
-        #~ new_hop = []
-        #~ for i0, i1, G, t in self._hop:
-            #~ new_hop.append([i0, i1, G, t * x])
-#~ 
-        #~ return self._create_model(in_place=False, on_site=new_on_site, pos=new_pos, hop=new_hop, occ=new_occ, add_cc=False, uc=new_uc)
-#~ 
-    #~ def __rmul__(self, x):
-        #~ """
-        #~ Multiplication with constant factors is commutative.
-        #~ """
-        #~ return self.__mul__(x)
+    def __add__(self, model):
+        if not isinstance(model, Model):
+            raise ValueError('Invalid argument type for Model.__add__: {}'.format(type(model)))
+
+        # ---- CONSISTENCY CHECKS ----
+        # check if the occupation number matches
+        if self.occ != model.occ:
+            raise ValueError('Error when adding Models: occupation numbers ({0}, {1}) don\'t match'.format(self.occ, model.occ))
+
+        # check if the size of the hopping matrices match
+        if self.size != model.size:
+            raise ValueError('Error when adding Models: the number of states ({0}, {1}) doesn\'t match'.format(len(self.size), len(model.size)))
+
+        # TODO: maybe use TolerantTuple for this purpose
+        # check if the unit cells match
+        uc_match = True
+        if self.uc is None or model.uc is None:
+            if model.uc is not self.uc:
+                uc_match = False
+        else:
+            tolerance = 1e-6
+            for v1, v2 in zip(self.uc, model.uc):
+                if not uc_match:
+                    break
+                for x1, x2 in zip(v1, v2):
+                    if abs(x1 - x2) > tolerance:
+                        uc_match = False
+                        break
+        if not uc_match:
+            raise ValueError('Error when adding Models: unit cells don\'t match.\nModel 1: {0}\nModel 2: {1}'.format(self._uc, model._uc))
+
+        # check if the positions match
+        pos_match = True
+        tolerance = 1e-6
+        for v1, v2 in zip(self.pos, model.pos):
+            if not pos_match:
+                break
+            for x1, x2 in zip(v1, v2):
+                if abs(x1 - x2) > tolerance:
+                    pos_match = False
+                    break
+        if not pos_match:
+            raise ValueError('Error when adding Models: positions don\'t match.\nModel 1: {0}\nModel 2: {1}'.format(self.pos, model.pos))
+
+        # ---- MAIN PART ----
+        new_hoppings = copy.deepcopy(self.hoppings)
+        for G, hop_mat in model.hoppings.items():
+            new_hoppings[G] += hop_mat
+        # -------------------
+        return Model(
+            new_hoppings,
+            pos=self.pos,
+            occ=self.occ,
+            uc=self.uc,
+            contains_cc=False,
+        )
+
+    def __radd__(self, model):
+        """
+        Addition is commutative.
+        """
+        return self.__add__(model)
+
+    def __sub__(self, model):
+        return self + -model
+
+    def __neg__(self):
+        return -1 * self
+    
+
+    def __mul__(self, x):
+        """
+        Multiply on-site energies and hopping parameter strengths by a constant factor.
+        """
+        new_hoppings = dict()
+        for G, hop_mat in self.hoppings.items():
+            new_hoppings[G] = x * hop_mat
+
+        return Model(
+            new_hoppings,
+            pos=self.pos,
+            occ=self.occ,
+            uc=self.uc,
+            contains_cc=False,
+        )
+
+    def __rmul__(self, x):
+        """
+        Multiplication with constant factors is commutative.
+        """
+        return self.__mul__(x)
+
+    def __div__(self, x):
+        return self * (1. / x)
+    
 
     #~ def supercell(self, dim, periodic=[True, True, True], passivation=None, in_place=False):
         #~ r"""

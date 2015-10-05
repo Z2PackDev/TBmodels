@@ -19,7 +19,7 @@ if __name__ == "__main__":
     #~ sys.argv = [sys.argv[0]] # turns off forwarding the flags
 
     if arguments.name is not None:
-        filename = arguments.name
+        filename = arguments.name.split('/')[-1]
         shutil.copyfile('./templates/' + filename, './' + filename)
         sys.argv = [sys.argv[0]]
         execfile(filename, globals(), locals())
