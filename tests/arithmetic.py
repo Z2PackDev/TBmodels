@@ -12,7 +12,7 @@ import copy
 import types
 import shutil
 
-class ArithmeticTestCase(BuildDirTestCase):
+class ArithmeticTestCase(CommonTestCase):
     def createH(self, t1, t2):
 
         builder = tbmodels.Builder()
