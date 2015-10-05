@@ -21,25 +21,44 @@ import scipy.sparse as sparse
 class Model(object):
     # I will patch the sparse array classes to have array properties.
     def __init__(self, hoppings, size=None, occ=None, pos=None, uc=None, contains_cc=True, cc_tolerance=1e-12):
-        # reading in hopping matrices into temporary "hop"
+        """
+        
+        :param hoppings:    Hopping matrices, as a dict containing the corresponding G as a key.
+        :type hoppings:     dict
+        
+        :param size:        Number of states. Defaults to the size of the hopping matrices, if those are given.
+        :type size:         int
+        
+        :param occ:         Number of occupied states.
+        :type occ:          int
+        
+        :param pos:         Positions of the atoms. Defaults to [0., 0., 0.]. Must be in the home UC.
+        :type pos:          list(array)
+        
+        :param contains_cc: Whether the full overlaps are given, or only the reduced representation which does not contain the complex conjugate terms (and only half the zero-terms).
+        :type contains_cc:  bool
+        
+        :param cc_tolerance:    Tolerance when the complex conjugate terms are checked for consistency.
+        :type cc_tolerance:     float
+        """
+        # ---- SIZE ----
         if len(hoppings) == 0 and size is None:
             raise ValueError('Empty hoppings dictionary supplied and no size given. Cannot determine the size of the system.')
         self.size = size if (size is not None) else hoppings.values()[0].shape[0]
 
-        
+        # ---- HOPPING TERMS ----
         hoppings = {tuple(key): np.array(value, dtype=complex) for key, value in hoppings.items()}
         if contains_cc:
             hoppings = self._reduce_hoppings(hoppings, cc_tolerance)
-        
         self.hoppings = co.defaultdict(lambda: np.zeros((self.size, self.size), dtype=complex))
         for G, h_mat in hoppings.items():
             self.hoppings[G] += h_mat
-        
+        # consistency check for size
         for h_mat in self.hoppings.values():
             if not h_mat.shape == (self.size, self.size):
                 raise ValueError('Hopping matrix of shape {0} found, should be {1}.'.format(h_mat.shape, (self.size, self.size)))
 
-        # positions and the unit cell 
+        # ---- POSITIONS ----
         if pos is None:
             self.pos = [np.array([0., 0., 0.]) for _ in range(self.size)]
         elif len(pos) == self.size:
@@ -49,20 +68,24 @@ class Model(object):
                     raise ValueError('position {0} is outside the unit cell'.format(p))
         else:
             raise ValueError('invalid argument for "pos": must be either None or of the same length as the number of orbitals (on_site)')
+            
+        # ---- UNIT CELL ----
         if uc is None:
             self.uc = None
         else:
             self.uc = np.array(uc) # implicit copy
 
-        # number of occupied states
+        # ---- OCCUPATION NR ----
         self.occ = None if (occ is None) else int(occ)
 
     def _reduce_hoppings(self, hop, cc_tolerance):
+        """
+        Reduce the full hoppings representation (with cc) to the reduced one (without cc, zero-terms halved).
+        """
         # Consistency checks
         for G, hop_array in hop.items():
             if la.norm(hop_array - hop[tuple(-x for x in G)].T.conjugate()) > cc_tolerance:
                 raise ValueError('The provided hoppings do not correspond to a hermitian Hamiltonian. hoppings[-G] = hoppings[G].H is not fulfilled.')
-
 
         res = dict()
         for G, hop_array in hop.items():
@@ -73,21 +96,17 @@ class Model(object):
             else:
                 continue
         return res
-        
-    
 
-    def add_single_hopping(self, i0, i1, G, t, add_cc=False):
-        """
-        Adds an additional hopping term.
-        """
-        #~ G_vec = 
-        #~ if G_vec not in self.hoppings.keys():
-            #~ self.hoppings[G_vec] = np.zeros((self.size, self.size), dtype=complex)
-        self.hoppings[tuple(G)][i0, i1] += t
-        
-        if add_cc:
-            self.add_single_hopping(i1, i0, -np.array(G, dtype=int), t.conjugate(), False)
-        self._hop.extend(hop)
+    #-----------------------------------------------------------------------#
+
+    #~ def add_single_hopping(self, i0, i1, G, t):
+        #~ """
+        #~ Adds an additional hopping term.
+        #~ """
+        #~ if G == (0, 0, 0):
+            #~ t *= 0.5
+        #~ self.hoppings[tuple(G)][i0, i1] += t
+        #~ self._hop.extend(hop)
 
     def hamilton(self, k):
         """
