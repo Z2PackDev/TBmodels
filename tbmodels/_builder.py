@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
@@ -9,7 +10,7 @@ from __future__ import division, print_function
 
 import numpy as np
 
-from ._old_model import OldModel
+from ._hoppings_list_model import HoppingsListModel
 
 class Builder(object):
     """
@@ -178,4 +179,7 @@ class Builder(object):
             count += num_orbitals_atom
         # use orbital_to_index to create hoppings with the correct (orbital) labels
         hop_total = [[orbital_to_index[idx0[0]][idx0[1]], orbital_to_index[idx1[0]][idx1[1]], G, t] for t, idx0, idx1, G in self._hoppings]
-        return OldModel(on_site=orbitals_total, hop=hop_total, pos=pos_total, occ=occ_total, add_cc=add_cc)
+        # on-site energy -> hoppings
+        for i, on_site_energy in enumerate(orbitals_total):
+            hop_total.append([i, i, (0, 0, 0), on_site_energy])
+        return HoppingsListModel(size=len(orbitals_total), hoppings_list=hop_total, pos=pos_total, occ=occ_total, add_cc=add_cc)

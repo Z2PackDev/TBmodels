@@ -7,7 +7,6 @@
 
 from __future__ import division, print_function
 
-from ._bare_model import BareModel
 from mtools.bands import EigenVal
 
 import copy
@@ -15,26 +14,39 @@ import warnings
 import decorator
 import itertools
 import numpy as np
+import collections as co
 import scipy.linalg as la
 import scipy.sparse as sparse
 
 class Model(object):
     # I will patch the sparse array classes to have array properties.
-    def __init__(self, hoppings, occ=None, pos=None, uc=None):
-        # reading in hopping matrices
-        if len(hoppings) == 0:
-            raise ValueError('Empty hoppings dictionary supplied.')
-        self.hoppings = {tuple(key): np.array(value, dtype=complex) for key, value in hoppings.items()}
-        self.size = self.hoppings.values()[0].shape[0]
-        for h_array in self.hoppings.values():
-            if not h_array.shape == (self.size, self.size):
-                raise ValueError('Hopping matrices of inconsistent sizes supplied.')
-                
+    def __init__(self, hoppings, size=None, occ=None, pos=None, uc=None, contains_cc=True, cc_tolerance=1e-12):
+        # reading in hopping matrices into temporary "hop"
+        if len(hoppings) == 0 and size is None:
+            raise ValueError('Empty hoppings dictionary supplied and no size given. Cannot determine the size of the system.')
+        self.size = size if (size is not None) else hoppings.values()[0].shape[0]
+
+        
+        hoppings = {tuple(key): np.array(value, dtype=complex) for key, value in hoppings.items()}
+        if contains_cc:
+            hoppings = self._reduce_hoppings(hoppings, cc_tolerance)
+        
+        self.hoppings = co.defaultdict(lambda: np.zeros((self.size, self.size), dtype=complex))
+        for G, h_mat in hoppings.items():
+            self.hoppings[G] += h_mat
+        
+        for h_mat in self.hoppings.values():
+            if not h_mat.shape == (self.size, self.size):
+                raise ValueError('Hopping matrix of shape {0} found, should be {1}.'.format(h_mat.shape, (self.size, self.size)))
+
         # positions and the unit cell 
         if pos is None:
             self.pos = [np.array([0., 0., 0.]) for _ in range(self.size)]
         elif len(pos) == self.size:
             self.pos = np.array(pos) # implicit copy
+            for p in pos:
+                if any(p >= np.array([1, 1, 1])) or any(p < np.array([0, 0, 0])):
+                    raise ValueError('position {0} is outside the unit cell'.format(p))
         else:
             raise ValueError('invalid argument for "pos": must be either None or of the same length as the number of orbitals (on_site)')
         if uc is None:
@@ -45,14 +57,33 @@ class Model(object):
         # number of occupied states
         self.occ = None if (occ is None) else int(occ)
 
+    def _reduce_hoppings(self, hop, cc_tolerance):
+        # Consistency checks
+        for G, hop_array in hop.items():
+            if la.norm(hop_array - hop[tuple(-x for x in G)].T.conjugate()) > cc_tolerance:
+                raise ValueError('The provided hoppings do not correspond to a hermitian Hamiltonian. hoppings[-G] = hoppings[G].H is not fulfilled.')
+
+
+        res = dict()
+        for G, hop_array in hop.items():
+            if G == (0, 0, 0):
+                res[G] = 0.5 * hop_array 
+            elif G[np.nonzero(G)[0][0]] > 0:
+                res[G] = hop_array
+            else:
+                continue
+        return res
+        
+    
+
     def add_single_hopping(self, i0, i1, G, t, add_cc=False):
         """
         Adds an additional hopping term.
         """
-        G_vec = tuple(G)
-        if G_vec not in self.hoppings.keys():
-            self.hoppings[G_vec] = np.zeros((self.size, self.size), dtype=complex)
-        self.hoppings[G_vec][i0, i1] += t
+        #~ G_vec = 
+        #~ if G_vec not in self.hoppings.keys():
+            #~ self.hoppings[G_vec] = np.zeros((self.size, self.size), dtype=complex)
+        self.hoppings[tuple(G)][i0, i1] += t
         
         if add_cc:
             self.add_single_hopping(i1, i0, -np.array(G, dtype=int), t.conjugate(), False)
@@ -68,9 +99,8 @@ class Model(object):
         :returns:   2D numpy array
         """
         k = np.array(k)
-        H = np.zeros((self.size, self.size), dtype=complex)
-        for G, hop in self.hoppings.items():
-            H += hop * np.exp(2j * np.pi * np.dot(G, k))
+        H = sum(hop * np.exp(2j * np.pi * np.dot(G, k)) for G, hop in self.hoppings.items())
+        H += H.conjugate().T
         return H
 
     def eigenval(self, k):
@@ -258,23 +288,25 @@ class Model(object):
                     #~ new_on_site.extend(tmp_on_site)
         #~ return self._create_model(in_place, on_site=new_on_site, pos=new_pos, hop=new_hop, occ=new_occ, add_cc=False, uc=new_uc)
 
-    def trs(self, in_place=False):
+    def trs(self):
         """
         Adds a time-reversal image of the current model.
 
         :param in_place:    Determines whether the current model is modified (``in_place=True``) or a new model is returned, preserving the current one (``in_place=False``, default).
         :type in_place:     bool
         """
+        # doubling the occupation number and positions
         new_occ = None if (self.occ is None) else self.occ * 2
         new_pos = np.vstack([self.pos, self.pos])
-        #~ new_on_site = np.hstack([self._on_site, self._on_site])
         new_hoppings = dict()
+        # doubling the hopping terms
         for G, hop in self.hoppings.items():
-            new_hoppings[G] = np.zeros((2 * self.size, 2 * self.size), dtype=complex)
+            if G not in new_hoppings.keys():
+                new_hoppings[G] = np.zeros((2 * self.size, 2 * self.size), dtype=complex)
             new_hoppings[G][:self.size, :self.size] += hop
-            # here you can either do -G or t.conjugate(), but not both
-            new_hoppings[G][self.size:, self.size:] += hop.T.conjugate()
-        return Model(new_hoppings, occ=new_occ, pos=new_pos, uc=self.uc)
+            # here you can either do -G  or hop.conjugate() or hop.T, but not both
+            new_hoppings[G][self.size:, self.size:] += hop.conjugate()
+        return Model(new_hoppings, occ=new_occ, pos=new_pos, uc=self.uc, contains_cc=False)
 
     #~ def change_uc(self, uc, in_place=False):
         #~ """

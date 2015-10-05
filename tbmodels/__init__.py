@@ -11,7 +11,7 @@ TBModels is a tool for creating / loading and manipulating tight-binding models.
 
 from ._version import *
 from ._tb_model import Model
-from ._old_model import OldModel
+from ._hoppings_list_model import HoppingsListModel
 from ._hr_model import HrModel
 from ._builder import Builder
 

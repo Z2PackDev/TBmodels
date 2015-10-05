@@ -6,9 +6,9 @@
 # File:    _hr_hamilton.py
 
 from .ptools.csv_parser import read_file
-from ._old_model import OldModel
+from ._hoppings_list_model import HoppingsListModel
 
-class HrModel(OldModel):
+class HrModel(HoppingsListModel):
     r"""A subclass of :class:`tb.Model` designed to read the
     tight-binding model from the ``*_hr.dat`` file produced by Wannier90.
 
@@ -25,13 +25,12 @@ class HrModel(OldModel):
     def __init__(self, hr_file, h_cutoff=None, **kwargs):
 
         num_wann, h_entries = _read_hr(hr_file)
-        on_site = [0.] * num_wann
         if h_cutoff is not None:
             h_entries = [hopping for hopping in h_entries if abs(hopping[3]) > h_cutoff]
 
         if 'add_cc' not in kwargs.keys():
             kwargs['add_cc'] = False
-        super(HrModel, self).__init__(on_site=on_site, hop=h_entries, **kwargs)
+        super(HrModel, self).__init__(size=num_wann, hoppings_list=h_entries, **kwargs)
 
 def _read_hr(filename):
     r"""

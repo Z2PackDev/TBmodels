@@ -55,12 +55,5 @@ class TrsTestCase(BuildDirTestCase):
 
         self.assertFullAlmostEqual(res, self.trs_model.hamilton([0.4, -0.2, 0.1]))
 
-    def test_trs_inplace(self):
-        self.createH(0.2, 0.3)
-        # create a second TRS model by in-place replacing
-        model2 = copy.deepcopy(self.model)
-        model2.trs(in_place=True)
-        self.assertFullAlmostEqual(self.trs_model.hamilton([0.1, 0.2, 0.7]), model2.hamilton([0.1, 0.2, 0.7]))
-
 if __name__ == "__main__":
     unittest.main()

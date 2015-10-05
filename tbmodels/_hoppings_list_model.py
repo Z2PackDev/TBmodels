@@ -3,17 +3,17 @@
 #
 # Author:  Dominik Gresch <greschd@gmx.ch>
 # Date:    05.10.2015 01:04:24 CEST
-# File:    _old_model.py
+# File:    _hoppings_list_model.py
 
 from ._tb_model import Model
 
 import numpy as np
 
-class OldModel(Model):
+class HoppingsListModel(Model):
 
-    def __init__(self, on_site, hop, pos=None, occ=None, add_cc=True, uc=None):
+    def __init__(self, size, hoppings_list, pos=None, occ=None, add_cc=True, uc=None):
         r"""
-        Describes a tight-binding model.
+        Describes a tight-binding model set up via list of hoppings.
 
         :param on_site: On-site energies of the orbitals.
         :type on_site:  list
@@ -39,17 +39,16 @@ class OldModel(Model):
         :param uc: Unit cell of the system. The lattice vectors :math:`a_i` are to be given as column vectors. By default, no unit cell is specified, meaning an Error will occur when adding electromagnetic field.
         :type uc: 3x3 matrix
         """
-        hoppings = dict()
-        size = len(on_site)
-        hoppings[(0, 0, 0)] = np.array(np.diag(on_site), dtype=complex)
-        for i0, i1, G, t in hop:
+        hoppings_dict = dict()
+        #~ hoppings[(0, 0, 0)] = np.array(np.diag(on_site), dtype=complex)
+        for i0, i1, G, t in hoppings_list:
             G_vec = tuple(G)
-            if G_vec not in hoppings.keys():
-                hoppings[G_vec] = np.zeros((size, size), dtype=complex)
-            hoppings[G_vec][i0, i1] += t
+            if G_vec not in hoppings_dict.keys():
+                hoppings_dict[G_vec] = np.zeros((size, size), dtype=complex)
+            hoppings_dict[G_vec][i0, i1] += t
             if add_cc:
-                hoppings[G_vec][i1, i0] += t.conjugate()
-        super(OldModel, self).__init__(hoppings, pos=pos, occ=occ, uc=uc)
+                hoppings_dict[G_vec][i1, i0] += t.conjugate()
+        super(HoppingsListModel, self).__init__(hoppings_dict, pos=pos, occ=occ, uc=uc)
         
         
         #~ # PRECOMPUTE FUNCTION
