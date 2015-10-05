@@ -6,9 +6,9 @@
 # File:    _hr_hamilton.py
 
 from .ptools.csv_parser import read_file
-from ._tb_model import Model
+from ._old_model import OldModel
 
-class HrModel(Model):
+class HrModel(OldModel):
     r"""A subclass of :class:`tb.Model` designed to read the
     tight-binding model from the ``*_hr.dat`` file produced by Wannier90.
 

@@ -9,7 +9,7 @@ from __future__ import division, print_function
 
 import numpy as np
 
-from ._tb_model import Model
+from ._old_model import OldModel
 
 class Builder(object):
     """
@@ -178,4 +178,4 @@ class Builder(object):
             count += num_orbitals_atom
         # use orbital_to_index to create hoppings with the correct (orbital) labels
         hop_total = [[orbital_to_index[idx0[0]][idx0[1]], orbital_to_index[idx1[0]][idx1[1]], G, t] for t, idx0, idx1, G in self._hoppings]
-        return Model(on_site=orbitals_total, hop=hop_total, pos=pos_total, occ=occ_total, add_cc=add_cc)
+        return OldModel(on_site=orbitals_total, hop=hop_total, pos=pos_total, occ=occ_total, add_cc=add_cc)
