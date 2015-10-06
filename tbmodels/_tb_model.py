@@ -52,12 +52,14 @@ class Model(object):
         if pos is None:
             self.pos = [np.array([0., 0., 0.]) for _ in range(self.size)]
         elif len(pos) == self.size:
-            pos, hoppings = self._map_to_uc(pos, hoppings)
+            pos, hoppings = self._map_to_uc(pos, hoppings, contains_cc)
             self.pos = np.array(pos) # implicit copy
         else:
             raise ValueError('invalid argument for "pos": must be either None or of the same length as the number of orbitals (on_site)')
         if contains_cc:
             hoppings = self._reduce_hoppings(hoppings, cc_tolerance)
+        else:
+            hoppings = self._map_hoppings_positive_G(hoppings)
         self.hoppings = co.defaultdict(lambda: np.zeros((self.size, self.size), dtype=complex))
         for G, h_mat in hoppings.items():
             self.hoppings[G] += h_mat
@@ -76,28 +78,27 @@ class Model(object):
         # ---- OCCUPATION NR ----
         self.occ = None if (occ is None) else int(occ)
 
-    def _map_to_uc(self, pos, hoppings):
-        # common case: already mapped into the UC
-        for p in pos:
-            all_inside = True
-            if any(p >= np.array([1, 1, 1])) or any(p < np.array([0, 0, 0])):
-                all_inside = False
-                break
-        if all_inside:
+    def _map_to_uc(self, pos, hoppings, contains_cc):
+        uc_offsets = [np.array(np.floor(p), dtype=int) for p in pos]
+        # ---- common case: already mapped into the UC ----
+        if all([all(o == 0 for o in offset) for offset in uc_offsets]):
             return pos, hoppings
-
-        # uncommon case: handle mapping
+            
+        # ---- uncommon case: handle mapping ----
+        # re-normalize the zero'th element
+        if (0, 0, 0) in hoppings.keys() and not contains_cc:
+            hoppings[0, 0, 0] *= 2.
         new_pos = [np.array(p) % 1 for p in pos]
-        offsets = [np.array(np.floor(p), dtype=int) for p in pos]
         new_hoppings = co.defaultdict(lambda: np.zeros((self.size, self.size), dtype=complex))
         for G, hop_mat in hoppings.items():
             for i0, row in enumerate(hop_mat):
                 for i1, t in enumerate(row):
-                    if G != (0, 0, 0):
-                        if tuple(np.array(G) + offsets[i1] - offsets[i0]) == (0, 0, 0):
-                            print('ffuuu')
-                    new_hoppings[tuple(np.array(G) + offsets[i1] - offsets[i0])] += t # TODO: check order
-                
+                    if t != 0:
+                        G_new = tuple(np.array(G, dtype=int) + uc_offsets[i1] - uc_offsets[i0])
+                        new_hoppings[G_new][i0][i1] += t
+        # halving the zero'th element again
+        if (0, 0, 0) in new_hoppings.keys() and not contains_cc:
+            new_hoppings[0, 0, 0] /= 2.
         return new_pos, new_hoppings
 
     def _reduce_hoppings(self, hop, cc_tolerance):
@@ -118,6 +119,18 @@ class Model(object):
             else:
                 continue
         return res
+
+    def _map_hoppings_positive_G(self, hoppings):
+        new_hoppings = dict()
+        for G, hop_mat in hoppings.items():
+            if G == (0, 0, 0):
+                new_hoppings[G] = hop_mat
+            elif G[np.nonzero(G)[0][0]] > 0:
+                new_hoppings[G] = hop_mat
+            else:
+                minus_G = tuple(-x for x in G)
+                new_hoppings[minus_G] = hop_mat.T.conjugate()
+        return new_hoppings
 
     #-----------------------------------------------------------------------#
 

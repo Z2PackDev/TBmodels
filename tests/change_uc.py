@@ -72,6 +72,15 @@ class ChangeUcTestCase(CommonTestCase):
         self.assertFullAlmostEqual(new_model.uc, res_uc)
         self.assertFullAlmostEqual(new_model.pos, res_pos)
         
+    def test_uc_hamilton_unity(self):
+        self.createH(0.1, 0.2, uc=np.diag([1, 2, 3]))
+        new_model = self.model.change_uc(uc=np.identity(3))
+
+        res = array([[ 1.0+0.j       ,  0.2+0.1618034j,  0.0+0.j       ],
+       [ 0.2-0.1618034j, -1.0+0.j       ,  0.0+0.j       ],
+       [ 0.0+0.j       ,  0.0+0.j       ,  0.0+0.j       ]])
+        self.assertFullAlmostEqual(res, new_model.hamilton([0.1, 0.4, 0.7]))
+        
     def test_uc_hamilton_1(self):
         self.createH(0.1, 0.2, uc=np.diag([1, 2, 3]))
         new_model = self.model.change_uc(uc=np.array([[1, 2, 0], [0, 1, 3], [0, 0, 1]]))
