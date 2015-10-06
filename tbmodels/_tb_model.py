@@ -317,9 +317,6 @@ class Model(object):
                     for G, hop_mat in self.hoppings.items():
                         for i0, row in enumerate(hop_mat):
                             for i1, t in enumerate(row):
-                                # double zero term
-                                if G == (0, 0, 0):
-                                    t *= 2.
                                 # new index of orbital 0
                                 new_i0 = full_idx(uc0_pos, i0)
                                 # position of the uc of orbital 1, not mapped inside supercell
@@ -336,7 +333,6 @@ class Model(object):
                                     uc1_pos = full_uc1_pos % dim
                                     new_i1 = full_idx(uc1_pos, i1)
                                     new_hoppings[tuple(new_G)][new_i0, new_i1] += t
-        #~ new_hoppings[(0, 0, 0)] /= 2.
 
         # new on_site terms, including passivation
         if passivation is None:
@@ -344,8 +340,8 @@ class Model(object):
         for i in range(nx):
             for j in range(ny):
                 for k in range(nz):
-                    idx = i * ny * nz + j * nz * k
-                    new_hoppings[(0, 0, 0)][idx:idx + self.size, idx:idx + self.size] += np.diag(np.array(passivation(*_edge_detect_pos([i, j, k], dim)), dtype=float))
+                    idx = (i * ny * nz + j * nz + k) * self.size
+                    new_hoppings[(0, 0, 0)][idx:idx + self.size, idx:idx + self.size] += np.diag(np.array(passivation(*_edge_detect_pos([i, j, k], dim)), dtype=float) * 0.5)
         return Model(new_hoppings, pos=new_pos, occ=new_occ, uc=new_uc, contains_cc=False)
 
     def trs(self):
