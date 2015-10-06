@@ -60,9 +60,10 @@ class Model(object):
             hoppings = self._reduce_hoppings(hoppings, cc_tolerance)
         else:
             hoppings = self._map_hoppings_positive_G(hoppings)
-        self.hoppings = co.defaultdict(lambda: np.zeros((self.size, self.size), dtype=complex))
+        #~ self.hoppings = co.defaultdict(lambda: sp.csr((self.size, self.size), dtype=complex))
+        self.hoppings = dict()
         for G, h_mat in hoppings.items():
-            self.hoppings[G] += h_mat
+            self.hoppings[G] = sp.csr(h_mat)
         # consistency check for size
         for h_mat in self.hoppings.values():
             if not h_mat.shape == (self.size, self.size):
@@ -82,7 +83,7 @@ class Model(object):
 
     def _map_to_uc(self, pos, hoppings, contains_cc):
         """
-        
+        hoppings in csr format
         """
         uc_offsets = [np.array(np.floor(p), dtype=int) for p in pos]
         # ---- common case: already mapped into the UC ----
@@ -131,14 +132,14 @@ class Model(object):
 
     def _map_hoppings_positive_G(self, hoppings):
         new_hoppings = dict()
-        for G, hop_mat in hoppings.items():
+        for G, hop_csr in hoppings.items():
             if G == (0, 0, 0):
-                new_hoppings[G] = hop_mat
+                new_hoppings[G] = hop_csr
             elif G[np.nonzero(G)[0][0]] > 0:
-                new_hoppings[G] = hop_mat
+                new_hoppings[G] = hop_csr
             else:
                 minus_G = tuple(-x for x in G)
-                new_hoppings[minus_G] = hop_mat.T.conjugate()
+                new_hoppings[minus_G] = hop_csr.transpose().conjugate()
         return new_hoppings
 
     #---------------- BASIC FUNCTIONALITY ----------------------------------#
@@ -152,7 +153,7 @@ class Model(object):
         :returns:   2D numpy array
         """
         k = np.array(k)
-        H = sum(hop * np.exp(2j * np.pi * np.dot(G, k)) for G, hop in self.hoppings.items())
+        H = sum(np.array(hop) * np.exp(2j * np.pi * np.dot(G, k)) for G, hop in self.hoppings.items())
         H += H.conjugate().T
         return np.array(H)
 
@@ -322,6 +323,7 @@ class Model(object):
                 for k in range(nz):
                     uc0_pos = np.array([i, j, k], dtype=int)
                     for G, hop_mat in self.hoppings.items():
+                        hop_mat = np.array(hop_mat)
                         for i0, row in enumerate(hop_mat):
                             for i1, t in enumerate(row):
                                 # new index of orbital 0
@@ -448,23 +450,22 @@ class Model(object):
             if self.uc is None:
                 raise ValueError('Unit cell is not specified')
             for G, hop_mat in self.hoppings.items():
-                for i0, row in enumerate(hop_mat):
-                    for i1, t in enumerate(row):
-                        p0 = self.pos[i0]
-                        p1 = self.pos[i0]
-                        r0 = np.dot(self.uc, p0)
-                        r1 = np.dot(self.uc, p1)
-                        if mode_vec == 'absolute':
-                            # project into the home UC
-                            A0 = vector_pot(np.dot(self.uc, p0 % 1))
-                            A1 = vector_pot(np.dot(self.uc, p1 % 1))
-                        elif mode_vec == 'relative':
-                            # project into the home UC
-                            A0 = vector_pot(p0 % 1)
-                            A1 = vector_pot(p1 % 1)
-                        else:
-                            raise ValueError('Unrecognized value for mode_vec. Must be either "absolute" or "relative"')
-                        hop_mat[i0, i1] *= np.exp(-1j * prefactor_vec * np.dot(G + r1 - r0, A1 - A0))
+                for i0, i1 in np.vstack(hop_mat.nonzero()).T:
+                    p0 = self.pos[i0]
+                    p1 = self.pos[i0]
+                    r0 = np.dot(self.uc, p0)
+                    r1 = np.dot(self.uc, p1)
+                    if mode_vec == 'absolute':
+                        # project into the home UC
+                        A0 = vector_pot(np.dot(self.uc, p0 % 1))
+                        A1 = vector_pot(np.dot(self.uc, p1 % 1))
+                    elif mode_vec == 'relative':
+                        # project into the home UC
+                        A0 = vector_pot(p0 % 1)
+                        A1 = vector_pot(p1 % 1)
+                    else:
+                        raise ValueError('Unrecognized value for mode_vec. Must be either "absolute" or "relative"')
+                    hop_mat[i0, i1] *= np.exp(-1j * prefactor_vec * np.dot(G + r1 - r0, A1 - A0))
                         
         return Model(new_hoppings, pos=self.pos, occ=self.occ, uc=self.uc, contains_cc=False)
 
