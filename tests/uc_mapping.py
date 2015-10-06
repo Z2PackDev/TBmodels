@@ -72,7 +72,6 @@ class UcMappingTestCase(CommonTestCase):
         self.assertFullAlmostEqual(res0, self.uc_mapping(*vars[0]))
         self.assertFullAlmostEqual(res1, self.uc_mapping(*vars[1]))
         self.assertFullAlmostEqual(res2, self.uc_mapping(*vars[2]))
-        
 
 if __name__ == "__main__":
     unittest.main()
