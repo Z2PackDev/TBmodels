@@ -385,81 +385,81 @@ class Model(object):
 
         return Model(hoppings=new_hoppings, pos=new_pos, occ=self.occ, uc=new_uc, contains_cc=False)
 
-    #~ def em_field(self, scalar_pot, vec_pot, prefactor_scalar=1, prefactor_vec=7.596337572e-6, mode_scalar='relative', mode_vec='relative', in_place=False):
-        #~ r"""
-        #~ Creates a model including an electromagnetic field described by a scalar potential :math:`\Phi(\mathbf{r})` and a vector potential :math:`\mathbf{A}(\mathbf{r})` .
-#~ 
-        #~ :param scalar_pot:  A function returning the scalar potential given the position as a numpy ``array`` of length 3.
-        #~ :type scalar_pot:   function
-#~ 
-        #~ :param vec_pot: A function returning the vector potential (``list`` or ``numpy array`` of length 3) given the position as a numpy ``array`` of length 3.
-        #~ :type vec_pot:  function
-#~ 
-        #~ The units in which the two potentials are given can be determined by specifying a multiplicative prefactor. By default, the scalar potential is given in :math:`\frac{\text{energy}}{\text{electron}}` in the given energy units, and the scalar potential is given in :math:`\text{T} \cdot {\buildrel _{\circ} \over {\mathrm{A}}}`, assuming that the unit cell is also given in Angstrom.
-#~ 
-        #~ Given a ``prefactor_scalar`` :math:`p_s` and ``prefactor_vec`` :math:`p_v`, the on-site energies are modified by
-#~ 
-        #~ :math:`\epsilon_{\alpha, \mathbf{R}} = \epsilon_{\alpha, \mathbf{R}}^0 + p_s \Phi(\mathbf{R})`
-#~ 
-        #~ and the hopping terms are transformed by
-#~ 
-        #~ :math:`t_{\alpha^\prime , \alpha } (\mathbf{R}, \mathbf{R}^\prime) = t_{\alpha^\prime , \alpha }^0 (\mathbf{R}, \mathbf{R}^\prime) \times \exp{\left[ -i ~ p_v~(\mathbf{R}^\prime - \mathbf{R})\cdot(\mathbf{A}(\mathbf{R}^\prime ) - \mathbf{A}(\mathbf{R})) \right]}`
-#~ 
-        #~ :param prefactor_scalar:    Prefactor determining the unit of the scalar potential.
-        #~ :type prefactor_scalar:     float
-#~ 
-        #~ :param prefactor_vec:       Prefactor determining the unit of the vector potential.
-        #~ :type prefactor_vec:        float
-#~ 
-        #~ The positions :math:`\mathbf{r}` given to the potentials :math:`\Phi` and :math:`\mathbf{A}` can be either absolute or relative to the unit cell:
-#~ 
-        #~ :param mode_scalar: Determines whether the input for the ``scalar_pot`` function is given as an absolute position (``mode_scalar=='absolute'``) or relative to the unit cell (``mode_scalar=='relative'``).
-        #~ :type mode_scalar:  str
-#~ 
-        #~ :param mode_vec:    Determines whether the input for the ``vec_pot`` function is given as an absolute position (``mode_vec=='absolute'``) or relative to the unit cell (``mode_vec=='relative'``).
-        #~ :type mode_vec:     str
-#~ 
-        #~ Additional parameters:
-#~ 
-        #~ :param in_place:    Determines whether the current model is modified (``in_place=True``) or a new model is returned, preserving the current one (``in_place=False``, default).
-        #~ :type in_place:     bool
-        #~ """
-        #~ new_on_site = copy.deepcopy(self._on_site)
-        #~ if scalar_pot is not None:
-            #~ for i, p in enumerate(self.pos):
-                #~ if mode_scalar == 'relative':
-                    #~ new_on_site[i] += prefactor_scalar * scalar_pot(p)
+    def em_field(self, scalar_pot=None, vec_pot=None, prefactor_scalar=1, prefactor_vec=7.596337572e-6, mode_scalar='relative', mode_vec='relative'):
+        r"""
+        Creates a model including an electromagnetic field described by a scalar potential :math:`\Phi(\mathbf{r})` and a vector potential :math:`\mathbf{A}(\mathbf{r})` .
+
+        :param scalar_pot:  A function returning the scalar potential given the position as a numpy ``array`` of length 3.
+        :type scalar_pot:   function
+
+        :param vec_pot: A function returning the vector potential (``list`` or ``numpy array`` of length 3) given the position as a numpy ``array`` of length 3.
+        :type vec_pot:  function
+
+        The units in which the two potentials are given can be determined by specifying a multiplicative prefactor. By default, the scalar potential is given in :math:`\frac{\text{energy}}{\text{electron}}` in the given energy units, and the scalar potential is given in :math:`\text{T} \cdot {\buildrel _{\circ} \over {\mathrm{A}}}`, assuming that the unit cell is also given in Angstrom.
+
+        Given a ``prefactor_scalar`` :math:`p_s` and ``prefactor_vec`` :math:`p_v`, the on-site energies are modified by
+
+        :math:`\epsilon_{\alpha, \mathbf{R}} = \epsilon_{\alpha, \mathbf{R}}^0 + p_s \Phi(\mathbf{R})`
+
+        and the hopping terms are transformed by
+
+        :math:`t_{\alpha^\prime , \alpha } (\mathbf{R}, \mathbf{R}^\prime) = t_{\alpha^\prime , \alpha }^0 (\mathbf{R}, \mathbf{R}^\prime) \times \exp{\left[ -i ~ p_v~(\mathbf{R}^\prime - \mathbf{R})\cdot(\mathbf{A}(\mathbf{R}^\prime ) - \mathbf{A}(\mathbf{R})) \right]}`
+
+        :param prefactor_scalar:    Prefactor determining the unit of the scalar potential.
+        :type prefactor_scalar:     float
+
+        :param prefactor_vec:       Prefactor determining the unit of the vector potential.
+        :type prefactor_vec:        float
+
+        The positions :math:`\mathbf{r}` given to the potentials :math:`\Phi` and :math:`\mathbf{A}` can be either absolute or relative to the unit cell:
+
+        :param mode_scalar: Determines whether the input for the ``scalar_pot`` function is given as an absolute position (``mode_scalar=='absolute'``) or relative to the unit cell (``mode_scalar=='relative'``).
+        :type mode_scalar:  str
+
+        :param mode_vec:    Determines whether the input for the ``vec_pot`` function is given as an absolute position (``mode_vec=='absolute'``) or relative to the unit cell (``mode_vec=='relative'``).
+        :type mode_vec:     str
+
+        Additional parameters:
+
+        :param in_place:    Determines whether the current model is modified (``in_place=True``) or a new model is returned, preserving the current one (``in_place=False``, default).
+        :type in_place:     bool
+        """
+        new_hoppings = copy.deepcopy(self.hoppings)
+        if scalar_pot is not None:
+            for i, p in enumerate(self.pos):
+                if mode_scalar == 'relative':
+                    new_hoppings[(0, 0, 0)][i, i] += 0.5 * prefactor_scalar * scalar_pot(p)
                     #~ print('adding {1} to site {0}'.format(i, prefactor_scalar * scalar_pot(p)))
-                #~ elif mode_scalar == 'absolute':
-                    #~ new_on_site[i] += prefactor_scalar * scalar_pot(np.dot(self._uc, p))
-                #~ else:
-                    #~ raise ValueError('Unrecognized value for mode_scalar. Must be either "absolute" or "relative"')
-#~ 
-        #~ if vec_pot is not None:
-            #~ if self._uc is None:
-                #~ raise ValueError('Unit cell is not specified')
-            #~ new_hop = []
-            #~ for i0, i1, G, t in self._hop:
-                #~ p0 = self.pos[i0]
-                #~ p1 = self.pos[i0]
-                #~ r0 = np.dot(self._uc, p0)
-                #~ r1 = np.dot(self._uc, p1)
-                #~ if mode_vec == 'absolute':
-                    #~ # project into the home UC
-                    #~ A0 = vec_pot(np.dot(self._uc, p0 % 1))
-                    #~ A1 = vec_pot(np.dot(self._uc, p1 % 1))
-                #~ elif mode_vec == 'relative':
-                    #~ # project into the home UC
-                    #~ A0 = vec_pot(p0 % 1)
-                    #~ A1 = vec_pot(p1 % 1)
-                #~ else:
-                    #~ raise ValueError('Unrecognized value for mode_vec. Must be either "absolute" or "relative"')
-                #~ new_t = t * np.exp(-1j * prefactor_vec * np.dot(G + r1 - r0, A1 - A0))
-                #~ new_hop.append(i0, i1, G, new_t)
-        #~ else:
-            #~ new_hop = copy.deepcopy(self._hop)
-#~ 
-        #~ return self._create_model(in_place, on_site=new_on_site, pos=self.pos, hop=new_hop, occ=self.occ, add_cc=False, uc=self._uc)
+                elif mode_scalar == 'absolute':
+                    new_hoppings[(0, 0, 0)][i, i] += 0.5 * prefactor_scalar * scalar_pot(np.dot(self.uc, p))
+                else:
+                    raise ValueError('Unrecognized value for mode_scalar. Must be either "absolute" or "relative"')
+
+        if vec_pot is not None:
+            warnings.warn('The code for non-zero vector potential has not been tested at all!', UserWarning)
+            vector_pot = lambda r: np.array(vec_pot(r))
+            if self.uc is None:
+                raise ValueError('Unit cell is not specified')
+            for G, hop_mat in self.hoppings.items():
+                for i0, row in enumerate(hop_mat):
+                    for i1, t in enumerate(row):
+                        p0 = self.pos[i0]
+                        p1 = self.pos[i0]
+                        r0 = np.dot(self.uc, p0)
+                        r1 = np.dot(self.uc, p1)
+                        if mode_vec == 'absolute':
+                            # project into the home UC
+                            A0 = vector_pot(np.dot(self.uc, p0 % 1))
+                            A1 = vector_pot(np.dot(self.uc, p1 % 1))
+                        elif mode_vec == 'relative':
+                            # project into the home UC
+                            A0 = vector_pot(p0 % 1)
+                            A1 = vector_pot(p1 % 1)
+                        else:
+                            raise ValueError('Unrecognized value for mode_vec. Must be either "absolute" or "relative"')
+                        hop_mat[i0, i1] *= np.exp(-1j * prefactor_vec * np.dot(G + r1 - r0, A1 - A0))
+                        
+        return Model(new_hoppings, pos=self.pos, occ=self.occ, uc=self.uc, contains_cc=False)
 
 #----------------HELPER FUNCTIONS FOR SUPERCELL-------------------------#
 def _pos_to_idx(pos, dim):
