@@ -88,12 +88,15 @@ class Model(object):
 
         # uncommon case: handle mapping
         new_pos = [np.array(p) % 1 for p in pos]
-        offsets = [np.array([int(np.floor(x)) for x in p]) for p in pos]
+        offsets = [np.array(np.floor(p), dtype=int) for p in pos]
         new_hoppings = co.defaultdict(lambda: np.zeros((self.size, self.size), dtype=complex))
         for G, hop_mat in hoppings.items():
             for i0, row in enumerate(hop_mat):
                 for i1, t in enumerate(row):
-                    new_hoppings[tuple(np.array(G) + offsets[i0] - offsets[i1])] += t # TODO: check order
+                    if G != (0, 0, 0):
+                        if tuple(np.array(G) + offsets[i1] - offsets[i0]) == (0, 0, 0):
+                            print('ffuuu')
+                    new_hoppings[tuple(np.array(G) + offsets[i1] - offsets[i0])] += t # TODO: check order
                 
         return new_pos, new_hoppings
 
