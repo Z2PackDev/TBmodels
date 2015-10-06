@@ -10,6 +10,7 @@ from __future__ import division, print_function
 from mtools.bands import EigenVal
 import ptools.sparse_matrix as sp
 
+import six
 import copy
 import warnings
 import decorator
@@ -44,7 +45,7 @@ class Model(object):
         # ---- SIZE ----
         if len(hoppings) == 0 and size is None:
             raise ValueError('Empty hoppings dictionary supplied and no size given. Cannot determine the size of the system.')
-        self.size = size if (size is not None) else hoppings.values()[0].shape[0]
+        self.size = size if (size is not None) else six.next(six.itervalues(hoppings)).shape[0]
 
         # ---- HOPPING TERMS AND POSITIONS ----
         hoppings = {tuple(key): sp.csr(value, dtype=complex) for key, value in hoppings.items()}
@@ -269,6 +270,10 @@ class Model(object):
 
     def __div__(self, x):
         return self * (1. / x)
+
+    # for Python 3
+    def __truediv__(self, x):
+        return self.__div__(x)
     
     #---- other derived models ----#
     def supercell(self, dim, periodic=[True, True, True], passivation=None, in_place=False):
