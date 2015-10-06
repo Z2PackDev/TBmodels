@@ -78,6 +78,8 @@ class Model(object):
         # ---- OCCUPATION NR ----
         self.occ = None if (occ is None) else int(occ)
 
+    #---------------- INIT HELPER FUNCTIONS --------------------------------#
+
     def _map_to_uc(self, pos, hoppings, contains_cc):
         uc_offsets = [np.array(np.floor(p), dtype=int) for p in pos]
         # ---- common case: already mapped into the UC ----
@@ -132,17 +134,7 @@ class Model(object):
                 new_hoppings[minus_G] = hop_mat.T.conjugate()
         return new_hoppings
 
-    #-----------------------------------------------------------------------#
-
-    #~ def add_single_hopping(self, i0, i1, G, t):
-        #~ """
-        #~ Adds an additional hopping term.
-        #~ """
-        #~ if G == (0, 0, 0):
-            #~ t *= 0.5
-        #~ self.hoppings[tuple(G)][i0, i1] += t
-        #~ self._hop.extend(hop)
-
+    #---------------- BASIC FUNCTIONALITY ----------------------------------#
     def hamilton(self, k):
         """
         Creates the Hamiltonian matrix.
@@ -172,14 +164,9 @@ class Model(object):
     def to_hr(self):
         raise NotImplementedError # TODO
 
-    #-------------------CREATING DERIVED MODELS-------------------------#
-    #~ def mixing(self, mixin_model, mixin_strength, in_place=False):
-        #~ """
-        #~ Creates an interpolation between this model and a given other model. For this interpolation to have any physical sense, the bases w.r.t. which the two models are defined must be identical.
-        #~ """
-        #~ raise NotImplementedError
 
-    
+    #-------------------CREATING DERIVED MODELS-------------------------#
+    #---- arithmetic operations ----#
     def __add__(self, model):
         if not isinstance(model, Model):
             raise ValueError('Invalid argument type for Model.__add__: {}'.format(type(model)))
@@ -275,85 +262,91 @@ class Model(object):
     def __div__(self, x):
         return self * (1. / x)
     
+    #---- other derived models ----#
+    def supercell(self, dim, periodic=[True, True, True], passivation=None, in_place=False):
+        r"""
+        Creates a tight-binding model which describes a supercell.
 
-    #~ def supercell(self, dim, periodic=[True, True, True], passivation=None, in_place=False):
-        #~ r"""
-        #~ Creates a tight-binding model which describes a supercell.
-#~ 
-        #~ :param dim: The dimensions of the supercell in terms of the previous unit cell.
-        #~ :type dim:  list(int)
-#~ 
-        #~ :param periodic:    Determines whether periodicity is kept in each crystal direction. If not (entry is ``False``), hopping terms that go across the border of the supercell (in the given direction) are cut.
-        #~ :type periodic:     list(bool)
-#~ 
-        #~ :param passivation: Determines the passivation on the surface layers. It must be a function taking three input variables ``x, y, z``, which are lists ``[bottom, top]`` of booleans indicating whether a given unit cell inside the supercell touches the bottom and top edge in the given direction. The function returns a list of on-site energies (must be the same length as the initial number of orbitals) determining the passivation strength in said unit cell.
-        #~ :type passivation:  function
-#~ 
-        #~ :param in_place:    Determines whether the current model is modified (``in_place=True``) or a new model is returned, preserving the current one (``in_place=False``, default).
-        #~ :type in_place:     bool
-        #~ """
-        #~ nx, ny, nz = dim
-        #~ dim = np.array(dim, dtype=int)
-#~ 
-        #~ new_occ = sum(dim) * self.occ
-        #~ if self._uc is None:
-            #~ new_uc = None
-        #~ else:
-            #~ new_uc = self._uc * dim
-#~ 
-        #~ # the new positions, normalized to the supercell
-        #~ new_pos = []
-        #~ reduced_pos = [p / dim for p in self.pos]
-        #~ for i in range(nx):
-            #~ for j in range(ny):
-                #~ for k in range(nz):
-                    #~ tmp_offset = np.array([i, j, k]) / dim
-                    #~ for p in reduced_pos:
-                        #~ new_pos.append(tmp_offset + p)
-#~ 
-        #~ # new hoppings, cutting those that cross the supercell boundary
-        #~ # in a non-periodic direction
-        #~ new_hop = []
-        #~ # full index of an orbital in unit cell at uc_pos
-        #~ def full_idx(uc_pos, orbital_idx):
-            #~ """
-            #~ Computes the full index of an orbital in a given unit cell.
-            #~ """
-            #~ uc_idx = _pos_to_idx(uc_pos, dim)
-            #~ return uc_idx * len(self._on_site) + orbital_idx
-        #~ for i in range(nx):
-            #~ for j in range(ny):
-                #~ for k in range(nz):
-                    #~ uc0_pos = np.array([i, j, k], dtype=int)
-                    #~ for i0, i1, G, t in self._hop:
-                        #~ # new index of orbital 0
-                        #~ new_i0 = full_idx(uc0_pos, i0)
-                        #~ # position of the uc of orbital 1, not mapped inside supercell
-                        #~ full_uc1_pos = uc0_pos + G
-                        #~ outside_supercell = [(p < 0) or (p >= d) for p, d in zip(full_uc1_pos, dim)]
-                        #~ # test if the hopping should be cut
-                        #~ cut_hop = any([not per and outside for per, outside in zip(periodic, outside_supercell)])
-                        #~ if cut_hop:
-                            #~ continue
-                        #~ else:
-                            #~ # G in terms of supercells
-                            #~ new_G = np.array(np.floor(full_uc1_pos / dim), dtype=int)
-                            #~ # mapped into the supercell
-                            #~ uc1_pos = full_uc1_pos % dim
-                            #~ new_i1 = full_idx(uc1_pos, i1)
-                            #~ new_hop.append([new_i0, new_i1, new_G, t])
-#~ 
-        #~ # new on_site terms, including passivation
-        #~ if passivation is None:
-            #~ passivation = lambda x, y, z: np.zeros(len(self._on_site))
-        #~ new_on_site = []
-        #~ for i in range(nx):
-            #~ for j in range(ny):
-                #~ for k in range(nz):
-                    #~ tmp_on_site = copy.deepcopy(self._on_site)
-                    #~ tmp_on_site += np.array(passivation(*_edge_detect_pos([i, j, k], dim)), dtype=float)
-                    #~ new_on_site.extend(tmp_on_site)
-        #~ return self._create_model(in_place, on_site=new_on_site, pos=new_pos, hop=new_hop, occ=new_occ, add_cc=False, uc=new_uc)
+        :param dim: The dimensions of the supercell in terms of the previous unit cell.
+        :type dim:  list(int)
+
+        :param periodic:    Determines whether periodicity is kept in each crystal direction. If not (entry is ``False``), hopping terms that go across the border of the supercell (in the given direction) are cut.
+        :type periodic:     list(bool)
+
+        :param passivation: Determines the passivation on the surface layers. It must be a function taking three input variables ``x, y, z``, which are lists ``[bottom, top]`` of booleans indicating whether a given unit cell inside the supercell touches the bottom and top edge in the given direction. The function returns a list of on-site energies (must be the same length as the initial number of orbitals) determining the passivation strength in said unit cell.
+        :type passivation:  function
+
+        :param in_place:    Determines whether the current model is modified (``in_place=True``) or a new model is returned, preserving the current one (``in_place=False``, default).
+        :type in_place:     bool
+        """
+        dim = np.array(dim, dtype=int)
+        nx, ny, nz = dim
+
+        new_occ = None if self.occ is None else sum(dim) * self.occ
+        if self.uc is None:
+            new_uc = None
+        else:
+            new_uc = self.uc * dim
+
+        # the new positions, normalized to the supercell
+        new_pos = []
+        reduced_pos = [p / dim for p in self.pos]
+        for i in range(nx):
+            for j in range(ny):
+                for k in range(nz):
+                    tmp_offset = np.array([i, j, k]) / dim
+                    for p in reduced_pos:
+                        new_pos.append(tmp_offset + p)
+
+        # new hoppings, cutting those that cross the supercell boundary
+        # in a non-periodic direction
+        new_size = self.size * nx * ny * nz
+        new_hoppings = co.defaultdict(lambda: np.zeros((new_size, new_size), dtype=complex))
+        # full index of an orbital in unit cell at uc_pos
+        def full_idx(uc_pos, orbital_idx):
+            """
+            Computes the full index of an orbital in a given unit cell.
+            """
+            uc_idx = _pos_to_idx(uc_pos, dim)
+            return uc_idx * self.size + orbital_idx
+
+        for i in range(nx):
+            for j in range(ny):
+                for k in range(nz):
+                    uc0_pos = np.array([i, j, k], dtype=int)
+                    for G, hop_mat in self.hoppings.items():
+                        for i0, row in enumerate(hop_mat):
+                            for i1, t in enumerate(row):
+                                # double zero term
+                                if G == (0, 0, 0):
+                                    t *= 2.
+                                # new index of orbital 0
+                                new_i0 = full_idx(uc0_pos, i0)
+                                # position of the uc of orbital 1, not mapped inside supercell
+                                full_uc1_pos = uc0_pos + np.array(G)
+                                outside_supercell = [(p < 0) or (p >= d) for p, d in zip(full_uc1_pos, dim)]
+                                # test if the hopping should be cut
+                                cut_hop = any([not per and outside for per, outside in zip(periodic, outside_supercell)])
+                                if cut_hop:
+                                    continue
+                                else:
+                                    # G in terms of supercells
+                                    new_G = np.array(np.floor(full_uc1_pos / dim), dtype=int)
+                                    # mapped into the supercell
+                                    uc1_pos = full_uc1_pos % dim
+                                    new_i1 = full_idx(uc1_pos, i1)
+                                    new_hoppings[tuple(new_G)][new_i0, new_i1] += t
+        #~ new_hoppings[(0, 0, 0)] /= 2.
+
+        # new on_site terms, including passivation
+        if passivation is None:
+            passivation = lambda x, y, z: np.zeros(self.size)
+        for i in range(nx):
+            for j in range(ny):
+                for k in range(nz):
+                    idx = i * ny * nz + j * nz * k
+                    new_hoppings[(0, 0, 0)][idx:idx + self.size, idx:idx + self.size] += np.diag(np.array(passivation(*_edge_detect_pos([i, j, k], dim)), dtype=float))
+        return Model(new_hoppings, pos=new_pos, occ=new_occ, uc=new_uc, contains_cc=False)
 
     def trs(self):
         """
