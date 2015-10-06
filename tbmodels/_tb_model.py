@@ -46,8 +46,16 @@ class Model(object):
             raise ValueError('Empty hoppings dictionary supplied and no size given. Cannot determine the size of the system.')
         self.size = size if (size is not None) else hoppings.values()[0].shape[0]
 
-        # ---- HOPPING TERMS ----
+        # ---- HOPPING TERMS AND POSITIONS ----
         hoppings = {tuple(key): np.array(value, dtype=complex) for key, value in hoppings.items()}
+        # positions
+        if pos is None:
+            self.pos = [np.array([0., 0., 0.]) for _ in range(self.size)]
+        elif len(pos) == self.size:
+            pos, hoppings = self._map_to_uc(pos, hoppings)
+            self.pos = np.array(pos) # implicit copy
+        else:
+            raise ValueError('invalid argument for "pos": must be either None or of the same length as the number of orbitals (on_site)')
         if contains_cc:
             hoppings = self._reduce_hoppings(hoppings, cc_tolerance)
         self.hoppings = co.defaultdict(lambda: np.zeros((self.size, self.size), dtype=complex))
@@ -58,16 +66,6 @@ class Model(object):
             if not h_mat.shape == (self.size, self.size):
                 raise ValueError('Hopping matrix of shape {0} found, should be {1}.'.format(h_mat.shape, (self.size, self.size)))
 
-        # ---- POSITIONS ----
-        if pos is None:
-            self.pos = [np.array([0., 0., 0.]) for _ in range(self.size)]
-        elif len(pos) == self.size:
-            self.pos = np.array(pos) # implicit copy
-            for p in pos:
-                if any(p >= np.array([1, 1, 1])) or any(p < np.array([0, 0, 0])):
-                    raise ValueError('position {0} is outside the unit cell'.format(p))
-        else:
-            raise ValueError('invalid argument for "pos": must be either None or of the same length as the number of orbitals (on_site)')
             
         # ---- UNIT CELL ----
         if uc is None:
@@ -77,6 +75,27 @@ class Model(object):
 
         # ---- OCCUPATION NR ----
         self.occ = None if (occ is None) else int(occ)
+
+    def _map_to_uc(self, pos, hoppings):
+        # common case: already mapped into the UC
+        for p in pos:
+            all_inside = True
+            if any(p >= np.array([1, 1, 1])) or any(p < np.array([0, 0, 0])):
+                all_inside = False
+                break
+        if all_inside:
+            return pos, hoppings
+
+        # uncommon case: handle mapping
+        new_pos = [np.array(p) % 1 for p in pos]
+        offsets = [np.array([int(np.floor(x)) for x in p]) for p in pos]
+        new_hoppings = co.defaultdict(lambda: np.zeros((self.size, self.size), dtype=complex))
+        for G, hop_mat in hoppings.items():
+            for i0, row in enumerate(hop_mat):
+                for i1, t in enumerate(row):
+                    new_hoppings[tuple(np.array(G) + offsets[i0] - offsets[i1])] += t # TODO: check order
+                
+        return new_pos, new_hoppings
 
     def _reduce_hoppings(self, hop, cc_tolerance):
         """
@@ -340,26 +359,26 @@ class Model(object):
             new_hoppings[G][self.size:, self.size:] += hop.conjugate()
         return Model(new_hoppings, occ=new_occ, pos=new_pos, uc=self.uc, contains_cc=False)
 
-    #~ def change_uc(self, uc, in_place=False):
-        #~ """
-        #~ Creates a new model with a different unit cell. The new unit cell must have the same volume as the previous one, i.e. the number of atoms per unit cell stays the same, and cannot change chirality.
-#~ 
-        #~ :param uc: The new unit cell, given w.r.t. to the old one. Lattice vectors are given as column vectors in a 3x3 matrix.
-#~ 
-        #~ :param in_place:    Determines whether the current model is modified (``in_place=True``) or a new model is returned, preserving the current one (``in_place=False``, default).
-        #~ :type in_place:     bool
-        #~ """
-        #~ uc = np.array(uc)
-        #~ if la.det(uc) != 1:
-            #~ raise ValueError('The determinant of uc is {0}, but should be 1'.format(la.det(uc)))
-        #~ if self._uc is not None:
-            #~ new_uc = np.dot(self._uc, uc)
-        #~ else:
-            #~ new_uc = None
-        #~ new_pos = [la.solve(uc, p) for p in self.pos]
-        #~ new_hop = [[i0, i1, np.array(la.solve(uc, G), dtype=int), t] for i0, i1, G, t in self._hop]
-#~ 
-        #~ return self._create_model(in_place, on_site=self._on_site, pos=new_pos, hop=new_hop, occ=self.occ, add_cc=False, uc=new_uc)
+    def change_uc(self, uc, in_place=False):
+        """
+        Creates a new model with a different unit cell. The new unit cell must have the same volume as the previous one, i.e. the number of atoms per unit cell stays the same, and cannot change chirality.
+
+        :param uc: The new unit cell, given w.r.t. to the old one. Lattice vectors are given as column vectors in a 3x3 matrix.
+
+        :param in_place:    Determines whether the current model is modified (``in_place=True``) or a new model is returned, preserving the current one (``in_place=False``, default).
+        :type in_place:     bool
+        """
+        uc = np.array(uc)
+        if la.det(uc) != 1:
+            raise ValueError('The determinant of uc is {0}, but should be 1'.format(la.det(uc)))
+        if self.uc is not None:
+            new_uc = np.dot(self.uc, uc)
+        else:
+            new_uc = None
+        new_pos = [la.solve(uc, p) for p in self.pos]
+        new_hoppings = {tuple(np.array(la.solve(uc, G), dtype=int)): hop_mat for G, hop_mat in self.hoppings.items()}
+
+        return Model(hoppings=new_hoppings, pos=new_pos, occ=self.occ, uc=new_uc, contains_cc=False)
 
     #~ def em_field(self, scalar_pot, vec_pot, prefactor_scalar=1, prefactor_vec=7.596337572e-6, mode_scalar='relative', mode_vec='relative', in_place=False):
         #~ r"""

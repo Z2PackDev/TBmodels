@@ -154,7 +154,7 @@ class Builder(object):
                         )
                     )
 
-    def create(self, add_cc=False):
+    def create(self, add_cc=False, **kwargs):
         r"""
         Creates the :class:`.Model` instance.
 
@@ -182,4 +182,4 @@ class Builder(object):
         # on-site energy -> hoppings
         for i, on_site_energy in enumerate(orbitals_total):
             hop_total.append([i, i, (0, 0, 0), on_site_energy])
-        return HoppingsListModel(size=len(orbitals_total), hoppings_list=hop_total, pos=pos_total, occ=occ_total, add_cc=add_cc)
+        return HoppingsListModel(size=len(orbitals_total), hoppings_list=hop_total, pos=pos_total, occ=occ_total, add_cc=add_cc, **kwargs)
