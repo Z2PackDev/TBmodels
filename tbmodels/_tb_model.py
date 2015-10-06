@@ -8,6 +8,7 @@
 from __future__ import division, print_function
 
 from mtools.bands import EigenVal
+import ptools.sparse_matrix as sp
 
 import copy
 import warnings
@@ -16,7 +17,6 @@ import itertools
 import numpy as np
 import collections as co
 import scipy.linalg as la
-import scipy.sparse as sparse
 
 class Model(object):
     # I will patch the sparse array classes to have array properties.
@@ -47,7 +47,7 @@ class Model(object):
         self.size = size if (size is not None) else hoppings.values()[0].shape[0]
 
         # ---- HOPPING TERMS AND POSITIONS ----
-        hoppings = {tuple(key): np.array(value, dtype=complex) for key, value in hoppings.items()}
+        hoppings = {tuple(key): sp.csr(value, dtype=complex) for key, value in hoppings.items()}
         # positions
         if pos is None:
             self.pos = [np.array([0., 0., 0.]) for _ in range(self.size)]
@@ -81,6 +81,9 @@ class Model(object):
     #---------------- INIT HELPER FUNCTIONS --------------------------------#
 
     def _map_to_uc(self, pos, hoppings, contains_cc):
+        """
+        
+        """
         uc_offsets = [np.array(np.floor(p), dtype=int) for p in pos]
         # ---- common case: already mapped into the UC ----
         if all([all(o == 0 for o in offset) for offset in uc_offsets]):
@@ -93,6 +96,7 @@ class Model(object):
         new_pos = [np.array(p) % 1 for p in pos]
         new_hoppings = co.defaultdict(lambda: np.zeros((self.size, self.size), dtype=complex))
         for G, hop_mat in hoppings.items():
+            hop_mat = np.array(hop_mat)
             for i0, row in enumerate(hop_mat):
                 for i1, t in enumerate(row):
                     if t != 0:
@@ -101,23 +105,26 @@ class Model(object):
         # halving the zero'th element again
         if (0, 0, 0) in new_hoppings.keys() and not contains_cc:
             new_hoppings[0, 0, 0] /= 2.
+        new_hoppings = {key: sp.csr(value) for key, value in new_hoppings.items()}
         return new_pos, new_hoppings
 
     def _reduce_hoppings(self, hop, cc_tolerance):
         """
         Reduce the full hoppings representation (with cc) to the reduced one (without cc, zero-terms halved).
+
+        hop is in CSR format
         """
         # Consistency checks
-        for G, hop_array in hop.items():
-            if la.norm(hop_array - hop[tuple(-x for x in G)].T.conjugate()) > cc_tolerance:
+        for G, hop_csr in hop.items():
+            if la.norm(hop_csr - hop[tuple(-x for x in G)].T.conjugate()) > cc_tolerance:
                 raise ValueError('The provided hoppings do not correspond to a hermitian Hamiltonian. hoppings[-G] = hoppings[G].H is not fulfilled.')
 
         res = dict()
-        for G, hop_array in hop.items():
+        for G, hop_csr in hop.items():
             if G == (0, 0, 0):
-                res[G] = 0.5 * hop_array 
+                res[G] = 0.5 * hop_csr 
             elif G[np.nonzero(G)[0][0]] > 0:
-                res[G] = hop_array
+                res[G] = hop_csr
             else:
                 continue
         return res
@@ -147,7 +154,7 @@ class Model(object):
         k = np.array(k)
         H = sum(hop * np.exp(2j * np.pi * np.dot(G, k)) for G, hop in self.hoppings.items())
         H += H.conjugate().T
-        return H
+        return np.array(H)
 
     def eigenval(self, k):
         """
