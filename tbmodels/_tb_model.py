@@ -13,8 +13,6 @@ import ptools.sparse_matrix as sp
 import six
 import copy
 import warnings
-import decorator
-import itertools
 import numpy as np
 import collections as co
 import scipy.linalg as la
@@ -23,22 +21,22 @@ class Model(object):
     # I will patch the sparse array classes to have array properties.
     def __init__(self, hoppings, size=None, occ=None, pos=None, uc=None, contains_cc=True, cc_tolerance=1e-12):
         """
-        
+
         :param hoppings:    Hopping matrices, as a dict containing the corresponding G as a key.
         :type hoppings:     dict
-        
+
         :param size:        Number of states. Defaults to the size of the hopping matrices, if those are given.
         :type size:         int
-        
+
         :param occ:         Number of occupied states.
         :type occ:          int
-        
+
         :param pos:         Positions of the atoms. Defaults to [0., 0., 0.]. Must be in the home UC.
         :type pos:          list(array)
-        
+
         :param contains_cc: Whether the full overlaps are given, or only the reduced representation which does not contain the complex conjugate terms (and only half the zero-terms).
         :type contains_cc:  bool
-        
+
         :param cc_tolerance:    Tolerance when the complex conjugate terms are checked for consistency.
         :type cc_tolerance:     float
         """
@@ -70,7 +68,7 @@ class Model(object):
             if not h_mat.shape == (self.size, self.size):
                 raise ValueError('Hopping matrix of shape {0} found, should be {1}.'.format(h_mat.shape, (self.size, self.size)))
 
-            
+
         # ---- UNIT CELL ----
         if uc is None:
             self.uc = None
@@ -90,7 +88,7 @@ class Model(object):
         # ---- common case: already mapped into the UC ----
         if all([all(o == 0 for o in offset) for offset in uc_offsets]):
             return pos, hoppings
-            
+
         # ---- uncommon case: handle mapping ----
         # re-normalize the zero'th element
         if (0, 0, 0) in hoppings.keys() and not contains_cc:
@@ -124,7 +122,7 @@ class Model(object):
         res = dict()
         for G, hop_csr in hop.items():
             if G == (0, 0, 0):
-                res[G] = 0.5 * hop_csr 
+                res[G] = 0.5 * hop_csr
             elif G[np.nonzero(G)[0][0]] > 0:
                 res[G] = hop_csr
             else:
@@ -132,15 +130,22 @@ class Model(object):
         return res
 
     def _map_hoppings_positive_G(self, hoppings):
-        new_hoppings = dict()
+        """
+        Maps hoppings with a negative first non-zero index in G to their positive counterpart. 
+        """
+        new_hoppings = co.defaultdict(lambda: sp.csr((self.size, self.size), dtype=complex))
+        #~ new_hoppings = dict()
+        print(hoppings.keys())
         for G, hop_csr in hoppings.items():
             if G == (0, 0, 0):
                 new_hoppings[G] = hop_csr
             elif G[np.nonzero(G)[0][0]] > 0:
-                new_hoppings[G] = hop_csr
+                #~ assert(G not in new_hoppings.keys())
+                new_hoppings[G] += hop_csr
             else:
                 minus_G = tuple(-x for x in G)
-                new_hoppings[minus_G] = hop_csr.transpose().conjugate()
+                #~ assert(minus_G not in new_hoppings.keys())
+                new_hoppings[minus_G] += hop_csr.transpose().conjugate()
         return new_hoppings
 
     #---------------- BASIC FUNCTIONALITY ----------------------------------#
@@ -205,7 +210,7 @@ class Model(object):
                         uc_match = False
                         break
         if not uc_match:
-            raise ValueError('Error when adding Models: unit cells don\'t match.\nModel 1: {0}\nModel 2: {1}'.format(self._uc, model._uc))
+            raise ValueError('Error when adding Models: unit cells don\'t match.\nModel 1: {0}\nModel 2: {1}'.format(self.uc, model.uc))
 
         # check if the positions match
         pos_match = True
@@ -244,7 +249,7 @@ class Model(object):
 
     def __neg__(self):
         return -1 * self
-    
+
 
     def __mul__(self, x):
         """
@@ -274,9 +279,9 @@ class Model(object):
     # for Python 3
     def __truediv__(self, x):
         return self.__div__(x)
-    
+
     #---- other derived models ----#
-    def supercell(self, dim, periodic=[True, True, True], passivation=None, in_place=False):
+    def supercell(self, dim, periodic=[True, True, True], passivation=None):
         r"""
         Creates a tight-binding model which describes a supercell.
 
@@ -288,9 +293,6 @@ class Model(object):
 
         :param passivation: Determines the passivation on the surface layers. It must be a function taking three input variables ``x, y, z``, which are lists ``[bottom, top]`` of booleans indicating whether a given unit cell inside the supercell touches the bottom and top edge in the given direction. The function returns a list of on-site energies (must be the same length as the initial number of orbitals) determining the passivation strength in said unit cell.
         :type passivation:  function
-
-        :param in_place:    Determines whether the current model is modified (``in_place=True``) or a new model is returned, preserving the current one (``in_place=False``, default).
-        :type in_place:     bool
         """
         dim = np.array(dim, dtype=int)
         nx, ny, nz = dim
@@ -471,7 +473,7 @@ class Model(object):
                     else:
                         raise ValueError('Unrecognized value for mode_vec. Must be either "absolute" or "relative"')
                     hop_mat[i0, i1] *= np.exp(-1j * prefactor_vec * np.dot(G + r1 - r0, A1 - A0))
-                        
+
         return Model(new_hoppings, pos=self.pos, occ=self.occ, uc=self.uc, contains_cc=False)
 
 #----------------HELPER FUNCTIONS FOR SUPERCELL-------------------------#

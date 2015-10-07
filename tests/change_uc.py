@@ -57,9 +57,7 @@ class ChangeUcTestCase(CommonTestCase):
         res_uc = array([[1, 2, 0],
        [0, 2, 6],
        [0, 0, 3]])
-        res_pos = array([[ 0.  ,  0.  ,  0.  ],
-       [ 0.7 ,  0.9 ,  0.2 ],
-       [ 0.05,  0.35,  0.6 ]])
+        res_pos = [array([ 0.,  0.,  0.]), array([ 0.7,  0.9,  0.2]), array([ 0.05,  0.35,  0.6 ])]
         self.assertFullAlmostEqual(new_model.uc, res_uc)
         self.assertFullAlmostEqual(new_model.pos, res_pos)
             
@@ -70,9 +68,7 @@ class ChangeUcTestCase(CommonTestCase):
         res_uc = array([[0, 1, 3],
        [2, 4, 1],
        [1, 2, 1]])
-        res_pos = array([[ 0.  ,  0.  ,  0.  ],
-       [ 0.7 ,  0.9 ,  0.2 ],
-       [ 0.05,  0.35,  0.6 ]])
+        res_pos = [array([ 0.,  0.,  0.]), array([ 0.7,  0.9,  0.2]), array([ 0.05,  0.35,  0.6 ])]
         self.assertFullAlmostEqual(new_model.uc, res_uc)
         self.assertFullAlmostEqual(new_model.pos, res_pos)
         
