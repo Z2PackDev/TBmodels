@@ -67,7 +67,7 @@ class Model(object):
         # consistency check for size
         for h_mat in self.hoppings.values():
             if not h_mat.shape == (self.size, self.size):
-                raise ValueError('Hopping matrix of shape {0} found, should be {1}.'.format(h_mat.shape, (self.size, self.size)))
+                raise ValueError('Hopping matrix of shape {0} found, should be ({1},{1}).'.format(h_mat.shape, self.size))
 
 
         # ---- UNIT CELL ----
@@ -173,11 +173,11 @@ class Model(object):
         lines = []
         tagline = ' created by the TBModels package    ' + time.strftime('%a, %d %b %Y %H:%M:%S %Z')
         lines.append(tagline)
-        lines.append('{:>12}'.format(self.size))
+        lines.append('{0:>12}'.format(self.size))
         num_g = len(self.hoppings.keys()) * 2 - 1
         if num_g == 0:
             raise ValueError('Cannot print empty model to hr format.')
-        lines.append('{:>12}'.format(num_g))
+        lines.append('{0:>12}'.format(num_g))
         tmp = ''
         for i in range(num_g):
             if tmp != '' and i % 15 == 0:
@@ -215,7 +215,7 @@ class Model(object):
         for j, column in enumerate(mat):
             for i, t in enumerate(column):
                 lines.append(
-                    '{:>5}{:>5}{:>5}{:>5}{:>5}{:>12.6f}{:>12.6f}'.format(G[0], G[1], G[2], i + 1, j + 1, t.real, t.imag)
+                    '{0[0]:>5}{0[1]:>5}{0[2]:>5}{1:>5}{2:>5}{3.real:>12.6f}{3.imag:>12.6f}'.format(G, i + 1, j + 1, t)
                 )
         return lines
 
@@ -234,7 +234,6 @@ class Model(object):
         if self.size != model.size:
             raise ValueError('Error when adding Models: the number of states ({0}, {1}) doesn\'t match'.format(len(self.size), len(model.size)))
 
-        # TODO: maybe use TolerantTuple for this purpose
         # check if the unit cells match
         uc_match = True
         if self.uc is None or model.uc is None:
@@ -250,7 +249,7 @@ class Model(object):
                         uc_match = False
                         break
         if not uc_match:
-            raise ValueError('Error when adding Models: unit cells don\'t match.\nModel 1: {0}\nModel 2: {1}').format(self.pos, model.pos))
+            raise ValueError('Error when adding Models: unit cells don\'t match.\nModel 1: {0.pos}\nModel 2: {1.pos}'.format(self, model))
 
         # check if the positions match
         pos_match = True
@@ -263,7 +262,7 @@ class Model(object):
                     pos_match = False
                     break
         if not pos_match:
-            raise ValueError('Error when adding Models: positions don\'t match.\nModel 1: {0}\nModel 2: {1}').format(self.pos, model.pos))
+            raise ValueError('Error when adding Models: positions don\'t match.\nModel 1: {0.pos}\nModel 2: {1.pos}'.format(self, model))
 
         # ---- MAIN PART ----
         new_hoppings = copy.deepcopy(self.hoppings)
@@ -474,7 +473,6 @@ class Model(object):
             for i, p in enumerate(self.pos):
                 if mode_scalar == 'relative':
                     new_hoppings[(0, 0, 0)][i, i] += 0.5 * prefactor_scalar * scalar_pot(p)
-                    #~ print('adding {1} to site {0}'.format(i, prefactor_scalar * scalar_pot(p)))
                 elif mode_scalar == 'absolute':
                     new_hoppings[(0, 0, 0)][i, i] += 0.5 * prefactor_scalar * scalar_pot(np.dot(self.uc, p))
                 else:
