@@ -207,7 +207,7 @@ class Model(object):
                     G, self.hoppings[G]
                 ))
         
-        return os.linesep.join(lines)
+        return '\n'.join(lines)
 
     def _mat_to_hr(self, G, mat):
         lines = []
@@ -250,7 +250,7 @@ class Model(object):
                         uc_match = False
                         break
         if not uc_match:
-            raise ValueError('Error when adding Models: unit cells don\'t match.' + os.linesep + 'Model 1: {0}\nModel 2: {1}'.format(self.uc, model.uc))
+            raise ValueError('Error when adding Models: unit cells don\'t match.\nModel 1: {0}\nModel 2: {1}').format(self.pos, model.pos))
 
         # check if the positions match
         pos_match = True
@@ -263,7 +263,7 @@ class Model(object):
                     pos_match = False
                     break
         if not pos_match:
-            raise ValueError('Error when adding Models: positions don\'t match.' + os.linesep + 'Model 1: {0}\nModel 2: {1}'.format(self.pos, model.pos))
+            raise ValueError('Error when adding Models: positions don\'t match.\nModel 1: {0}\nModel 2: {1}').format(self.pos, model.pos))
 
         # ---- MAIN PART ----
         new_hoppings = copy.deepcopy(self.hoppings)
