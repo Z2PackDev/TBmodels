@@ -12,6 +12,7 @@ from .ptools import sparse_matrix as sp
 
 import six
 import copy
+import time
 import warnings
 import numpy as np
 import collections as co
@@ -168,8 +169,54 @@ class Model(object):
 
 
     def to_hr(self):
-        raise NotImplementedError # TODO
+        lines = []
+        tagline = ' created by the TBModels package    ' + time.strftime('%a, %d %b %Y %H:%M:%S %Z')
+        lines.append(tagline)
+        lines.append('{:>12}'.format(self.size))
+        num_g = len(self.hoppings.keys()) * 2 - 1
+        if num_g == 0:
+            raise ValueError('Cannot print empty model to hr format.')
+        lines.append('{:>12}'.format(num_g))
+        tmp = ''
+        for i in range(num_g):
+            if tmp != '' and i % 15 == 0:
+                lines.append(tmp)
+                tmp = ''
+            tmp += '    1'
+        lines.append(tmp)
 
+        # negative
+        for G in reversed(sorted(self.hoppings.keys())):
+            if G != (0, 0, 0):
+                minus_G = tuple(-x for x in G)
+                lines.extend(self._mat_to_hr(
+                    minus_G, self.hoppings[G].conjugate().transpose()
+                ))
+        # zero
+        zero_G = (0, 0, 0)
+        if zero_G in self.hoppings.keys():
+            lines.extend(self._mat_to_hr(
+                zero_G,
+                self.hoppings[zero_G] + self.hoppings[zero_G].conjugate().transpose()
+            ))
+        # positive
+        for G in sorted(self.hoppings.keys()):
+            if G != (0, 0, 0):
+                lines.extend(self._mat_to_hr(
+                    G, self.hoppings[G]
+                ))
+        
+        return '\n'.join(lines)
+
+    def _mat_to_hr(self, G, mat):
+        lines = []
+        mat = np.array(mat).T # to be consistent with W90's ordering
+        for j, column in enumerate(mat):
+            for i, t in enumerate(column):
+                lines.append(
+                    '{:>5}{:>5}{:>5}{:>5}{:>5}{:>12.6f}{:>12.6f}'.format(G[0], G[1], G[2], i, j, t.real, t.imag)
+                )
+        return lines
 
     #-------------------CREATING DERIVED MODELS-------------------------#
     #---- arithmetic operations ----#
