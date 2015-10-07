@@ -41,7 +41,7 @@ class HrPrintTestCase(CommonTestCase):
     def test0(self):
         self.createH(0.1, 0.211)
         res = in_place_replace(self.model.to_hr())
-        self.assertEqual(res, self.model.to_hr())
+        self.assertFullEqual(res.split('\n')[1:], self.model.to_hr().split('\n')[1:])
     
 
 if __name__ == "__main__":
