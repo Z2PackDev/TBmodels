@@ -90,9 +90,6 @@ class Model(object):
             return pos, hoppings
 
         # ---- uncommon case: handle mapping ----
-        # re-normalize the zero'th element
-        if (0, 0, 0) in hoppings.keys() and not contains_cc:
-            hoppings[0, 0, 0] *= 2.
         new_pos = [np.array(p) % 1 for p in pos]
         new_hoppings = co.defaultdict(lambda: np.zeros((self.size, self.size), dtype=complex))
         for G, hop_mat in hoppings.items():
@@ -102,9 +99,6 @@ class Model(object):
                     if t != 0:
                         G_new = tuple(np.array(G, dtype=int) + uc_offsets[i1] - uc_offsets[i0])
                         new_hoppings[G_new][i0][i1] += t
-        # halving the zero'th element again
-        if (0, 0, 0) in new_hoppings.keys() and not contains_cc:
-            new_hoppings[0, 0, 0] /= 2.
         new_hoppings = {key: sp.csr(value) for key, value in new_hoppings.items()}
         return new_pos, new_hoppings
 
@@ -135,7 +129,6 @@ class Model(object):
         """
         new_hoppings = co.defaultdict(lambda: sp.csr((self.size, self.size), dtype=complex))
         #~ new_hoppings = dict()
-        print(hoppings.keys())
         for G, hop_csr in hoppings.items():
             if G == (0, 0, 0):
                 new_hoppings[G] = hop_csr
