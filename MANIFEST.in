@@ -4,17 +4,17 @@ prune examples
 # tests are used for development only
 prune tests
 
-# Documentation is provided on http://z2pack.ethz.ch/doc
+# Documentation is provided online
 prune doc
 
 # selectively include ptools
-prune z2pack/ptools
+prune tbmodels/ptools
 prune futures
 include tbmodels/ptools/__init__.py
 # include tbmodels/ptools/parse_dict.py
 # include tbmodels/ptools/string_tools.py
-include tbmodels/ptools/logger.py
 include tbmodels/ptools/csv_parser.py
+include tbmodels/ptools/sparse_matrix.py
 
 # installation related
 exclude MANIFEST.in
