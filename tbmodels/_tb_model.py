@@ -8,7 +8,7 @@
 from __future__ import division, print_function
 
 from mtools.bands import EigenVal
-import ptools.sparse_matrix as sp
+from .ptools import sparse_matrix as sp
 
 import six
 import copy
@@ -18,28 +18,27 @@ import collections as co
 import scipy.linalg as la
 
 class Model(object):
-    # I will patch the sparse array classes to have array properties.
+    r"""
+
+    :param hoppings:    Hopping matrices, as a dict containing the corresponding G as a key.
+    :type hoppings:     dict
+
+    :param size:        Number of states. Defaults to the size of the hopping matrices, if those are given.
+    :type size:         int
+
+    :param occ:         Number of occupied states.
+    :type occ:          int
+
+    :param pos:         Positions of the atoms. Defaults to [0., 0., 0.]. Must be in the home UC.
+    :type pos:          list(array)
+
+    :param contains_cc: Whether the full overlaps are given, or only the reduced representation which does not contain the complex conjugate terms (and only half the zero-terms).
+    :type contains_cc:  bool
+
+    :param cc_tolerance:    Tolerance when the complex conjugate terms are checked for consistency.
+    :type cc_tolerance:     float
+    """
     def __init__(self, hoppings, size=None, occ=None, pos=None, uc=None, contains_cc=True, cc_tolerance=1e-12):
-        """
-
-        :param hoppings:    Hopping matrices, as a dict containing the corresponding G as a key.
-        :type hoppings:     dict
-
-        :param size:        Number of states. Defaults to the size of the hopping matrices, if those are given.
-        :type size:         int
-
-        :param occ:         Number of occupied states.
-        :type occ:          int
-
-        :param pos:         Positions of the atoms. Defaults to [0., 0., 0.]. Must be in the home UC.
-        :type pos:          list(array)
-
-        :param contains_cc: Whether the full overlaps are given, or only the reduced representation which does not contain the complex conjugate terms (and only half the zero-terms).
-        :type contains_cc:  bool
-
-        :param cc_tolerance:    Tolerance when the complex conjugate terms are checked for consistency.
-        :type cc_tolerance:     float
-        """
         # ---- SIZE ----
         if len(hoppings) == 0 and size is None:
             raise ValueError('Empty hoppings dictionary supplied and no size given. Cannot determine the size of the system.')
@@ -51,7 +50,7 @@ class Model(object):
         if pos is None:
             self.pos = [np.array([0., 0., 0.]) for _ in range(self.size)]
         elif len(pos) == self.size:
-            pos, hoppings = self._map_to_uc(pos, hoppings, contains_cc)
+            pos, hoppings = self._map_to_uc(pos, hoppings)
             self.pos = np.array(pos) # implicit copy
         else:
             raise ValueError('invalid argument for "pos": must be either None or of the same length as the number of orbitals (on_site)')
@@ -80,7 +79,7 @@ class Model(object):
 
     #---------------- INIT HELPER FUNCTIONS --------------------------------#
 
-    def _map_to_uc(self, pos, hoppings, contains_cc):
+    def _map_to_uc(self, pos, hoppings):
         """
         hoppings in csr format
         """
@@ -125,7 +124,7 @@ class Model(object):
 
     def _map_hoppings_positive_G(self, hoppings):
         """
-        Maps hoppings with a negative first non-zero index in G to their positive counterpart. 
+        Maps hoppings with a negative first non-zero index in G to their positive counterpart.
         """
         new_hoppings = co.defaultdict(lambda: sp.csr((self.size, self.size), dtype=complex))
         #~ new_hoppings = dict()
@@ -356,9 +355,6 @@ class Model(object):
     def trs(self):
         """
         Adds a time-reversal image of the current model.
-
-        :param in_place:    Determines whether the current model is modified (``in_place=True``) or a new model is returned, preserving the current one (``in_place=False``, default).
-        :type in_place:     bool
         """
         # doubling the occupation number and positions
         new_occ = None if (self.occ is None) else self.occ * 2
@@ -373,14 +369,11 @@ class Model(object):
             new_hoppings[G][self.size:, self.size:] += hop.conjugate()
         return Model(new_hoppings, occ=new_occ, pos=new_pos, uc=self.uc, contains_cc=False)
 
-    def change_uc(self, uc, in_place=False):
+    def change_uc(self, uc):
         """
         Creates a new model with a different unit cell. The new unit cell must have the same volume as the previous one, i.e. the number of atoms per unit cell stays the same, and cannot change chirality.
 
         :param uc: The new unit cell, given w.r.t. to the old one. Lattice vectors are given as column vectors in a 3x3 matrix.
-
-        :param in_place:    Determines whether the current model is modified (``in_place=True``) or a new model is returned, preserving the current one (``in_place=False``, default).
-        :type in_place:     bool
         """
         uc = np.array(uc)
         if la.det(uc) != 1:
@@ -427,11 +420,6 @@ class Model(object):
 
         :param mode_vec:    Determines whether the input for the ``vec_pot`` function is given as an absolute position (``mode_vec=='absolute'``) or relative to the unit cell (``mode_vec=='relative'``).
         :type mode_vec:     str
-
-        Additional parameters:
-
-        :param in_place:    Determines whether the current model is modified (``in_place=True``) or a new model is returned, preserving the current one (``in_place=False``, default).
-        :type in_place:     bool
         """
         new_hoppings = copy.deepcopy(self.hoppings)
         if scalar_pot is not None:
