@@ -41,7 +41,6 @@ class Model(object):
     :type cc_tolerance:     float
     """
     def __init__(self, on_site=None, hop=dict(), size=None, occ=None, pos=None, uc=None, contains_cc=True, cc_tolerance=1e-12):
-        print(on_site)
         # ---- SIZE ----
         if len(hop) == 0 and size is None and on_site is None:
             raise ValueError('Empty hoppings dictionary supplied and no size given. Cannot determine the size of the system.')
@@ -304,7 +303,7 @@ class Model(object):
             new_hop[G] += hop_mat
         # -------------------
         return Model(
-            new_hop,
+            hop=new_hop,
             pos=self.pos,
             occ=self.occ,
             uc=self.uc,
@@ -333,7 +332,7 @@ class Model(object):
             new_hop[G] = x * hop_mat
 
         return Model(
-            new_hop,
+            hop=new_hop,
             pos=self.pos,
             occ=self.occ,
             uc=self.uc,
@@ -431,7 +430,13 @@ class Model(object):
                 for k in range(nz):
                     idx = (i * ny * nz + j * nz + k) * self.size
                     new_hop[(0, 0, 0)][idx:idx + self.size, idx:idx + self.size] += np.diag(np.array(passivation(*_edge_detect_pos([i, j, k], dim)), dtype=float) * 0.5)
-        return Model(new_hop, pos=new_pos, occ=new_occ, uc=new_uc, contains_cc=False)
+        return Model(
+            hop=new_hop,
+            pos=new_pos,
+            occ=new_occ,
+            uc=new_uc,
+            contains_cc=False
+        )
 
     def trs(self):
         """
@@ -448,7 +453,13 @@ class Model(object):
             new_hop[G][:self.size, :self.size] += hop
             # here you can either do -G  or hop.conjugate() or hop.T, but not both
             new_hop[G][self.size:, self.size:] += hop.conjugate()
-        return Model(new_hop, occ=new_occ, pos=new_pos, uc=self.uc, contains_cc=False)
+        return Model(
+            hop=new_hop,
+            occ=new_occ,
+            pos=new_pos,
+            uc=self.uc,
+            contains_cc=False
+        )
 
     def change_uc(self, uc):
         """
@@ -466,7 +477,13 @@ class Model(object):
         new_pos = [la.solve(uc, p) for p in self.pos]
         new_hop = {tuple(np.array(la.solve(uc, G), dtype=int)): hop_mat for G, hop_mat in self.hop.items()}
 
-        return Model(hop=new_hop, pos=new_pos, occ=self.occ, uc=new_uc, contains_cc=False)
+        return Model(
+            hop=new_hop,
+            pos=new_pos,
+            occ=self.occ,
+            uc=new_uc,
+            contains_cc=False,
+        )
 
     def em_field(self, scalar_pot=None, vec_pot=None, prefactor_scalar=1, prefactor_vec=7.596337572e-6, mode_scalar='relative', mode_vec='relative'):
         r"""
@@ -535,7 +552,13 @@ class Model(object):
                         raise ValueError('Unrecognized value for mode_vec. Must be either "absolute" or "relative"')
                     hop_mat[i0, i1] *= np.exp(-1j * prefactor_vec * np.dot(G + r1 - r0, A1 - A0))
 
-        return Model(new_hop, pos=self.pos, occ=self.occ, uc=self.uc, contains_cc=False)
+        return Model(
+            hop=new_hop,
+            pos=self.pos,
+            occ=self.occ,
+            uc=self.uc,
+            contains_cc=False,
+        )
 
 #----------------HELPER FUNCTIONS FOR SUPERCELL-------------------------#
 def _pos_to_idx(pos, dim):
