@@ -9,9 +9,12 @@ from ._tb_model import Model
 
 import numpy as np
 
-class HoppingsListModel(Model):
+class HopListModel(Model):
     r"""
     Describes a tight-binding model set up via list of hoppings.
+
+    :param on_site: TODO
+    :type on_site:  list
 
     :param on_site: On-site energies of the orbitals.
     :type on_site:  list
@@ -38,14 +41,14 @@ class HoppingsListModel(Model):
     :type uc: 3x3 matrix
     """
 
-    def __init__(self, size, hoppings_list, pos=None, occ=None, add_cc=True, uc=None):
-        hoppings_dict = dict()
-        #~ hoppings[(0, 0, 0)] = np.array(np.diag(on_site), dtype=complex)
-        for i, j, G, t in hoppings_list:
+    def __init__(self, size, on_site=None, hop_list=[], pos=None, occ=None, add_cc=True, uc=None):
+        hop_dict = dict()
+        #~ hop[(0, 0, 0)] = np.array(np.diag(on_site), dtype=complex)
+        for i, j, G, t in hop_list:
             G_vec = tuple(G)
-            if G_vec not in hoppings_dict.keys():
-                hoppings_dict[G_vec] = np.zeros((size, size), dtype=complex)
-            hoppings_dict[G_vec][i, j] += t
+            if G_vec not in hop_dict.keys():
+                hop_dict[G_vec] = np.zeros((size, size), dtype=complex)
+            hop_dict[G_vec][i, j] += t
             if add_cc:
-                hoppings_dict[G_vec][j, i] += t.conjugate()
-        super(HoppingsListModel, self).__init__(hoppings_dict, pos=pos, occ=occ, uc=uc)
+                hop_dict[G_vec][j, i] += t.conjugate()
+        super(HopListModel, self).__init__(on_site=on_site, hop=hop_dict, pos=pos, occ=occ, uc=uc)

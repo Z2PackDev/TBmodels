@@ -40,7 +40,7 @@ class Model(object):
     :param cc_tolerance:    Tolerance when the complex conjugate terms are checked for consistency.
     :type cc_tolerance:     float
     """
-    def __init__(self, hop=dict(), size=None, occ=None, pos=None, uc=None, contains_cc=True, cc_tolerance=1e-12):
+    def __init__(self, on_site=None, hop=dict(), size=None, occ=None, pos=None, uc=None, contains_cc=True, cc_tolerance=1e-12):
         # ---- SIZE ----
         if len(hop) == 0 and size is None:
             raise ValueError('Empty hoppings dictionary supplied and no size given. Cannot determine the size of the system.')
@@ -63,6 +63,12 @@ class Model(object):
         self.hop = co.defaultdict(lambda: sp.csr((self.size, self.size), dtype=complex))
         for G, h_mat in hop.items():
             self.hop[G] = sp.csr(h_mat)
+        # add on-site terms
+        if on_site is not None:
+            if len(on_site) != self.size:
+                raise ValueError('The number of on-site energies {0} does not match the size of the system {1}'.format(len(on_site), self.size))
+            self.hop[(0, 0, 0)] += np.diag(0.5 * np.array(on_site))
+        
         # consistency check for size
         for h_mat in self.hop.values():
             if not h_mat.shape == (self.size, self.size):
