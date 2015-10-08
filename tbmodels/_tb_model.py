@@ -40,7 +40,7 @@ class Model(object):
     :param cc_tolerance:    Tolerance when the complex conjugate terms are checked for consistency.
     :type cc_tolerance:     float
     """
-    def __init__(self, hoppings, size=None, occ=None, pos=None, uc=None, contains_cc=True, cc_tolerance=1e-12):
+    def __init__(self, hoppings=dict(), size=None, occ=None, pos=None, uc=None, contains_cc=True, cc_tolerance=1e-12):
         # ---- SIZE ----
         if len(hoppings) == 0 and size is None:
             raise ValueError('Empty hoppings dictionary supplied and no size given. Cannot determine the size of the system.')
@@ -60,8 +60,7 @@ class Model(object):
             hoppings = self._reduce_hoppings(hoppings, cc_tolerance)
         else:
             hoppings = self._map_hoppings_positive_G(hoppings)
-        #~ self.hoppings = co.defaultdict(lambda: sp.csr((self.size, self.size), dtype=complex))
-        self.hoppings = dict()
+        self.hoppings = co.defaultdict(lambda: sp.csr((self.size, self.size), dtype=complex))
         for G, h_mat in hoppings.items():
             self.hoppings[G] = sp.csr(h_mat)
         # consistency check for size
@@ -219,6 +218,28 @@ class Model(object):
                 )
         return lines
 
+    #-------------------MODIFYING THE MODEL ----------------------------#
+    # TODO: test
+    def add_hop(self, strength, orbital_1, orbital_2, rec_lattice_vec):
+        """
+        In all cases, the complex conjugate of the hopping is added automatically.
+
+        .. warning:: This means that adding a hopping of strength :math:`\epsilon` between an orbital and itself in the home unit cell increases the orbitals on-site energy by :math:`2 \epsilon`.
+        """
+        G = tuple(rec_lattice_vec)
+        mat = np.zeros((self.size, self.size), dtype=complex)
+        if G == (0, 0, 0):
+            mat[orbital_1, orbital_2] += strength
+        elif G[np.nonzero(G)[0][0]] > 0:
+            mat[orbital_1, orbital_2] += strength
+        else:
+            G = tuple(-x for x in G)
+            mat[orbital_2, orbital_1] += strength.conjugate()
+        self.hoppings[G] += sp.csr(mat)
+
+    def add_on_site(self, energy, orbital):
+        self.add_hop(energy / 2., orbital, orbital, (0, 0, 0))
+        
     #-------------------CREATING DERIVED MODELS-------------------------#
     #---- arithmetic operations ----#
     def __add__(self, model):

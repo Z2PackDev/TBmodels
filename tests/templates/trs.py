@@ -12,36 +12,24 @@ import copy
 import types
 import shutil
 
-class TrsTestCase(BuildDirTestCase):
+class TrsTestCase(CommonTestCase):
 
     def createH(self, t1, t2):
+        model = tbmodels.Model(size=2, pos=[[0, 0, 0], [0.5, 0.5, 0]], occ=1)
 
-        builder = tbmodels.Builder()
+        model.add_on_site(1., 0)
+        model.add_on_site(-1., 1)
 
-        # create the two atoms
-        builder.add_atom([1], [0, 0, 0], 1)
-        builder.add_atom([-1], [0.5, 0.5, 0], 0)
+        for phase, G in zip([1, -1j, 1j, -1], tbmodels.helpers.combine([0, -1], [0, -1], 0)):
+            model.add_hop(t1 * phase, 0, 1, G)
 
-        # add hopping between different atoms
-        builder.add_hopping(((0, 0), (1, 0)),
-                           tbmodels.helpers.combine([0, -1], [0, -1], 0),
-                           t1,
-                           phase=[1, -1j, 1j, -1])
-
-        # add hopping between neighbouring orbitals of the same type
-        builder.add_hopping(((0, 0), (0, 0)),
-                           tbmodels.helpers.neighbours([0, 1],
-                                                        forward_only=True),
-                           t2,
-                           phase=[1])
-        builder.add_hopping(((1, 0), (1, 0)),
-                           tbmodels.helpers.neighbours([0, 1],
-                                                        forward_only=True),
-                           -t2,
-                           phase=[1])
-        self.model = builder.create()
+        for G in tbmodels.helpers.neighbours([0, 1], forward_only=True):
+            model.add_hop(t2, 0, 0, G)
+            model.add_hop(-t2, 1, 1, G)
+            
+        self.model = model
         self.trs_model = self.model.trs()
-
+        
     # this test may produce false negatives due to small numerical differences
     def test_notrs(self):
         self.createH(0.2, 0.3)
