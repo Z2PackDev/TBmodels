@@ -12,31 +12,17 @@ import numpy as np
 class HrPrintTestCase(CommonTestCase):
     def createH(self, t1, t2, uc=None):
 
-        builder = tbmodels.Builder()
+        model = tbmodels.Model(on_site=[1, -1, 0], pos=[[0, 0, 0], [0.5, 0.5, 0], [0.75, 0.15, 0.6]], occ=1, uc=uc)
 
-        # create the two atoms
-        builder.add_atom([1], [0, 0, 0.], 1)
-        builder.add_atom([-1], [0.5, 0.5, 0.2], 0)
-        builder.add_atom([0.], [0.75, 0.15, 0.6], 0)
+        for phase, G in zip([1, -1j, 1j, -1], tbmodels.helpers.combine([0, -1], [0, -1], 0)):
+            model.add_hop(t1 * phase, 0, 1, G)
 
-        # add hopping between different atoms
-        builder.add_hopping(((0, 0), (1, 0)),
-                           tbmodels.helpers.combine([0, -1], [0, -1], 0),
-                           t1,
-                           phase=[1, -1j, 1j, -1])
-
-        # add hopping between neighbouring orbitals of the same type
-        builder.add_hopping(((0, 0), (0, 0)),
-                           tbmodels.helpers.neighbours([0, 1],
-                                                        forward_only=True),
-                           t2,
-                           phase=[1])
-        builder.add_hopping(((1, 0), (1, 0)),
-                           tbmodels.helpers.neighbours([0, 1],
-                                                        forward_only=True),
-                           -t2,
-                           phase=[1])
-        self.model = builder.create(uc=uc)
+        for G in tbmodels.helpers.neighbours([0, 1], forward_only=True):
+            model.add_hop(t2, 0, 0, G)
+            model.add_hop(-t2, 1, 1, G)
+            
+        self.model = model
+        return self.model
 
     def test0(self):
         self.createH(0.1, 0.211)
