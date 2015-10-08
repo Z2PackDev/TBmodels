@@ -16,49 +16,56 @@ class Builder(object):
     """
     A helper tool to create a tight-binding :class:`.Model` .
     """
-    def __init__(self):
-        self._reset_atoms()
+    def __init__(self, dim_r, dim_k, lat, orb):
+        self.dim_r = dim_r
+        self.dim_k = dim_k
+        self.lat = [np.array(l) for l in lat]
+        self.orb = list(orb)
+        
 
-    def _reset_atoms(self):
-        """
-        Reset the system.
-        """
-        self._atoms = []
-        self._hoppings = []
-        self._electrons = 0
+    #~ def _reset_atoms(self):
+        #~ """
+        #~ Reset the system.
+        #~ """
+        #~ self._atoms = []
+        #~ self._hoppings = []
+        #~ self._electrons = 0
+#~ 
+    #~ def add_atom(self, orbitals, pos, occ=None):
+        #~ r"""
+        #~ Adds an atom to the tight-binding model.
+#~ 
+        #~ :param orbitals:    Orbitals of the atom, given as a ``list`` of their
+            #~ energies
+        #~ :type orbitals:     list
+#~ 
+        #~ :param pos:    Position relative to the reciprocal lattice vector
+        #~ :type pos:     list
+#~ 
+        #~ :param occ:     Number of electrons in the atom.
+        #~ :type occ:      int
+#~ 
+        #~ :returns:       Index of the atom
+        #~ :rtype:         int
+        #~ """
+#~ 
+        #~ # check input
+        #~ if len(pos) != 3:
+            #~ raise ValueError('position must be a list/tuple of length 3')
+#~ 
+        #~ # add the atom - store as (orbitals, num_electrons, position)
+        #~ self._atoms.append((tuple(orbitals), occ, tuple(pos)))
+        #~ # return the index the atom will get
+        #~ return len(self._atoms) - 1
 
-    def add_atom(self, orbitals, pos, occ):
-        r"""
-        Adds an atom to the tight-binding model.
-
-        :param orbitals:    Orbitals of the atom, given as a ``list`` of their
-            energies
-        :type orbitals:     list
-
-        :param pos:    Position relative to the reciprocal lattice vector
-        :type pos:     list of length 3
-
-        :param occ:     Number of electrons in the atom.
-        :type occ:      int
-
-        :returns:       Index of the atom
-        :rtype:         int
-        """
-
-        # check input
-        if len(pos) != 3:
-            raise ValueError('position must be a list/tuple of length 3')
-
-        # add the atom - store as (orbitals, num_electrons, position)
-        self._atoms.append((tuple(orbitals), occ, tuple(pos)))
-        # return the index the atom will get
-        return len(self._atoms) - 1
-
-    def add_hopping(self, orbital_pairs, rec_lattice_vec,
-                    overlap, phase=None, add_cc=True):
+    def add_hopping(self, overlap, orbital_1, orbital_2, rec_lattice_vec,
+                     phase=None, add_cc=True):
         r"""
         Adds a hopping term between orbitals. If the orbitals are not equal,
         the complex conjugate term is also added.
+
+        :param overlap:             Strength of the hopping
+        :type overlap:              complex
 
         :param orbital_pairs:       A tuple ``(orbital_1, orbital_2)``, where
             ``orbital_*`` is again a tuple ``(atom_index, orbital_index)``. Can
@@ -66,8 +73,6 @@ class Builder(object):
 
         :param rec_lattice_vec:     Vector connecting unit cells (``list`` of
             length 3), or list of such vectors
-
-        :param overlap:             Strength of the hopping
 
         :param phase:               Multiplicative factor for the overlap or
             a ``list`` of factors (one for each ``rec_lattice_vec``)
