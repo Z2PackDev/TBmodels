@@ -41,10 +41,18 @@ class Model(object):
     :type cc_tolerance:     float
     """
     def __init__(self, on_site=None, hop=dict(), size=None, occ=None, pos=None, uc=None, contains_cc=True, cc_tolerance=1e-12):
+        print(on_site)
         # ---- SIZE ----
-        if len(hop) == 0 and size is None:
+        if len(hop) == 0 and size is None and on_site is None:
             raise ValueError('Empty hoppings dictionary supplied and no size given. Cannot determine the size of the system.')
-        self.size = size if (size is not None) else six.next(six.itervalues(hop)).shape[0]
+        if size is not None:
+            self.size = size
+        elif on_site is not None:
+            self.size = len(on_site)
+        elif len(hop) != 0:
+            self.size = six.next(six.itervalues(hop)).shape[0]
+        else:
+            raise ValueError('Empty hoppings dictionary supplied and no size given. Cannot determine the size of the system.')
 
         # ---- HOPPING TERMS AND POSITIONS ----
         hop = {tuple(key): sp.csr(value, dtype=complex) for key, value in hop.items()}
@@ -67,7 +75,7 @@ class Model(object):
         if on_site is not None:
             if len(on_site) != self.size:
                 raise ValueError('The number of on-site energies {0} does not match the size of the system {1}'.format(len(on_site), self.size))
-            self.hop[(0, 0, 0)] += np.diag(0.5 * np.array(on_site))
+            self.hop[(0, 0, 0)] += sp.csr(np.diag(0.5 * np.array(on_site)))
         
         # consistency check for size
         for h_mat in self.hop.values():

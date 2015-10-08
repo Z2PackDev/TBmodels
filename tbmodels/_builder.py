@@ -10,7 +10,7 @@ from __future__ import division, print_function
 
 import numpy as np
 
-from ._hoppings_list_model import HoppingsListModel
+from ._hop_list_model import HopListModel
 
 class Builder(object):
     """
