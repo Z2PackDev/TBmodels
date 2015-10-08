@@ -12,22 +12,9 @@ import copy
 import types
 import shutil
 
-class TrsTestCase(CommonTestCase):
-
-    def createH(self, t1, t2):
-        model = tbmodels.Model(size=2, on_site=[1, -1], pos=[[0, 0, 0], [0.5, 0.5, 0]], occ=1)
-
-        #~ model.add_on_site(1., 0)
-        #~ model.add_on_site(-1., 1)
-
-        for phase, G in zip([1, -1j, 1j, -1], tbmodels.helpers.combine([0, -1], [0, -1], 0)):
-            model.add_hop(t1 * phase, 0, 1, G)
-
-        for G in tbmodels.helpers.neighbours([0, 1], forward_only=True):
-            model.add_hop(t2, 0, 0, G)
-            model.add_hop(-t2, 1, 1, G)
-            
-        self.model = model
+class TrsTestCase(SimpleModelTestCase):
+    def createH(self, *args, **kwargs):
+        super(TrsTestCase, self).createH(*args, **kwargs)
         self.trs_model = self.model.trs()
         
     # this test may produce false negatives due to small numerical differences

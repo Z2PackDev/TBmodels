@@ -55,6 +55,16 @@ class Model(object):
 
         # ---- HOPPING TERMS AND POSITIONS ----
         hop = {tuple(key): sp.csr(value, dtype=complex) for key, value in hop.items()}
+        # add on-site terms
+        if on_site is not None:
+            if len(on_site) != self.size:
+                raise ValueError('The number of on-site energies {0} does not match the size of the system {1}'.format(len(on_site), self.size))
+            if (0, 0, 0) not in hop.keys():
+                hop[(0, 0, 0)] = sp.csr((self.size, self.size), dtype=complex)
+            if contains_cc:
+                hop[(0, 0, 0)] += sp.csr(np.diag(np.array(on_site)))
+            else:
+                hop[(0, 0, 0)] += sp.csr(np.diag(0.5 * np.array(on_site)))
         # positions
         if pos is None:
             self.pos = [np.array([0., 0., 0.]) for _ in range(self.size)]
@@ -70,11 +80,6 @@ class Model(object):
         self.hop = co.defaultdict(lambda: sp.csr((self.size, self.size), dtype=complex))
         for G, h_mat in hop.items():
             self.hop[G] = sp.csr(h_mat)
-        # add on-site terms
-        if on_site is not None:
-            if len(on_site) != self.size:
-                raise ValueError('The number of on-site energies {0} does not match the size of the system {1}'.format(len(on_site), self.size))
-            self.hop[(0, 0, 0)] += sp.csr(np.diag(0.5 * np.array(on_site)))
         
         # consistency check for size
         for h_mat in self.hop.values():

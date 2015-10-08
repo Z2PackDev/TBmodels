@@ -98,24 +98,29 @@ class CommonTestCase(unittest.TestCase):
         self.assertWccConv = types.MethodType(
             assertWccConv, self)
 
-class BuildDirTestCase(CommonTestCase):
-    def __init__(self, *args, **kwargs):
-        self._name = traceback.extract_stack()[0][0].split('.')[0]
-        if self._name in ['test', 'create_tests']:
-            self._name = re.search("'([\w]+).[\w]+'", str(type(self))).group(1)
-        self._build_folder = 'build/' + self._name
-        try:
-            shutil.rmtree(self._build_folder)
-        except OSError:
-            pass
-        os.mkdir(self._build_folder)
-        super(BuildDirTestCase, self).__init__(*args, **kwargs)
+class SimpleModelTestCase(CommonTestCase):
+    def createH(self, t1, t2, uc=None):
+        model = tbmodels.Model(size=2, on_site=[1, -1], pos=[[0, 0, 0], [0.5, 0.5, 0]], occ=1, uc=uc)
 
-class VaspTestCase(BuildDirTestCase):
-    pass
+        for phase, G in zip([1, -1j, 1j, -1], tbmodels.helpers.combine([0, -1], [0, -1], 0)):
+            model.add_hop(t1 * phase, 0, 1, G)
 
-class AbinitTestCase(BuildDirTestCase):
-    pass
+        for G in tbmodels.helpers.neighbours([0, 1], forward_only=True):
+            model.add_hop(t2, 0, 0, G)
+            model.add_hop(-t2, 1, 1, G)
+            
+        self.model = model
+        return self.model
     
-class EspressoTestCase(BuildDirTestCase):
-    pass
+#~ class BuildDirTestCase(CommonTestCase):
+    #~ def __init__(self, *args, **kwargs):
+        #~ self._name = traceback.extract_stack()[0][0].split('.')[0]
+        #~ if self._name in ['test', 'create_tests']:
+            #~ self._name = re.search("'([\w]+).[\w]+'", str(type(self))).group(1)
+        #~ self._build_folder = 'build/' + self._name
+        #~ try:
+            #~ shutil.rmtree(self._build_folder)
+        #~ except OSError:
+            #~ pass
+        #~ os.mkdir(self._build_folder)
+        #~ super(BuildDirTestCase, self).__init__(*args, **kwargs)

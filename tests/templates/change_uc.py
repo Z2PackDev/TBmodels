@@ -11,32 +11,25 @@ import numpy as np
 
 class ChangeUcTestCase(CommonTestCase):
     def createH(self, t1, t2, uc=None):
+        model = tbmodels.Model(
+            on_site=[1, -1, 0],
+            pos=[
+                [0, 0., 0.],
+                [0.5, 0.5, 0.2],
+                [0.75, 0.15, 0.6],
+            ],
+            occ=1,
+            uc=uc,
+        )
+        
+        for phase, G in zip([1, -1j, 1j, -1], tbmodels.helpers.combine([0, -1], [0, -1], 0)):
+            model.add_hop(t1 * phase, 0, 1, G)
 
-        builder = tbmodels.Builder()
+        for G in tbmodels.helpers.neighbours([0, 1], forward_only=True):
+            model.add_hop(t2, 0, 0, G)
+            model.add_hop(-t2, 1, 1, G)
 
-        # create the two atoms
-        builder.add_atom([1], [0, 0, 0.], 1)
-        builder.add_atom([-1], [0.5, 0.5, 0.2], 0)
-        builder.add_atom([0.], [0.75, 0.15, 0.6], 0)
-
-        # add hopping between different atoms
-        builder.add_hopping(((0, 0), (1, 0)),
-                           tbmodels.helpers.combine([0, -1], [0, -1], 0),
-                           t1,
-                           phase=[1, -1j, 1j, -1])
-
-        # add hopping between neighbouring orbitals of the same type
-        builder.add_hopping(((0, 0), (0, 0)),
-                           tbmodels.helpers.neighbours([0, 1],
-                                                        forward_only=True),
-                           t2,
-                           phase=[1])
-        builder.add_hopping(((1, 0), (1, 0)),
-                           tbmodels.helpers.neighbours([0, 1],
-                                                        forward_only=True),
-                           -t2,
-                           phase=[1])
-        self.model = builder.create(uc=uc)
+        self.model = model
 
     def test_no_uc_unity(self):
         self.createH(0.1, 0.2)

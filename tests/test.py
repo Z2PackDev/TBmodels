@@ -30,15 +30,10 @@ if __name__ == "__main__":
     os.mkdir('build')
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-v', '--vasp', action='store_true', dest='vasp')
-    parser.add_argument('-e', '--espresso', action='store_true', dest='espresso')
-    parser.add_argument('-a', '--abinit', action='store_true', dest='abinit')
     arguments = parser.parse_args(sys.argv[1:])
     sys.argv = [sys.argv[0]] 
 
-    special_cases = [(VaspTestCase, arguments.vasp),
-                     (AbinitTestCase, arguments.abinit),
-                     (EspressoTestCase, arguments.espresso)]
+    special_cases = []
 
     expr = re.compile(r'\.py$')
     exclude_list = ['test.py', 'create_tests.py']
