@@ -22,8 +22,8 @@ import scipy.linalg as la
 class Model(object):
     r"""
 
-    :param hoppings:    Hopping matrices, as a dict containing the corresponding G as a key.
-    :type hoppings:     dict
+    :param hop:    Hopping matrices, as a dict containing the corresponding G as a key.
+    :type hop:     dict
 
     :param size:        Number of states. Defaults to the size of the hopping matrices, if those are given.
     :type size:         int
@@ -40,31 +40,31 @@ class Model(object):
     :param cc_tolerance:    Tolerance when the complex conjugate terms are checked for consistency.
     :type cc_tolerance:     float
     """
-    def __init__(self, hoppings=dict(), size=None, occ=None, pos=None, uc=None, contains_cc=True, cc_tolerance=1e-12):
+    def __init__(self, hop=dict(), size=None, occ=None, pos=None, uc=None, contains_cc=True, cc_tolerance=1e-12):
         # ---- SIZE ----
-        if len(hoppings) == 0 and size is None:
+        if len(hop) == 0 and size is None:
             raise ValueError('Empty hoppings dictionary supplied and no size given. Cannot determine the size of the system.')
-        self.size = size if (size is not None) else six.next(six.itervalues(hoppings)).shape[0]
+        self.size = size if (size is not None) else six.next(six.itervalues(hop)).shape[0]
 
         # ---- HOPPING TERMS AND POSITIONS ----
-        hoppings = {tuple(key): sp.csr(value, dtype=complex) for key, value in hoppings.items()}
+        hop = {tuple(key): sp.csr(value, dtype=complex) for key, value in hop.items()}
         # positions
         if pos is None:
             self.pos = [np.array([0., 0., 0.]) for _ in range(self.size)]
         elif len(pos) == self.size:
-            pos, hoppings = self._map_to_uc(pos, hoppings)
+            pos, hop = self._map_to_uc(pos, hop)
             self.pos = np.array(pos) # implicit copy
         else:
             raise ValueError('invalid argument for "pos": must be either None or of the same length as the number of orbitals (on_site)')
         if contains_cc:
-            hoppings = self._reduce_hoppings(hoppings, cc_tolerance)
+            hop = self._reduce_hop(hop, cc_tolerance)
         else:
-            hoppings = self._map_hoppings_positive_G(hoppings)
-        self.hoppings = co.defaultdict(lambda: sp.csr((self.size, self.size), dtype=complex))
-        for G, h_mat in hoppings.items():
-            self.hoppings[G] = sp.csr(h_mat)
+            hop = self._map_hop_positive_G(hop)
+        self.hop = co.defaultdict(lambda: sp.csr((self.size, self.size), dtype=complex))
+        for G, h_mat in hop.items():
+            self.hop[G] = sp.csr(h_mat)
         # consistency check for size
-        for h_mat in self.hoppings.values():
+        for h_mat in self.hop.values():
             if not h_mat.shape == (self.size, self.size):
                 raise ValueError('Hopping matrix of shape {0} found, should be ({1},{1}).'.format(h_mat.shape, self.size))
 
@@ -80,29 +80,29 @@ class Model(object):
 
     #---------------- INIT HELPER FUNCTIONS --------------------------------#
 
-    def _map_to_uc(self, pos, hoppings):
+    def _map_to_uc(self, pos, hop):
         """
         hoppings in csr format
         """
         uc_offsets = [np.array(np.floor(p), dtype=int) for p in pos]
         # ---- common case: already mapped into the UC ----
         if all([all(o == 0 for o in offset) for offset in uc_offsets]):
-            return pos, hoppings
+            return pos, hop
 
         # ---- uncommon case: handle mapping ----
         new_pos = [np.array(p) % 1 for p in pos]
-        new_hoppings = co.defaultdict(lambda: np.zeros((self.size, self.size), dtype=complex))
-        for G, hop_mat in hoppings.items():
+        new_hop = co.defaultdict(lambda: np.zeros((self.size, self.size), dtype=complex))
+        for G, hop_mat in hop.items():
             hop_mat = np.array(hop_mat)
             for i0, row in enumerate(hop_mat):
                 for i1, t in enumerate(row):
                     if t != 0:
                         G_new = tuple(np.array(G, dtype=int) + uc_offsets[i1] - uc_offsets[i0])
-                        new_hoppings[G_new][i0][i1] += t
-        new_hoppings = {key: sp.csr(value) for key, value in new_hoppings.items()}
-        return new_pos, new_hoppings
+                        new_hop[G_new][i0][i1] += t
+        new_hop = {key: sp.csr(value) for key, value in new_hop.items()}
+        return new_pos, new_hop
 
-    def _reduce_hoppings(self, hop, cc_tolerance):
+    def _reduce_hop(self, hop, cc_tolerance):
         """
         Reduce the full hoppings representation (with cc) to the reduced one (without cc, zero-terms halved).
 
@@ -123,23 +123,23 @@ class Model(object):
                 continue
         return res
 
-    def _map_hoppings_positive_G(self, hoppings):
+    def _map_hop_positive_G(self, hop):
         """
         Maps hoppings with a negative first non-zero index in G to their positive counterpart.
         """
-        new_hoppings = co.defaultdict(lambda: sp.csr((self.size, self.size), dtype=complex))
-        #~ new_hoppings = dict()
-        for G, hop_csr in hoppings.items():
+        new_hop = co.defaultdict(lambda: sp.csr((self.size, self.size), dtype=complex))
+        #~ new_hop = dict()
+        for G, hop_csr in hop.items():
             if G == (0, 0, 0):
-                new_hoppings[G] = hop_csr
+                new_hop[G] = hop_csr
             elif G[np.nonzero(G)[0][0]] > 0:
-                #~ assert(G not in new_hoppings.keys())
-                new_hoppings[G] += hop_csr
+                #~ assert(G not in new_hop.keys())
+                new_hop[G] += hop_csr
             else:
                 minus_G = tuple(-x for x in G)
-                #~ assert(minus_G not in new_hoppings.keys())
-                new_hoppings[minus_G] += hop_csr.transpose().conjugate()
-        return new_hoppings
+                #~ assert(minus_G not in new_hop.keys())
+                new_hop[minus_G] += hop_csr.transpose().conjugate()
+        return new_hop
 
     #---------------- BASIC FUNCTIONALITY ----------------------------------#
     def hamilton(self, k):
@@ -152,7 +152,7 @@ class Model(object):
         :returns:   2D numpy array
         """
         k = np.array(k)
-        H = sum(np.array(hop) * np.exp(2j * np.pi * np.dot(G, k)) for G, hop in self.hoppings.items())
+        H = sum(np.array(hop) * np.exp(2j * np.pi * np.dot(G, k)) for G, hop in self.hop.items())
         H += H.conjugate().T
         return np.array(H)
 
@@ -173,7 +173,7 @@ class Model(object):
         tagline = ' created by the TBModels package    ' + time.strftime('%a, %d %b %Y %H:%M:%S %Z')
         lines.append(tagline)
         lines.append('{0:>12}'.format(self.size))
-        num_g = len(self.hoppings.keys()) * 2 - 1
+        num_g = len(self.hop.keys()) * 2 - 1
         if num_g == 0:
             raise ValueError('Cannot print empty model to hr format.')
         lines.append('{0:>12}'.format(num_g))
@@ -186,24 +186,24 @@ class Model(object):
         lines.append(tmp)
 
         # negative
-        for G in reversed(sorted(self.hoppings.keys())):
+        for G in reversed(sorted(self.hop.keys())):
             if G != (0, 0, 0):
                 minus_G = tuple(-x for x in G)
                 lines.extend(self._mat_to_hr(
-                    minus_G, self.hoppings[G].conjugate().transpose()
+                    minus_G, self.hop[G].conjugate().transpose()
                 ))
         # zero
         zero_G = (0, 0, 0)
-        if zero_G in self.hoppings.keys():
+        if zero_G in self.hop.keys():
             lines.extend(self._mat_to_hr(
                 zero_G,
-                self.hoppings[zero_G] + self.hoppings[zero_G].conjugate().transpose()
+                self.hop[zero_G] + self.hop[zero_G].conjugate().transpose()
             ))
         # positive
-        for G in sorted(self.hoppings.keys()):
+        for G in sorted(self.hop.keys()):
             if G != (0, 0, 0):
                 lines.extend(self._mat_to_hr(
-                    G, self.hoppings[G]
+                    G, self.hop[G]
                 ))
         
         return '\n'.join(lines)
@@ -219,7 +219,6 @@ class Model(object):
         return lines
 
     #-------------------MODIFYING THE MODEL ----------------------------#
-    # TODO: test
     def add_hop(self, strength, orbital_1, orbital_2, rec_lattice_vec):
         """
         In all cases, the complex conjugate of the hopping is added automatically.
@@ -235,7 +234,7 @@ class Model(object):
         else:
             G = tuple(-x for x in G)
             mat[orbital_2, orbital_1] += strength.conjugate()
-        self.hoppings[G] += sp.csr(mat)
+        self.hop[G] += sp.csr(mat)
 
     def add_on_site(self, energy, orbital):
         self.add_hop(energy / 2., orbital, orbital, (0, 0, 0))
@@ -286,12 +285,12 @@ class Model(object):
             raise ValueError('Error when adding Models: positions don\'t match.\nModel 1: {0.pos}\nModel 2: {1.pos}'.format(self, model))
 
         # ---- MAIN PART ----
-        new_hoppings = copy.deepcopy(self.hoppings)
-        for G, hop_mat in model.hoppings.items():
-            new_hoppings[G] += hop_mat
+        new_hop = copy.deepcopy(self.hop)
+        for G, hop_mat in model.hop.items():
+            new_hop[G] += hop_mat
         # -------------------
         return Model(
-            new_hoppings,
+            new_hop,
             pos=self.pos,
             occ=self.occ,
             uc=self.uc,
@@ -315,12 +314,12 @@ class Model(object):
         """
         Multiply on-site energies and hopping parameter strengths by a constant factor.
         """
-        new_hoppings = dict()
-        for G, hop_mat in self.hoppings.items():
-            new_hoppings[G] = x * hop_mat
+        new_hop = dict()
+        for G, hop_mat in self.hop.items():
+            new_hop[G] = x * hop_mat
 
         return Model(
-            new_hoppings,
+            new_hop,
             pos=self.pos,
             occ=self.occ,
             uc=self.uc,
@@ -376,7 +375,7 @@ class Model(object):
         # new hoppings, cutting those that cross the supercell boundary
         # in a non-periodic direction
         new_size = self.size * nx * ny * nz
-        new_hoppings = co.defaultdict(lambda: np.zeros((new_size, new_size), dtype=complex))
+        new_hop = co.defaultdict(lambda: np.zeros((new_size, new_size), dtype=complex))
         # full index of an orbital in unit cell at uc_pos
         def full_idx(uc_pos, orbital_idx):
             """
@@ -389,7 +388,7 @@ class Model(object):
             for j in range(ny):
                 for k in range(nz):
                     uc0_pos = np.array([i, j, k], dtype=int)
-                    for G, hop_mat in self.hoppings.items():
+                    for G, hop_mat in self.hop.items():
                         hop_mat = np.array(hop_mat)
                         for i0, row in enumerate(hop_mat):
                             for i1, t in enumerate(row):
@@ -408,7 +407,7 @@ class Model(object):
                                     # mapped into the supercell
                                     uc1_pos = full_uc1_pos % dim
                                     new_i1 = full_idx(uc1_pos, i1)
-                                    new_hoppings[tuple(new_G)][new_i0, new_i1] += t
+                                    new_hop[tuple(new_G)][new_i0, new_i1] += t
 
         # new on_site terms, including passivation
         if passivation is None:
@@ -417,8 +416,8 @@ class Model(object):
             for j in range(ny):
                 for k in range(nz):
                     idx = (i * ny * nz + j * nz + k) * self.size
-                    new_hoppings[(0, 0, 0)][idx:idx + self.size, idx:idx + self.size] += np.diag(np.array(passivation(*_edge_detect_pos([i, j, k], dim)), dtype=float) * 0.5)
-        return Model(new_hoppings, pos=new_pos, occ=new_occ, uc=new_uc, contains_cc=False)
+                    new_hop[(0, 0, 0)][idx:idx + self.size, idx:idx + self.size] += np.diag(np.array(passivation(*_edge_detect_pos([i, j, k], dim)), dtype=float) * 0.5)
+        return Model(new_hop, pos=new_pos, occ=new_occ, uc=new_uc, contains_cc=False)
 
     def trs(self):
         """
@@ -427,15 +426,15 @@ class Model(object):
         # doubling the occupation number and positions
         new_occ = None if (self.occ is None) else self.occ * 2
         new_pos = np.vstack([self.pos, self.pos])
-        new_hoppings = dict()
+        new_hop = dict()
         # doubling the hopping terms
-        for G, hop in self.hoppings.items():
-            if G not in new_hoppings.keys():
-                new_hoppings[G] = np.zeros((2 * self.size, 2 * self.size), dtype=complex)
-            new_hoppings[G][:self.size, :self.size] += hop
+        for G, hop in self.hop.items():
+            if G not in new_hop.keys():
+                new_hop[G] = np.zeros((2 * self.size, 2 * self.size), dtype=complex)
+            new_hop[G][:self.size, :self.size] += hop
             # here you can either do -G  or hop.conjugate() or hop.T, but not both
-            new_hoppings[G][self.size:, self.size:] += hop.conjugate()
-        return Model(new_hoppings, occ=new_occ, pos=new_pos, uc=self.uc, contains_cc=False)
+            new_hop[G][self.size:, self.size:] += hop.conjugate()
+        return Model(new_hop, occ=new_occ, pos=new_pos, uc=self.uc, contains_cc=False)
 
     def change_uc(self, uc):
         """
@@ -451,9 +450,9 @@ class Model(object):
         else:
             new_uc = None
         new_pos = [la.solve(uc, p) for p in self.pos]
-        new_hoppings = {tuple(np.array(la.solve(uc, G), dtype=int)): hop_mat for G, hop_mat in self.hoppings.items()}
+        new_hop = {tuple(np.array(la.solve(uc, G), dtype=int)): hop_mat for G, hop_mat in self.hop.items()}
 
-        return Model(hoppings=new_hoppings, pos=new_pos, occ=self.occ, uc=new_uc, contains_cc=False)
+        return Model(hop=new_hop, pos=new_pos, occ=self.occ, uc=new_uc, contains_cc=False)
 
     def em_field(self, scalar_pot=None, vec_pot=None, prefactor_scalar=1, prefactor_vec=7.596337572e-6, mode_scalar='relative', mode_vec='relative'):
         r"""
@@ -489,13 +488,13 @@ class Model(object):
         :param mode_vec:    Determines whether the input for the ``vec_pot`` function is given as an absolute position (``mode_vec=='absolute'``) or relative to the unit cell (``mode_vec=='relative'``).
         :type mode_vec:     str
         """
-        new_hoppings = copy.deepcopy(self.hoppings)
+        new_hop = copy.deepcopy(self.hop)
         if scalar_pot is not None:
             for i, p in enumerate(self.pos):
                 if mode_scalar == 'relative':
-                    new_hoppings[(0, 0, 0)][i, i] += 0.5 * prefactor_scalar * scalar_pot(p)
+                    new_hop[(0, 0, 0)][i, i] += 0.5 * prefactor_scalar * scalar_pot(p)
                 elif mode_scalar == 'absolute':
-                    new_hoppings[(0, 0, 0)][i, i] += 0.5 * prefactor_scalar * scalar_pot(np.dot(self.uc, p))
+                    new_hop[(0, 0, 0)][i, i] += 0.5 * prefactor_scalar * scalar_pot(np.dot(self.uc, p))
                 else:
                     raise ValueError('Unrecognized value for mode_scalar. Must be either "absolute" or "relative"')
 
@@ -504,7 +503,7 @@ class Model(object):
             vector_pot = lambda r: np.array(vec_pot(r))
             if self.uc is None:
                 raise ValueError('Unit cell is not specified')
-            for G, hop_mat in self.hoppings.items():
+            for G, hop_mat in self.hop.items():
                 for i0, i1 in np.vstack(hop_mat.nonzero()).T:
                     p0 = self.pos[i0]
                     p1 = self.pos[i0]
@@ -522,7 +521,7 @@ class Model(object):
                         raise ValueError('Unrecognized value for mode_vec. Must be either "absolute" or "relative"')
                     hop_mat[i0, i1] *= np.exp(-1j * prefactor_vec * np.dot(G + r1 - r0, A1 - A0))
 
-        return Model(new_hoppings, pos=self.pos, occ=self.occ, uc=self.uc, contains_cc=False)
+        return Model(new_hop, pos=self.pos, occ=self.occ, uc=self.uc, contains_cc=False)
 
 #----------------HELPER FUNCTIONS FOR SUPERCELL-------------------------#
 def _pos_to_idx(pos, dim):
