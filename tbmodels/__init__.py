@@ -10,9 +10,9 @@ TBModels is a tool for creating / loading and manipulating tight-binding models.
 """
 
 from ._version import __version__
+
 from ._tb_model import Model
 from ._hop_list_model import HopListModel
 from ._hr_model import HrModel
-from ._builder import Builder
 
 from . import helpers

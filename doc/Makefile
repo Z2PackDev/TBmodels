@@ -59,6 +59,7 @@ clean:
 
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(HTMLBUILDDIR)
+	python replace_colors.py
 	@echo
 	@echo "Build finished. The HTML pages are in $(HTMLBUILDDIR)."
 

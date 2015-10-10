@@ -1,5 +1,5 @@
-.. image:: images/tbmodels_logo.svg
-    :width: 200px
+.. image:: images/tbmodels_logo.jpg
+    :width: 300px
     :alt: TBModels logo
 
 |
@@ -58,4 +58,3 @@ Indices and tables
 
 .. _dg: http://github.com/greschd
 .. _GitHub: http://github.com/Z2PackDev/TBModels
-

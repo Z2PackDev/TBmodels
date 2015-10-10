@@ -232,22 +232,41 @@ class Model(object):
         return lines
 
     #-------------------MODIFYING THE MODEL ----------------------------#
-    def add_hop(self, strength, orbital_1, orbital_2, rec_lattice_vec):
+    def add_hop(self, overlap, orbital_1, orbital_2, R):
         """
-        In all cases, the complex conjugate of the hopping is added automatically.
+        Adds a hopping term of a given overlap between an orbital in the home unit cell (``orbital_1``) and another orbital (``orbital_2``) located in the unit cell pointed to by ``R``.
 
-        .. warning:: This means that adding a hopping of strength :math:`\epsilon` between an orbital and itself in the home unit cell increases the orbitals on-site energy by :math:`2 \epsilon`.
+        The complex conjugate of the hopping is added automatically. That is, the hopping from ``orbital_2`` to ``orbital_1`` with conjugated ``overlap`` and inverse ``R`` does not have to be added manually.
+        
+        .. note::
+            This means that adding a hopping of overlap :math:`\epsilon` between an orbital and itself in the home unit cell increases the orbitals on-site energy by :math:`2 \epsilon`.
+        
+        :param overlap:    Strength of the hopping term (in energy units).
+        :type overlap:     complex
+        
+        :param orbital_1:   Index of the first orbital.
+        :type orbital_1:    int
+        
+        :param orbital_2:   Index of the second orbital.
+        :type orbital_2:    int
+        
+        :param R:           Lattice vector pointing to the unit cell where `orbital_2` lies.
+        :type R:            list(int)
+        
+        .. warning::
+            The positions given in the constructor of :class:`Model` are automatically mapped into the home unit cell. This has to be taken into account when determining ``R``.
+        
         """
-        G = tuple(rec_lattice_vec)
+        R = tuple(R)
         mat = np.zeros((self.size, self.size), dtype=complex)
-        if G == (0, 0, 0):
-            mat[orbital_1, orbital_2] += strength
-        elif G[np.nonzero(G)[0][0]] > 0:
-            mat[orbital_1, orbital_2] += strength
+        if R == (0, 0, 0):
+            mat[orbital_1, orbital_2] += overlap
+        elif R[np.nonzero(R)[0][0]] > 0:
+            mat[orbital_1, orbital_2] += overlap
         else:
-            G = tuple(-x for x in G)
-            mat[orbital_2, orbital_1] += strength.conjugate()
-        self.hop[G] += sp.csr(mat)
+            R = tuple(-x for x in R)
+            mat[orbital_2, orbital_1] += overlap.conjugate()
+        self.hop[R] += sp.csr(mat)
 
     def add_on_site(self, energy, orbital):
         self.add_hop(energy / 2., orbital, orbital, (0, 0, 0))
