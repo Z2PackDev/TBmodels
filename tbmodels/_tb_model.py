@@ -42,6 +42,31 @@ class Model(object):
     """
     def __init__(self, on_site=None, hop=dict(), size=None, occ=None, pos=None, uc=None, contains_cc=True, cc_tolerance=1e-12):
         # ---- SIZE ----
+        self._init_size(size=size, on_site=on_site, hop=hop)
+
+        # ---- HOPPING TERMS AND POSITIONS ----
+        self._init_hop_pos(
+            on_site=on_site,
+            hop=hop,
+            pos=pos,
+            contains_cc=contains_cc,
+            cc_tolerance=cc_tolerance
+        )
+        
+        # ---- CONSISTENCY CHECK SIZE - HOP ----
+        self._check_size_hop()
+
+        # ---- UNIT CELL ----
+        self.uc = None if uc is None else np.array(uc) # implicit copy
+
+        # ---- OCCUPATION NR ----
+        self.occ = None if (occ is None) else int(occ)
+
+    #---------------- INIT HELPER FUNCTIONS --------------------------------#
+    def _init_size(self, size, on_site, hop):
+        """
+        Sets the size of the system (number of orbitals).
+        """
         if len(hop) == 0 and size is None and on_site is None:
             raise ValueError('Empty hoppings dictionary supplied and no size given. Cannot determine the size of the system.')
         if size is not None:
@@ -52,8 +77,11 @@ class Model(object):
             self.size = six.next(six.itervalues(hop)).shape[0]
         else:
             raise ValueError('Empty hoppings dictionary supplied and no size given. Cannot determine the size of the system.')
-
-        # ---- HOPPING TERMS AND POSITIONS ----
+            
+    def _init_hop_pos(self, on_site, hop, pos, contains_cc, cc_tolerance):
+        """
+        Sets the hopping terms and positions, mapping the positions to the UC (and changing the hoppings accordingly) if necessary.
+        """
         hop = {tuple(key): sp.csr(value, dtype=complex) for key, value in hop.items()}
         # positions
         if pos is None:
@@ -75,24 +103,8 @@ class Model(object):
             if len(on_site) != self.size:
                 raise ValueError('The number of on-site energies {0} does not match the size of the system {1}'.format(len(on_site), self.size))
             self.hop[(0, 0, 0)] += 0.5 * sp.csr(np.diag(on_site))
-        
-        # consistency check for size
-        for h_mat in self.hop.values():
-            if not h_mat.shape == (self.size, self.size):
-                raise ValueError('Hopping matrix of shape {0} found, should be ({1},{1}).'.format(h_mat.shape, self.size))
 
-
-        # ---- UNIT CELL ----
-        if uc is None:
-            self.uc = None
-        else:
-            self.uc = np.array(uc) # implicit copy
-
-        # ---- OCCUPATION NR ----
-        self.occ = None if (occ is None) else int(occ)
-
-    #---------------- INIT HELPER FUNCTIONS --------------------------------#
-
+    # helpers for _init_hop_pos
     def _map_to_uc(self, pos, hop):
         """
         hoppings in csr format
@@ -153,6 +165,15 @@ class Model(object):
                 #~ assert(minus_G not in new_hop.keys())
                 new_hop[minus_G] += hop_csr.transpose().conjugate()
         return new_hop
+    # end helpers for _init_hop_pos
+
+    def _check_size_hop(self):
+        """
+        Consistency check for the size of the hopping matrices.
+        """
+        for h_mat in self.hop.values():
+            if not h_mat.shape == (self.size, self.size):
+                raise ValueError('Hopping matrix of shape {0} found, should be ({1},{1}).'.format(h_mat.shape, self.size))
 
     #---------------- BASIC FUNCTIONALITY ----------------------------------#
     def hamilton(self, k):
@@ -182,6 +203,11 @@ class Model(object):
 
 
     def to_hr(self):
+        """
+        Returns a string containing the model in Wannier90's ``*_hr.dat`` format.
+
+        :returns: str
+        """
         lines = []
         tagline = ' created by the TBModels package    ' + time.strftime('%a, %d %b %Y %H:%M:%S %Z')
         lines.append(tagline)
@@ -222,6 +248,9 @@ class Model(object):
         return '\n'.join(lines)
 
     def _mat_to_hr(self, G, mat):
+        """
+        Creates the ``*_hr.dat`` string for a single hopping matrix.
+        """
         lines = []
         mat = np.array(mat).T # to be consistent with W90's ordering
         for j, column in enumerate(mat):
@@ -269,11 +298,17 @@ class Model(object):
         self.hop[R] += sp.csr(mat)
 
     def add_on_site(self, energy, orbital):
+        """
+        TODO
+        """
         self.add_hop(energy / 2., orbital, orbital, (0, 0, 0))
         
     #-------------------CREATING DERIVED MODELS-------------------------#
     #---- arithmetic operations ----#
     def __add__(self, model):
+        """
+        TODO
+        """
         if not isinstance(model, Model):
             raise ValueError('Invalid argument type for Model.__add__: {}'.format(type(model)))
 
@@ -336,15 +371,21 @@ class Model(object):
         return self.__add__(model)
 
     def __sub__(self, model):
+        """
+        TODO
+        """
         return self + -model
 
     def __neg__(self):
+        """
+        TODO
+        """
         return -1 * self
 
 
     def __mul__(self, x):
         """
-        Multiply on-site energies and hopping parameter strengths by a constant factor.
+        Multiply hopping parameter strengths by a constant factor.
         """
         new_hop = dict()
         for G, hop_mat in self.hop.items():
@@ -365,10 +406,16 @@ class Model(object):
         return self.__mul__(x)
 
     def __div__(self, x):
+        """
+        Division by a constant factor.
+        """
         return self * (1. / x)
 
     # for Python 3
     def __truediv__(self, x):
+        """
+        Division by a constant factor.
+        """
         return self.__div__(x)
 
     #---- other derived models ----#
