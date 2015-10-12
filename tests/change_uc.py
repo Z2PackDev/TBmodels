@@ -20,6 +20,7 @@ class ChangeUcTestCase(CommonTestCase):
             ],
             occ=1,
             uc=uc,
+            dim=3
         )
         
         for phase, G in zip([1, -1j, 1j, -1], tbmodels.helpers.combine([0, -1], [0, -1], 0)):

@@ -100,7 +100,7 @@ class CommonTestCase(unittest.TestCase):
 
 class SimpleModelTestCase(CommonTestCase):
     def createH(self, t1, t2, uc=None):
-        model = tbmodels.Model(size=2, on_site=[1, -1], pos=[[0, 0, 0], [0.5, 0.5, 0]], occ=1, uc=uc)
+        model = tbmodels.Model(size=2, on_site=[1, -1], pos=[[0, 0, 0], [0.5, 0.5, 0]], occ=1, uc=uc, dim=3)
 
         for phase, G in zip([1, -1j, 1j, -1], tbmodels.helpers.combine([0, -1], [0, -1], 0)):
             model.add_hop(t1 * phase, 0, 1, G)

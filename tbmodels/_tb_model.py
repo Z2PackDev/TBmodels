@@ -10,7 +10,6 @@ from __future__ import division, print_function
 from mtools.bands import EigenVal
 from .ptools import sparse_matrix as sp
 
-import os
 import six
 import copy
 import time
@@ -40,9 +39,12 @@ class Model(object):
     :param cc_tolerance:    Tolerance when the complex conjugate terms are checked for consistency.
     :type cc_tolerance:     float
     """
-    def __init__(self, on_site=None, hop=dict(), size=None, occ=None, pos=None, uc=None, contains_cc=True, cc_tolerance=1e-12):
+    def __init__(self, on_site=None, hop=dict(), size=None, dim=None, occ=None, pos=None, uc=None, contains_cc=True, cc_tolerance=1e-12):
         # ---- SIZE ----
         self._init_size(size=size, on_site=on_site, hop=hop)
+
+        # ---- DIMENSION ----
+        self._init_dim(dim=dim, hop=hop)
 
         # ---- HOPPING TERMS AND POSITIONS ----
         self._init_hop_pos(
@@ -52,8 +54,8 @@ class Model(object):
             contains_cc=contains_cc,
             cc_tolerance=cc_tolerance
         )
-        
-        # ---- CONSISTENCY CHECK SIZE - HOP ----
+
+        # ---- CONSISTENCY CHECK FOR SIZE ----
         self._check_size_hop()
 
         # ---- UNIT CELL ----
@@ -67,8 +69,6 @@ class Model(object):
         """
         Sets the size of the system (number of orbitals).
         """
-        if len(hop) == 0 and size is None and on_site is None:
-            raise ValueError('Empty hoppings dictionary supplied and no size given. Cannot determine the size of the system.')
         if size is not None:
             self.size = size
         elif on_site is not None:
@@ -77,7 +77,26 @@ class Model(object):
             self.size = six.next(six.itervalues(hop)).shape[0]
         else:
             raise ValueError('Empty hoppings dictionary supplied and no size given. Cannot determine the size of the system.')
-            
+
+    def _init_dim(self, dim, hop):
+        r"""
+        Sets the system's dimensionality.
+        """
+        if dim is not None:
+            self.dim = dim
+        else:
+            try:
+                self.dim = len(hop.keys()[0])
+            except IndexError:
+                raise ValueError('No dimension specified and no hoppings given. The dimensionality of the system cannot be determined.')
+
+        self._zero_vec = tuple([0] * self.dim)
+        
+        # consistency check
+        for key in hop.keys():
+            if len(key) != self.dim:
+                raise ValueError('The length of R = {0} does not match the dimensionality of the system ({1})'.format(key, self.dim))
+
     def _init_hop_pos(self, on_site, hop, pos, contains_cc, cc_tolerance):
         """
         Sets the hopping terms and positions, mapping the positions to the UC (and changing the hoppings accordingly) if necessary.
@@ -85,7 +104,7 @@ class Model(object):
         hop = {tuple(key): sp.csr(value, dtype=complex) for key, value in hop.items()}
         # positions
         if pos is None:
-            self.pos = [np.array([0., 0., 0.]) for _ in range(self.size)]
+            self.pos = [np.array(self._zero_vec) for _ in range(self.size)]
         elif len(pos) == self.size:
             pos, hop = self._map_to_uc(pos, hop)
             self.pos = np.array(pos) # implicit copy
@@ -102,7 +121,7 @@ class Model(object):
         if on_site is not None:
             if len(on_site) != self.size:
                 raise ValueError('The number of on-site energies {0} does not match the size of the system {1}'.format(len(on_site), self.size))
-            self.hop[(0, 0, 0)] += 0.5 * sp.csr(np.diag(on_site))
+            self.hop[self._zero_vec] += 0.5 * sp.csr(np.diag(on_site))
 
     # helpers for _init_hop_pos
     def _map_to_uc(self, pos, hop):
@@ -139,13 +158,15 @@ class Model(object):
                 raise ValueError('The provided hoppings do not correspond to a hermitian Hamiltonian. hoppings[-G] = hoppings[G].H is not fulfilled.')
 
         res = dict()
-        for G, hop_csr in hop.items():
-            if G == (0, 0, 0):
-                res[G] = 0.5 * hop_csr
-            elif G[np.nonzero(G)[0][0]] > 0:
-                res[G] = hop_csr
-            else:
-                continue
+        for R, hop_csr in hop.items():
+            try:
+                if R[np.nonzero(R)[0][0]] > 0:
+                    res[R] = hop_csr
+                else:
+                    continue
+            # zero case
+            except IndexError:
+                res[R] = 0.5 * hop_csr
         return res
 
     def _map_hop_positive_G(self, hop):
@@ -153,17 +174,15 @@ class Model(object):
         Maps hoppings with a negative first non-zero index in G to their positive counterpart.
         """
         new_hop = co.defaultdict(lambda: sp.csr((self.size, self.size), dtype=complex))
-        #~ new_hop = dict()
-        for G, hop_csr in hop.items():
-            if G == (0, 0, 0):
-                new_hop[G] = hop_csr
-            elif G[np.nonzero(G)[0][0]] > 0:
-                #~ assert(G not in new_hop.keys())
-                new_hop[G] += hop_csr
-            else:
-                minus_G = tuple(-x for x in G)
-                #~ assert(minus_G not in new_hop.keys())
-                new_hop[minus_G] += hop_csr.transpose().conjugate()
+        for R, hop_csr in hop.items():
+            try:
+                if R[np.nonzero(R)[0][0]] > 0:
+                    new_hop[R] += hop_csr
+                else:
+                    minus_R = tuple(-x for x in R)
+                    new_hop[minus_R] += hop_csr.transpose().conjugate()
+            except IndexError:
+                new_hop[R] += hop_csr
         return new_hop
     # end helpers for _init_hop_pos
 
@@ -226,13 +245,13 @@ class Model(object):
 
         # negative
         for G in reversed(sorted(self.hop.keys())):
-            if G != (0, 0, 0):
+            if G != self._zero_vec:
                 minus_G = tuple(-x for x in G)
                 lines.extend(self._mat_to_hr(
                     minus_G, self.hop[G].conjugate().transpose()
                 ))
         # zero
-        zero_G = (0, 0, 0)
+        zero_G = self._zero_vec
         if zero_G in self.hop.keys():
             lines.extend(self._mat_to_hr(
                 zero_G,
@@ -240,11 +259,11 @@ class Model(object):
             ))
         # positive
         for G in sorted(self.hop.keys()):
-            if G != (0, 0, 0):
+            if G != self._zero_vec:
                 lines.extend(self._mat_to_hr(
                     G, self.hop[G]
                 ))
-        
+
         return '\n'.join(lines)
 
     def _mat_to_hr(self, G, mat):
@@ -262,47 +281,48 @@ class Model(object):
 
     #-------------------MODIFYING THE MODEL ----------------------------#
     def add_hop(self, overlap, orbital_1, orbital_2, R):
-        """
+        r"""
         Adds a hopping term of a given overlap between an orbital in the home unit cell (``orbital_1``) and another orbital (``orbital_2``) located in the unit cell pointed to by ``R``.
 
         The complex conjugate of the hopping is added automatically. That is, the hopping from ``orbital_2`` to ``orbital_1`` with conjugated ``overlap`` and inverse ``R`` does not have to be added manually.
-        
+
         .. note::
             This means that adding a hopping of overlap :math:`\epsilon` between an orbital and itself in the home unit cell increases the orbitals on-site energy by :math:`2 \epsilon`.
-        
+
         :param overlap:    Strength of the hopping term (in energy units).
         :type overlap:     complex
-        
+
         :param orbital_1:   Index of the first orbital.
         :type orbital_1:    int
-        
+
         :param orbital_2:   Index of the second orbital.
         :type orbital_2:    int
-        
+
         :param R:           Lattice vector pointing to the unit cell where `orbital_2` lies.
         :type R:            list(int)
-        
+
         .. warning::
             The positions given in the constructor of :class:`Model` are automatically mapped into the home unit cell. This has to be taken into account when determining ``R``.
-        
+
         """
         R = tuple(R)
         mat = np.zeros((self.size, self.size), dtype=complex)
-        if R == (0, 0, 0):
-            mat[orbital_1, orbital_2] += overlap
-        elif R[np.nonzero(R)[0][0]] > 0:
-            mat[orbital_1, orbital_2] += overlap
-        else:
-            R = tuple(-x for x in R)
-            mat[orbital_2, orbital_1] += overlap.conjugate()
+        try:
+            if R[np.nonzero(R)[0][0]] > 0:
+                mat[orbital_1, orbital_2] = overlap
+            else:
+                R = tuple(-x for x in R)
+                mat[orbital_2, orbital_1] = overlap.conjugate()
+        except IndexError:
+            mat[orbital_1, orbital_2] = overlap
         self.hop[R] += sp.csr(mat)
 
     def add_on_site(self, energy, orbital):
         """
         TODO
         """
-        self.add_hop(energy / 2., orbital, orbital, (0, 0, 0))
-        
+        self.add_hop(energy / 2., orbital, orbital, self._zero_vec)
+
     #-------------------CREATING DERIVED MODELS-------------------------#
     #---- arithmetic operations ----#
     def __add__(self, model):
@@ -495,7 +515,7 @@ class Model(object):
             for j in range(ny):
                 for k in range(nz):
                     idx = (i * ny * nz + j * nz + k) * self.size
-                    new_hop[(0, 0, 0)][idx:idx + self.size, idx:idx + self.size] += np.diag(np.array(passivation(*_edge_detect_pos([i, j, k], dim)), dtype=float) * 0.5)
+                    new_hop[self._zero_vec][idx:idx + self.size, idx:idx + self.size] += np.diag(np.array(passivation(*_edge_detect_pos([i, j, k], dim)), dtype=float) * 0.5)
         return Model(
             hop=new_hop,
             pos=new_pos,
@@ -589,9 +609,9 @@ class Model(object):
         if scalar_pot is not None:
             for i, p in enumerate(self.pos):
                 if mode_scalar == 'relative':
-                    new_hop[(0, 0, 0)][i, i] += 0.5 * prefactor_scalar * scalar_pot(p)
+                    new_hop[self._zero_vec][i, i] += 0.5 * prefactor_scalar * scalar_pot(p)
                 elif mode_scalar == 'absolute':
-                    new_hop[(0, 0, 0)][i, i] += 0.5 * prefactor_scalar * scalar_pot(np.dot(self.uc, p))
+                    new_hop[self._zero_vec][i, i] += 0.5 * prefactor_scalar * scalar_pot(np.dot(self.uc, p))
                 else:
                     raise ValueError('Unrecognized value for mode_scalar. Must be either "absolute" or "relative"')
 

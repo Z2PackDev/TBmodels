@@ -12,7 +12,7 @@ import numpy as np
 class HrPrintTestCase(CommonTestCase):
     def createH(self, t1, t2, uc=None):
 
-        model = tbmodels.Model(on_site=[1, -1, 0], pos=[[0, 0, 0], [0.5, 0.5, 0], [0.75, 0.15, 0.6]], occ=1, uc=uc)
+        model = tbmodels.Model(on_site=[1, -1, 0], pos=[[0, 0, 0], [0.5, 0.5, 0], [0.75, 0.15, 0.6]], occ=1, uc=uc, dim=3)
 
         for phase, G in zip([1, -1j, 1j, -1], tbmodels.helpers.combine([0, -1], [0, -1], 0)):
             model.add_hop(t1 * phase, 0, 1, G)
