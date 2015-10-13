@@ -6,8 +6,10 @@
 # File:    _hoppings_list_model.py
 
 from ._tb_model import Model
+import ptools.sparse_matrix as sp
 
 import numpy as np
+import collections as co
 
 class HopListModel(Model):
     r"""
@@ -42,13 +44,30 @@ class HopListModel(Model):
     """
 
     def __init__(self, size, on_site=None, hop_list=[], pos=None, occ=None, add_cc=True, uc=None):
-        hop_dict = dict()
-        #~ hop[(0, 0, 0)] = np.array(np.diag(on_site), dtype=complex)
-        for i, j, G, t in hop_list:
-            G_vec = tuple(G)
-            if G_vec not in hop_dict.keys():
-                hop_dict[G_vec] = np.zeros((size, size), dtype=complex)
-            hop_dict[G_vec][i, j] += t
+        class _hop:
+            """
+            POD for hoppings
+            """
+            def __init__(self):
+                self.data = []
+                self.row_idx = []
+                self.col_idx = []
+
+            def append(self, data, row_idx, col_idx):
+                self.data.append(data)
+                self.row_idx.append(row_idx)
+                self.col_idx.append(col_idx)
+
+        # create data, row_idx, col_idx for setting up the CSR matrices
+        hop_list_dict = co.defaultdict(lambda: _hop())
+        for i, j, R, t in hop_list:
+            R_vec = tuple(R)
+            hop_list_dict[R_vec].append(t, i, j)
             if add_cc:
-                hop_dict[G_vec][j, i] += t.conjugate()
+                hop_list_dict[R_vec].append(t.conjugate(), j, i)
+
+        # creating CSR matrices
+        hop_dict = dict()
+        for key, val in hop_list_dict.items():
+            hop_dict[key] = sp.csr((val.data, (val.row_idx, val.col_idx)), dtype=complex)
         super(HopListModel, self).__init__(on_site=on_site, hop=hop_dict, pos=pos, occ=occ, uc=uc)
