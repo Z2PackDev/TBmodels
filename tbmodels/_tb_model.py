@@ -21,7 +21,7 @@ import scipy.linalg as la
 class Model(object):
     r"""
 
-    :param hop:    Hopping matrices, as a dict containing the corresponding G as a key.
+    :param hop:    Hopping matrices, as a dict containing the corresponding R as a key.
     :type hop:     dict
 
     :param size:        Number of states. Defaults to the size of the hopping matrices, if those are given.
@@ -36,15 +36,17 @@ class Model(object):
     :param contains_cc: Whether the full overlaps are given, or only the reduced representation which does not contain the complex conjugate terms (and only half the zero-terms).
     :type contains_cc:  bool
 
-    :param cc_tolerance:    Tolerance when the complex conjugate terms are checked for consistency.
-    :type cc_tolerance:     float
+    :param cc_tol:    Tolerance when the complex conjugate terms are checked for consistency.
+    :type cc_tol:     float
     """
-    def __init__(self, on_site=None, hop=dict(), size=None, dim=None, occ=None, pos=None, uc=None, contains_cc=True, cc_tolerance=1e-12):
+    def __init__(self, on_site=None, hop=None, size=None, dim=None, occ=None, pos=None, uc=None, contains_cc=True, cc_tol=1e-12):
+        if hop is None:
+            hop = dict()
         # ---- SIZE ----
         self._init_size(size=size, on_site=on_site, hop=hop)
 
         # ---- DIMENSION ----
-        self._init_dim(dim=dim, hop=hop)
+        self._init_dim(dim=dim, hop=hop, pos=pos)
 
         # ---- HOPPING TERMS AND POSITIONS ----
         self._init_hop_pos(
@@ -52,11 +54,12 @@ class Model(object):
             hop=hop,
             pos=pos,
             contains_cc=contains_cc,
-            cc_tolerance=cc_tolerance
+            cc_tol=cc_tol
         )
 
         # ---- CONSISTENCY CHECK FOR SIZE ----
         self._check_size_hop()
+        # ---- CONSISTENCY CHECK FOR DIM ----
 
         # ---- UNIT CELL ----
         self.uc = None if uc is None else np.array(uc) # implicit copy
@@ -78,26 +81,22 @@ class Model(object):
         else:
             raise ValueError('Empty hoppings dictionary supplied and no size given. Cannot determine the size of the system.')
 
-    def _init_dim(self, dim, hop):
+    def _init_dim(self, dim, hop, pos):
         r"""
         Sets the system's dimensionality.
         """
         if dim is not None:
             self.dim = dim
+        elif pos is not None:
+            self.dim = len(pos[0])
+        elif len(hop.keys()) > 0:
+            self.dim = len(hop.keys()[0])
         else:
-            try:
-                self.dim = len(hop.keys()[0])
-            except IndexError:
-                raise ValueError('No dimension specified and no hoppings given. The dimensionality of the system cannot be determined.')
+            raise ValueError('No dimension specified and no positions or hoppings are given. The dimensionality of the system cannot be determined.')
 
         self._zero_vec = tuple([0] * self.dim)
-        
-        # consistency check
-        for key in hop.keys():
-            if len(key) != self.dim:
-                raise ValueError('The length of R = {0} does not match the dimensionality of the system ({1})'.format(key, self.dim))
 
-    def _init_hop_pos(self, on_site, hop, pos, contains_cc, cc_tolerance):
+    def _init_hop_pos(self, on_site, hop, pos, contains_cc, cc_tol):
         """
         Sets the hopping terms and positions, mapping the positions to the UC (and changing the hoppings accordingly) if necessary.
         """
@@ -111,12 +110,12 @@ class Model(object):
         else:
             raise ValueError('invalid argument for "pos": must be either None or of the same length as the size of the system')
         if contains_cc:
-            hop = self._reduce_hop(hop, cc_tolerance)
+            hop = self._reduce_hop(hop, cc_tol)
         else:
-            hop = self._map_hop_positive_G(hop)
+            hop = self._map_hop_positive_R(hop)
         self.hop = co.defaultdict(lambda: sp.csr((self.size, self.size), dtype=complex))
-        for G, h_mat in hop.items():
-            self.hop[G] = sp.csr(h_mat)
+        for R, h_mat in hop.items():
+            self.hop[R] = sp.csr(h_mat)
         # add on-site terms
         if on_site is not None:
             if len(on_site) != self.size:
@@ -136,26 +135,26 @@ class Model(object):
         # ---- uncommon case: handle mapping ----
         new_pos = [np.array(p) % 1 for p in pos]
         new_hop = co.defaultdict(lambda: np.zeros((self.size, self.size), dtype=complex))
-        for G, hop_mat in hop.items():
+        for R, hop_mat in hop.items():
             hop_mat = np.array(hop_mat)
             for i0, row in enumerate(hop_mat):
                 for i1, t in enumerate(row):
                     if t != 0:
-                        G_new = tuple(np.array(G, dtype=int) + uc_offsets[i1] - uc_offsets[i0])
-                        new_hop[G_new][i0][i1] += t
+                        R_new = tuple(np.array(R, dtype=int) + uc_offsets[i1] - uc_offsets[i0])
+                        new_hop[R_new][i0][i1] += t
         new_hop = {key: sp.csr(value) for key, value in new_hop.items()}
         return new_pos, new_hop
 
-    def _reduce_hop(self, hop, cc_tolerance):
+    def _reduce_hop(self, hop, cc_tol):
         """
         Reduce the full hoppings representation (with cc) to the reduced one (without cc, zero-terms halved).
 
         hop is in CSR format
         """
         # Consistency checks
-        for G, hop_csr in hop.items():
-            if la.norm(hop_csr - hop[tuple(-x for x in G)].T.conjugate()) > cc_tolerance:
-                raise ValueError('The provided hoppings do not correspond to a hermitian Hamiltonian. hoppings[-G] = hoppings[G].H is not fulfilled.')
+        for R, hop_csr in hop.items():
+            if la.norm(hop_csr - hop[tuple(-x for x in R)].T.conjugate()) > cc_tol:
+                raise ValueError('The provided hoppings do not correspond to a hermitian Hamiltonian. hoppings[-R] = hoppings[R].H is not fulfilled.')
 
         res = dict()
         for R, hop_csr in hop.items():
@@ -169,9 +168,9 @@ class Model(object):
                 res[R] = 0.5 * hop_csr
         return res
 
-    def _map_hop_positive_G(self, hop):
+    def _map_hop_positive_R(self, hop):
         """
-        Maps hoppings with a negative first non-zero index in G to their positive counterpart.
+        Maps hoppings with a negative first non-zero index in R to their positive counterpart.
         """
         new_hop = co.defaultdict(lambda: sp.csr((self.size, self.size), dtype=complex))
         for R, hop_csr in hop.items():
@@ -194,6 +193,18 @@ class Model(object):
             if not h_mat.shape == (self.size, self.size):
                 raise ValueError('Hopping matrix of shape {0} found, should be ({1},{1}).'.format(h_mat.shape, self.size))
 
+    def _check_dim(self):
+        # consistency check
+        for key in self.hop.keys():
+            if len(key) != self.dim:
+                raise ValueError('The length of R = {0} does not match the dimensionality of the system ({1})'.format(key, self.dim))
+        for p in self.pos:
+            if len(p) != self.dim:
+                raise ValueError('The length of position r = {0} does not match the dimensionality of the system ({1})'.format(len(p), self.dim))
+        if self.uc is not None:
+            if self.uc.shape != (self.dim, self.dim):
+                raise ValueError('Inconsistend dimension of the unit cell: {0}, does not match the dimensionality of the system ({1})'.format(self.uc.shape, self.dim))
+
     #---------------- BASIC FUNCTIONALITY ----------------------------------#
     def hamilton(self, k):
         """
@@ -205,7 +216,7 @@ class Model(object):
         :returns:   2D numpy array
         """
         k = np.array(k)
-        H = sum(np.array(hop) * np.exp(2j * np.pi * np.dot(G, k)) for G, hop in self.hop.items())
+        H = sum(np.array(hop) * np.exp(2j * np.pi * np.dot(R, k)) for R, hop in self.hop.items())
         H += H.conjugate().T
         return np.array(H)
 
@@ -244,29 +255,28 @@ class Model(object):
         lines.append(tmp)
 
         # negative
-        for G in reversed(sorted(self.hop.keys())):
-            if G != self._zero_vec:
-                minus_G = tuple(-x for x in G)
+        for R in reversed(sorted(self.hop.keys())):
+            if R != self._zero_vec:
+                minus_R = tuple(-x for x in R)
                 lines.extend(self._mat_to_hr(
-                    minus_G, self.hop[G].conjugate().transpose()
+                    minus_R, self.hop[R].conjugate().transpose()
                 ))
         # zero
-        zero_G = self._zero_vec
-        if zero_G in self.hop.keys():
+        if self._zero_vec in self.hop.keys():
             lines.extend(self._mat_to_hr(
-                zero_G,
-                self.hop[zero_G] + self.hop[zero_G].conjugate().transpose()
+                self._zero_vec,
+                self.hop[self._zero_vec] + self.hop[self._zero_vec].conjugate().transpose()
             ))
         # positive
-        for G in sorted(self.hop.keys()):
-            if G != self._zero_vec:
+        for R in sorted(self.hop.keys()):
+            if R != self._zero_vec:
                 lines.extend(self._mat_to_hr(
-                    G, self.hop[G]
+                    R, self.hop[R]
                 ))
 
         return '\n'.join(lines)
 
-    def _mat_to_hr(self, G, mat):
+    def _mat_to_hr(self, R, mat):
         """
         Creates the ``*_hr.dat`` string for a single hopping matrix.
         """
@@ -275,7 +285,7 @@ class Model(object):
         for j, column in enumerate(mat):
             for i, t in enumerate(column):
                 lines.append(
-                    '{0[0]:>5}{0[1]:>5}{0[2]:>5}{1:>5}{2:>5}{3.real:>12.6f}{3.imag:>12.6f}'.format(G, i + 1, j + 1, t)
+                    '{0[0]:>5}{0[1]:>5}{0[2]:>5}{1:>5}{2:>5}{3.real:>12.6f}{3.imag:>12.6f}'.format(R, i + 1, j + 1, t)
                 )
         return lines
 
@@ -373,8 +383,8 @@ class Model(object):
 
         # ---- MAIN PART ----
         new_hop = copy.deepcopy(self.hop)
-        for G, hop_mat in model.hop.items():
-            new_hop[G] += hop_mat
+        for R, hop_mat in model.hop.items():
+            new_hop[R] += hop_mat
         # -------------------
         return Model(
             hop=new_hop,
@@ -408,8 +418,8 @@ class Model(object):
         Multiply hopping parameter strengths by a constant factor.
         """
         new_hop = dict()
-        for G, hop_mat in self.hop.items():
-            new_hop[G] = x * hop_mat
+        for R, hop_mat in self.hop.items():
+            new_hop[R] = x * hop_mat
 
         return Model(
             hop=new_hop,
@@ -487,26 +497,26 @@ class Model(object):
             for j in range(ny):
                 for k in range(nz):
                     uc0_pos = np.array([i, j, k], dtype=int)
-                    for G, hop_mat in self.hop.items():
+                    for R, hop_mat in self.hop.items():
                         hop_mat = np.array(hop_mat)
                         for i0, row in enumerate(hop_mat):
                             for i1, t in enumerate(row):
                                 # new index of orbital 0
                                 new_i0 = full_idx(uc0_pos, i0)
                                 # position of the uc of orbital 1, not mapped inside supercell
-                                full_uc1_pos = uc0_pos + np.array(G)
+                                full_uc1_pos = uc0_pos + np.array(R)
                                 outside_supercell = [(p < 0) or (p >= d) for p, d in zip(full_uc1_pos, dim)]
                                 # test if the hopping should be cut
                                 cut_hop = any([not per and outside for per, outside in zip(periodic, outside_supercell)])
                                 if cut_hop:
                                     continue
                                 else:
-                                    # G in terms of supercells
-                                    new_G = np.array(np.floor(full_uc1_pos / dim), dtype=int)
+                                    # R in terms of supercells
+                                    new_R = np.array(np.floor(full_uc1_pos / dim), dtype=int)
                                     # mapped into the supercell
                                     uc1_pos = full_uc1_pos % dim
                                     new_i1 = full_idx(uc1_pos, i1)
-                                    new_hop[tuple(new_G)][new_i0, new_i1] += t
+                                    new_hop[tuple(new_R)][new_i0, new_i1] += t
 
         # new on_site terms, including passivation
         if passivation is None:
@@ -533,12 +543,12 @@ class Model(object):
         new_pos = np.vstack([self.pos, self.pos])
         new_hop = dict()
         # doubling the hopping terms
-        for G, hop in self.hop.items():
-            if G not in new_hop.keys():
-                new_hop[G] = np.zeros((2 * self.size, 2 * self.size), dtype=complex)
-            new_hop[G][:self.size, :self.size] += hop
-            # here you can either do -G  or hop.conjugate() or hop.T, but not both
-            new_hop[G][self.size:, self.size:] += hop.conjugate()
+        for R, hop in self.hop.items():
+            if R not in new_hop.keys():
+                new_hop[R] = np.zeros((2 * self.size, 2 * self.size), dtype=complex)
+            new_hop[R][:self.size, :self.size] += hop
+            # here you can either do -R  or hop.conjugate() or hop.T, but not both
+            new_hop[R][self.size:, self.size:] += hop.conjugate()
         return Model(
             hop=new_hop,
             occ=new_occ,
@@ -561,7 +571,7 @@ class Model(object):
         else:
             new_uc = None
         new_pos = [la.solve(uc, p) for p in self.pos]
-        new_hop = {tuple(np.array(la.solve(uc, G), dtype=int)): hop_mat for G, hop_mat in self.hop.items()}
+        new_hop = {tuple(np.array(la.solve(uc, R), dtype=int)): hop_mat for R, hop_mat in self.hop.items()}
 
         return Model(
             hop=new_hop,
@@ -620,7 +630,7 @@ class Model(object):
             vector_pot = lambda r: np.array(vec_pot(r))
             if self.uc is None:
                 raise ValueError('Unit cell is not specified')
-            for G, hop_mat in self.hop.items():
+            for R, hop_mat in self.hop.items():
                 for i0, i1 in np.vstack(hop_mat.nonzero()).T:
                     p0 = self.pos[i0]
                     p1 = self.pos[i0]
@@ -636,7 +646,7 @@ class Model(object):
                         A1 = vector_pot(p1 % 1)
                     else:
                         raise ValueError('Unrecognized value for mode_vec. Must be either "absolute" or "relative"')
-                    hop_mat[i0, i1] *= np.exp(-1j * prefactor_vec * np.dot(G + r1 - r0, A1 - A0))
+                    hop_mat[i0, i1] *= np.exp(-1j * prefactor_vec * np.dot(R + r1 - r0, A1 - A0))
 
         return Model(
             hop=new_hop,
