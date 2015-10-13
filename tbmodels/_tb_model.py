@@ -289,6 +289,71 @@ class Model(object):
                 )
         return lines
 
+    def __repr__(self):
+        return ' '.join('tbmodels.Model(hop={1}, pos={0.pos!r}, uc={0.uc!r}, occ={0.occ}, contains_cc=False)'.format(self, dict(self.hop)).replace('\n', ' ').replace('array', 'np.array').split())
+            
+
+    def __str__(self):
+        res = self._entries_section('general', dict(occ=self.occ, dim=self.dim)) + '\n'
+        res += self._array_section('pos', self.pos) + '\n'
+        if self.uc is not None:
+            res += self._array_section('uc', self.uc.T) + '\n'
+        res += self._hop_section('hop')
+        return res
+
+    #--------------------- STR HELPER FUNCTIONS ----------------------------#
+
+    def _entries_section(self, name, entries):
+        """
+        Only supports simple data for now. Expand when necessary.
+        """
+        res = ''
+        lines = []
+        for key, value in entries.items():
+            lines.append('{0} = {1}'.format(key, value))
+        res += '\n'.join(lines)
+        return self._section(name, res)
+
+    def _array_section(self, name, array):
+        """
+        Writes an array consisting of a 2D floating point array
+        """
+        res = ''
+        max_width = 0
+        for line in array:
+            for entry in line:
+                max_width = max(max_width, len('{: .100g}'.format(entry)))
+        for line in array:
+            res += (' ' * 4).join(['{: .100g}'.format(entry).ljust(max_width) for entry in line]).rstrip(' ') + '\n'
+
+        return self._section(name, res)
+
+    def _hop_section(self, name):
+        """
+        Writes the [hop] section
+        """
+        max_width_idx = len(str(self.size))
+        content = ''
+        tab_char = ' ' * 4
+        format_str = (
+            tab_char + '{{0:< {0}}}' + tab_char + '{{1:< {0}}}' + tab_char +
+            '{{2: .100g}}'
+        ).format(max_width_idx)
+        for key in sorted(self.hop.keys()):
+            content += '(' + ' '.join(str(x) for x in key) + ')' + '\n'
+            mat = self.hop[key]
+            for i, j in zip(*mat.nonzero()):
+                content += format_str.format(i, j, mat[i, j]) + '\n'
+            content += '\n'
+        content = content.rstrip('\n')
+        return self._section(name, content)
+    
+
+    def _section(self, name, content):
+        return '[{0}]\n'.format(name) + content + '\n'
+
+    #--------------------- END STR HELPER FUNCTIONS ------------------------#
+
     #-------------------MODIFYING THE MODEL ----------------------------#
     def add_hop(self, overlap, orbital_1, orbital_2, R):
         r"""

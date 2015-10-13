@@ -15,12 +15,6 @@ class HopListModel(Model):
     r"""
     Describes a tight-binding model set up via list of hoppings.
 
-    :param on_site: TODO
-    :type on_site:  list
-
-    :param on_site: On-site energies of the orbitals.
-    :type on_site:  list
-
     :param hop: Hopping terms. Each hopping terms is a list
         [O1, O2, G, t] where O1 and O2 are the indices of the two orbitals
         involved, G is the reciprocal lattice vector indicating the UC

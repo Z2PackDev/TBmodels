@@ -20,7 +20,16 @@ class ArrayConvertible(object):
     
 
 class csr(ArrayConvertible, sp.csr_matrix):
-    pass
+    def __repr__(self):
+        res = (
+            'csr((' +
+            '[' + ', '.join(str(x) for x in self.data) + '], ' +
+            '[' + ', '.join(str(x) for x in self.indices) + '], ' +
+            '[' + ', '.join(str(x) for x in self.indptr) + ']), ' +
+            'shape={0.shape}, dtype=np.{0.dtype})'.format(self)
+        )
+        return res
+    
     
 class coo(ArrayConvertible, sp.coo_matrix):
     pass

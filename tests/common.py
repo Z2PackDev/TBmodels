@@ -102,12 +102,12 @@ class SimpleModelTestCase(CommonTestCase):
     def createH(self, t1, t2, uc=None):
         model = tbmodels.Model(size=2, on_site=[1, -1], pos=[[0, 0, 0], [0.5, 0.5, 0]], occ=1, uc=uc)
 
-        for phase, G in zip([1, -1j, 1j, -1], tbmodels.helpers.combine([0, -1], [0, -1], 0)):
-            model.add_hop(t1 * phase, 0, 1, G)
+        for phase, R in zip([1, -1j, 1j, -1], tbmodels.helpers.combine([0, -1], [0, -1], 0)):
+            model.add_hop(t1 * phase, 0, 1, R)
 
-        for G in tbmodels.helpers.neighbours([0, 1], forward_only=True):
-            model.add_hop(t2, 0, 0, G)
-            model.add_hop(-t2, 1, 1, G)
+        for R in tbmodels.helpers.neighbours([0, 1], forward_only=True):
+            model.add_hop(t2, 0, 0, R)
+            model.add_hop(-t2, 1, 1, R)
             
         self.model = model
         return self.model
@@ -115,12 +115,12 @@ class SimpleModelTestCase(CommonTestCase):
     def createH_2D(self, t1, t2, uc=None):
         model = tbmodels.Model(size=2, on_site=[1, -1], pos=[[0, 0], [0.5, 0.5]], occ=1, uc=uc)
 
-        for phase, G in zip([1, -1j, 1j, -1], tbmodels.helpers.combine([0, -1], [0, -1], 0)):
-            model.add_hop(t1 * phase, 0, 1, G)
+        for phase, R in zip([1, -1j, 1j, -1], tbmodels.helpers.combine([0, -1], [0, -1])):
+            model.add_hop(t1 * phase, 0, 1, R)
 
-        for G in tbmodels.helpers.neighbours([0, 1], forward_only=True):
-            model.add_hop(t2, 0, 0, G)
-            model.add_hop(-t2, 1, 1, G)
+        for R in tbmodels.helpers.neighbours([0, 1], forward_only=True):
+            model.add_hop(t2, 0, 0, R)
+            model.add_hop(-t2, 1, 1, R)
             
-        self.model = model
-        return self.model
+        self.model_2d = model
+        return self.model_2d
