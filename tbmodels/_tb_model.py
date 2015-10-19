@@ -7,6 +7,7 @@
 
 from __future__ import division, print_function
 
+from .ptools.locker import Locker
 from mtools.bands import EigenVal
 from .ptools import sparse_matrix as sp
 
@@ -18,6 +19,7 @@ import numpy as np
 import collections as co
 import scipy.linalg as la
 
+@six.add_metaclass(Locker)
 class Model(object):
     r"""
 
@@ -294,7 +296,7 @@ class Model(object):
             
 
     def __str__(self):
-        res = self._entries_section('general', dict(occ=self.occ, dim=self.dim)) + '\n'
+        res = self._entries_section('general', dict(occ=self.occ, dim=self.dim, size=self.size)) + '\n'
         res += self._array_section('pos', self.pos) + '\n'
         if self.uc is not None:
             res += self._array_section('uc', self.uc.T) + '\n'
@@ -310,7 +312,8 @@ class Model(object):
         res = ''
         lines = []
         for key, value in entries.items():
-            lines.append('{0} = {1}'.format(key, value))
+            if value is not None:
+                lines.append('{0} = {1}'.format(key, value))
         res += '\n'.join(lines)
         return self._section(name, res)
 

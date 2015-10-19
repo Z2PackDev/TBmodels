@@ -64,4 +64,6 @@ class HopListModel(Model):
         hop_dict = dict()
         for key, val in hop_list_dict.items():
             hop_dict[key] = sp.csr((val.data, (val.row_idx, val.col_idx)), dtype=complex)
+        #~ print(isinstance(self, HopListModel))
+        #~ print(type(self))
         super(HopListModel, self).__init__(on_site=on_site, hop=hop_dict, pos=pos, occ=occ, uc=uc)

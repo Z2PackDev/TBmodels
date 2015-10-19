@@ -15,4 +15,6 @@ from ._tb_model import Model
 from ._hop_list_model import HopListModel
 from ._hr_model import HrModel
 
+from . import read_model
+
 from . import helpers
