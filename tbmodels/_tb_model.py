@@ -147,7 +147,8 @@ class Model(object):
         new_hop = {key: sp.csr(value) for key, value in new_hop.items()}
         return new_pos, new_hop
 
-    def _reduce_hop(self, hop, cc_tol):
+    @staticmethod
+    def _reduce_hop(hop, cc_tol):
         """
         Reduce the full hoppings representation (with cc) to the reduced one (without cc, zero-terms halved).
 
@@ -196,7 +197,7 @@ class Model(object):
                 raise ValueError('Hopping matrix of shape {0} found, should be ({1},{1}).'.format(h_mat.shape, self.size))
 
     def _check_dim(self):
-        # consistency check
+        """Consistency check for the dimension."""
         for key in self.hop.keys():
             if len(key) != self.dim:
                 raise ValueError('The length of R = {0} does not match the dimensionality of the system ({1})'.format(key, self.dim))
@@ -232,7 +233,6 @@ class Model(object):
         :returns:   list of EigenVal objects
         """
         return EigenVal(la.eigh(self.hamilton(k))[0], self.occ)
-
 
     def to_hr(self):
         """
@@ -278,7 +278,8 @@ class Model(object):
 
         return '\n'.join(lines)
 
-    def _mat_to_hr(self, R, mat):
+    @staticmethod
+    def _mat_to_hr(R, mat):
         """
         Creates the ``*_hr.dat`` string for a single hopping matrix.
         """
@@ -293,7 +294,7 @@ class Model(object):
 
     def __repr__(self):
         return ' '.join('tbmodels.Model(hop={1}, pos={0.pos!r}, uc={0.uc!r}, occ={0.occ}, contains_cc=False)'.format(self, dict(self.hop)).replace('\n', ' ').replace('array', 'np.array').split())
-            
+
 
     def __str__(self):
         res = self._entries_section('general', dict(occ=self.occ, dim=self.dim, size=self.size)) + '\n'
@@ -350,9 +351,11 @@ class Model(object):
             content += '\n'
         content = content.rstrip('\n')
         return self._section(name, content)
-    
 
-    def _section(self, name, content):
+
+    @staticmethod
+    def _section(name, content):
+        """Wraps a string into section form, with a given name."""
         return '[{0}]\n'.format(name) + content + '\n'
 
     #--------------------- END STR HELPER FUNCTIONS ------------------------#
@@ -517,7 +520,7 @@ class Model(object):
         return self.__div__(x)
 
     #---- other derived models ----#
-    def supercell(self, dim, periodic=[True, True, True], passivation=None):
+    def supercell(self, dim, periodic=(True, True, True), passivation=None):
         r"""
         Creates a tight-binding model which describes a supercell.
 

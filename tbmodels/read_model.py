@@ -6,12 +6,11 @@
 # File:    read_model.py
 
 from ._tb_model import Model
-from ptools.locker import Locker
-import ptools.sparse_matrix as sp
+from .ptools.locker import Locker
+from .ptools import sparse_matrix as sp
 
 import re
 import six
-import numpy as np
 import collections as co
 
 #--------------------- COMMON HELPER FUNCTIONS -------------------------#
@@ -30,10 +29,10 @@ def _clean_input(string):
     lines = string.split('\n')
     for i in range(len(lines)):
         lines[i] = lines[i].split('#')[0]
-    rx = re.compile('\s+')
+    rx = re.compile(r'\s+')
     for i in range(len(lines)):
         lines[i] = rx.sub(' ', lines[i]).strip()
-    return '\n'.join(list(filter(None, lines)))
+    return '\n'.join([line for line in lines if line])
 
 def clean_string(fct):
     """
@@ -58,6 +57,7 @@ class _tbm_read_impl(object):
         self.dim = None
         self.occ = None
         self.pos = None
+        self.size = None
         #~ self.size = None
         # set up all default inputs to Model
         self.sections = self._get_sections(string)
@@ -70,13 +70,13 @@ class _tbm_read_impl(object):
         # validate section names
         for key in self.sections.keys():
             if key not in sections_parsing_dict.keys():
-                raise ValueError('Invalid section name \'{0}\'. Must be one of {1}'.format(key, section_parsing_dict.keys()))
+                raise ValueError('Invalid section name \'{0}\'. Must be one of {1}'.format(key, sections_parsing_dict.keys()))
         for key, fct in sections_parsing_dict.items():
             if key in self.sections.keys():
                 fct(self.sections[key])
 
-    @clean_string    
-    def _get_sections(self, string, regex_str='\[([^\]]+)\]'):
+    @clean_string
+    def _get_sections(self, string, regex_str=r'\[([^\]]+)\]'):
         sct_name = re.compile(regex_str)
         sections_split = re.split(sct_name, string)
         if sections_split[0] != '':
@@ -95,6 +95,7 @@ class _tbm_read_impl(object):
     def _parse_pos_section(self, string):
         self.pos = self._parse_list(string)
 
+
     @clean_string
     def _parse_list(self, string):
         return [
@@ -105,7 +106,7 @@ class _tbm_read_impl(object):
     # TODO: de-duplicate from _hop_list_model
     # This can be done when the different ways of setting up a Model
     # are put into functions.
-    class _hop:
+    class _hop(object):
         """
         POD for hoppings
         """
@@ -121,27 +122,27 @@ class _tbm_read_impl(object):
 
     @clean_string
     def _parse_hop_section(self, string):
-        hop_sections = self._get_sections(string, '\(([^\)]+)\)')
-        rx = re.compile('[\D]+')
+        hop_sections = self._get_sections(string, r'\(([^\)]+)\)')
+        rx = re.compile(r'[\D]+')
         self.hop = dict()
         for key, val in hop_sections.items():
-            key = list(filter(None, rx.split(key)))
+            key = [line for line in  rx.split(key) if line]
             R = tuple([int(x) for x in key])
             self.hop[R] = self._parse_hop_lines(val)
-            
+
     @clean_string
     def _parse_hop_lines(self, string):
         res = self._hop()
-        rx = re.compile('[\s]+')
+        rx = re.compile(r'[\s]+')
         for line in string.split('\n'):
-            items = list(filter(None, rx.split(line)))
+            items = [line for line in rx.split(line) if line]
             i0 = int(items[0])
             i1 = int(items[1])
             t = complex(''.join(items[2:]))
             res.append(t, i0, i1)
         return sp.csr((res.data, (res.row_idx, res.col_idx)), dtype=complex, shape=(self.size, self.size))
         #~ return sp.csr((res.data, (res.row_idx, res.col_idx)), dtype=complex)
-            
+
     @clean_string
     def _parse_general_section(self, string):
         # 'name': (type, Default)
@@ -153,7 +154,7 @@ class _tbm_read_impl(object):
             'occ': (int, None),
         }
         args_read = dict()
-        rx = re.compile('[=:\s]+')
+        rx = re.compile(r'[=:\s]+')
         for line in string.split('\n'):
             name, val = rx.split(line)
             name = name.lower().strip()
