@@ -27,6 +27,7 @@ tbmodels/ptools/.gitignore
 # selectively choose ptools
 tbmodels/ptools/*.py
 !tbmodels/ptools/__init__.py  
+!tbmodels/ptools/locker.py
 !tbmodels/ptools/replace.py  
 !tbmodels/ptools/csv_parser.py  
 !tbmodels/ptools/sparse_matrix.py
