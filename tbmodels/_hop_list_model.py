@@ -6,9 +6,8 @@
 # File:    _hoppings_list_model.py
 
 from ._tb_model import Model
-import ptools.sparse_matrix as sp
+from .ptools import sparse_matrix as sp
 
-import numpy as np
 import collections as co
 
 class HopListModel(Model):
@@ -37,8 +36,8 @@ class HopListModel(Model):
     :type uc: 3x3 matrix
     """
 
-    def __init__(self, size, on_site=None, hop_list=[], pos=None, occ=None, add_cc=True, uc=None):
-        class _hop:
+    def __init__(self, size, on_site=None, hop_list=(), pos=None, occ=None, add_cc=True, uc=None):
+        class _hop(object):
             """
             POD for hoppings
             """
@@ -53,7 +52,7 @@ class HopListModel(Model):
                 self.col_idx.append(col_idx)
 
         # create data, row_idx, col_idx for setting up the CSR matrices
-        hop_list_dict = co.defaultdict(lambda: _hop())
+        hop_list_dict = co.defaultdict(_hop)
         for i, j, R, t in hop_list:
             R_vec = tuple(R)
             hop_list_dict[R_vec].append(t, i, j)
