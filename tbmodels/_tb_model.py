@@ -8,7 +8,7 @@
 from __future__ import division, print_function
 
 from .ptools.locker import Locker
-from mtools.bands import EigenVal
+#~ from mtools.bands import EigenVal
 from .ptools import sparse_matrix as sp
 
 import six
@@ -230,9 +230,9 @@ class Model(object):
         :param k:   k-point
         :type k:    list
 
-        :returns:   list of EigenVal objects
+        :returns:   list of eigenvalues
         """
-        return EigenVal(la.eigh(self.hamilton(k))[0], self.occ)
+        return la.eigh(self.hamilton(k))[0]
 
     def to_hr(self):
         """
