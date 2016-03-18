@@ -92,7 +92,7 @@ class Model(object):
         elif pos is not None:
             self.dim = len(pos[0])
         elif len(hop.keys()) > 0:
-            self.dim = len(hop.keys()[0])
+            self.dim = len(next(iter(hop.keys())))
         else:
             raise ValueError('No dimension specified and no positions or hoppings are given. The dimensionality of the system cannot be determined.')
 

@@ -40,3 +40,6 @@ debug
 # testing files from Brutus
 lsf.*
 decorator.py
+
+# virtualenvs
+venv*
