@@ -8,7 +8,6 @@
 from __future__ import division, print_function
 
 from .ptools.locker import Locker
-#~ from mtools.bands import EigenVal
 from .ptools import sparse_matrix as sp
 
 import six
