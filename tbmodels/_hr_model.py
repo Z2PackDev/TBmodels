@@ -42,35 +42,26 @@ def _read_hr(file_handle):
     read the number of wannier functions and the hopping entries
     from *hr.dat and converts them into the right format
     """
-    def to_number(string):
-        try:
-            return int(string)
-        except ValueError:
-            return float(string)
-
-    re_float = re.compile(r'[0-9.\-E]+')
-    def to_number_list(line):
-        return [to_number(x) for x in re.findall(re_float, line)]
-    
     next(file_handle) # skip first line
     num_wann = int(next(file_handle))
     nrpts = int(next(file_handle))
 
-    data = (to_number_list(line) for line in file_handle)
-
     # get degeneracy points
     deg_pts = []
     # order in zip important because else the next data element is consumed
-    for _, line in zip(range(int(np.ceil(nrpts / 15))), data):
-        deg_pts.extend(line)
+    for _, line in zip(range(int(np.ceil(nrpts / 15))), file_handle):
+        deg_pts.extend(int(x) for x in line.split())
     assert len(deg_pts) == nrpts
 
-    hop_list = (
-        [
-            entry[3] - 1,
-            entry[4] - 1,
-            entry[:3],
-            (entry[5] + 1j * entry[6]) / (deg_pts[i // num_wann**2])
-        ] for i, entry in enumerate(data))
+    def to_entry(line, i):
+        entry = line.split()
+        return [
+            int(entry[3]) - 1,
+            int(entry[4]) - 1,
+            [int(x) for x in entry[:3]],
+            float(entry[5]) + 1j * float(entry[6]) / (deg_pts[i // num_wann**2])
+        ]
+
+    hop_list = (to_entry(line, i) for i, line in enumerate(file_handle))
 
     return num_wann, hop_list
