@@ -5,11 +5,8 @@
 # Date:    05.05.2015 12:04:36 CEST
 # File:    _hr_hamilton.py
 
-import re
-
 import numpy as np
 
-from .ptools.monitoring import Timer
 from ._hop_list_model import HopListModel
 
 class HrModel(HopListModel):
@@ -27,8 +24,8 @@ class HrModel(HopListModel):
     :param kwargs: Keyword arguments are passed to :class:`Model` . For ``add_cc``, the default is ``False`` (unlike in :class:`HopListModel`).
     """
     def __init__(self, hr_file, h_cutoff=None, **kwargs):
-        with open(hr_file, 'r') as f:
-            num_wann, h_entries = _read_hr(f)
+        with open(hr_file, 'r') as file_handle:
+            num_wann, h_entries = _read_hr(file_handle)
             if h_cutoff is not None:
                 h_entries = [hopping for hopping in h_entries if abs(hopping[3]) > h_cutoff]
 
@@ -54,6 +51,7 @@ def _read_hr(file_handle):
 
     num_wann_square = num_wann**2
     def to_entry(line, i):
+        """Turns a line (string) into a hop_list entry"""
         entry = line.split()
         return [
             int(entry[3]) - 1,
