@@ -14,12 +14,12 @@ class HopListModel(Model):
     r"""
     Describes a tight-binding model set up via list of hoppings.
 
-    :param hop: Hopping terms. Each hopping terms is a list
+    :param hop_list: Hopping terms. Each hopping terms is a list
         [O1, O2, G, t] where O1 and O2 are the indices of the two orbitals
         involved, G is the reciprocal lattice vector indicating the UC
         where O2 is located (if O1 is located in the home UC), and t
         is the hopping strength.
-    :type hop: list
+    :type hop_list: list
 
     :param pos:   Positions of the orbitals. By default (positions = ``None``),
         all orbitals are put at the origin.
@@ -29,14 +29,14 @@ class HopListModel(Model):
     :type occ:  int
 
     :param add_cc:  Determines whether the complex conjugates of the hopping
-        parameters are added automatically. Default: ``True``.
+        parameters (corresponding to -R) are added automatically. Default: ``False``.
     :type add_cc:   bool
 
     :param uc: Unit cell of the system. The lattice vectors :math:`a_i` are to be given as column vectors. By default, no unit cell is specified, meaning an Error will occur when adding electromagnetic field.
     :type uc: 3x3 matrix
     """
 
-    def __init__(self, size, on_site=None, hop_list=(), pos=None, occ=None, add_cc=True, uc=None):
+    def __init__(self, size, on_site=None, hop_list=(), pos=None, occ=None, add_cc=False, uc=None):
         class _hop(object):
             """
             POD for hoppings
@@ -57,11 +57,11 @@ class HopListModel(Model):
             R_vec = tuple(R)
             hop_list_dict[R_vec].append(t, i, j)
             if add_cc:
-                hop_list_dict[R_vec].append(t.conjugate(), j, i)
+                hop_list_dict[tuple(-x for x in R_vec)].append(t.conjugate(), j, i)
 
         # creating CSR matrices
         hop_dict = dict()
         for key, val in hop_list_dict.items():
-            hop_dict[key] = sp.csr((val.data, (val.row_idx, val.col_idx)), dtype=complex)
+            hop_dict[key] = sp.csr((val.data, (val.row_idx, val.col_idx)), dtype=complex, shape=(size, size))
 
-        super(HopListModel, self).__init__(on_site=on_site, hop=hop_dict, pos=pos, occ=occ, uc=uc)
+        super(HopListModel, self).__init__(size=size, on_site=on_site, hop=hop_dict, pos=pos, occ=occ, uc=uc)

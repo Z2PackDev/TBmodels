@@ -15,3 +15,7 @@ Derived Classes
 .. autoclass:: tbmodels.HrModel
     :members:
     :special-members:
+
+.. autoclass:: tbmodels.HopListModel
+    :members:
+    :special-members:
