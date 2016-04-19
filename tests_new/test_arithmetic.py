@@ -5,79 +5,63 @@
 # Date:    05.10.2015 16:54:52 CEST
 # File:    arithmetics.py
 
+import pytest
+import numpy as np
+
 from models import get_model
 
-def test_add_1(get_model, compare_equal):
-    m1 = get_model(0.2, 0.3)
-    m2 = get_model(0., 0.1)
+t_values = [(t1, t2) for t1 in [-0.1, 0.2, 0.3, 0.9] for t2 in [0.2, 0.4, 0.5]]
+
+kpt = [(0.1, 0.2, 0.7), (-0.3, 0.5, 0.2), (0., 0., 0.), (0.1, -0.9, -0.7)]
+
+@pytest.mark.parametrize('t1', t_values)
+@pytest.mark.parametrize('t2', t_values)
+@pytest.mark.parametrize('k', kpt)
+def test_add(t1, t2, k, get_model, compare_equal):
+    m1 = get_model(*t1)
+    m2 = get_model(*t2)
     m3 = m1 + m2
-    compare_equal(m3.hamilton([0.1, 0.2, 0.7]))
+    compare_equal(m3.hamilton(k))
+
+@pytest.mark.parametrize('t1', t_values)
+@pytest.mark.parametrize('t2', t_values)
+@pytest.mark.parametrize('k', kpt)
+def test_sub(t1, t2, k, get_model, compare_equal):
+    m1 = get_model(*t1)
+    m2 = get_model(*t2)
+    m3 = m1 - m2
+    compare_equal(m3.hamilton(k))
     
-
-
-#~ class ArithmeticTestCase(SimpleModelTestCase):
-
-    #~ def test_add_1(self):
-        #~ model1 = self.createH(0.2, 0.3)
-        #~ model2 = self.createH(0.0, 0.1)
-        #~ model3 = model1 + model2
-        #~ res = array([[ 2.89442719+0.j       ,  0.18914915+0.2902113j],
-       #~ [ 0.18914915-0.2902113j, -2.89442719+0.j       ]])
-
-        #~ self.assertFullAlmostEqual(res, model3.hamilton([0.1, 0.2, 0.7]))
-
-    #~ def test_add_2(self):
-        #~ model1 = self.createH(0.2, 0.3)
-        #~ model2 = self.createH(0.7, -0.1)
-        #~ model3 = model1 + model2
-        #~ res = array([[ 2.44721360+0.j        ,  0.85117116+1.30595086j],
-       #~ [ 0.85117116-1.30595086j, -2.44721360+0.j        ]])
-
-        #~ self.assertFullAlmostEqual(res, model3.hamilton([0.1, 0.2, 0.7]))
-
-    #~ def test_sub_1(self):
-        #~ model1 = self.createH(0.2, 0.3)
-        #~ model2 = self.createH(0.0, 0.1)
-        #~ model3 = model1 - model2
-        #~ res = array([[ 0.44721360+0.j       ,  0.18914915+0.2902113j],
-       #~ [ 0.18914915-0.2902113j, -0.44721360+0.j       ]])
-
-        #~ self.assertFullAlmostEqual(res, model3.hamilton([0.1, 0.2, 0.7]))
-
-    #~ def test_sub_2(self):
-        #~ model1 = self.createH(0.2, 0.3)
-        #~ model2 = self.createH(0.7, -0.1)
-        #~ model3 = -model1 - model2
-        #~ res = array([[-2.44721360+0.j        , -0.85117116-1.30595086j],
-       #~ [-0.85117116+1.30595086j,  2.44721360+0.j        ]])
-
-        #~ self.assertFullAlmostEqual(res, model3.hamilton([0.1, 0.2, 0.7]))
-
-    #~ def test_mul_1(self):
-        #~ model1 = self.createH(0.2, 0.3)
-        #~ model2 = model1 * 0.2
-        #~ res = array([[ 0.33416408+0.j        ,  0.03782983+0.05804226j],
-       #~ [ 0.03782983-0.05804226j, -0.33416408+0.j        ]])
-
-        #~ self.assertFullAlmostEqual(res, model2.hamilton([0.1, 0.2, 0.7]))
-
-    #~ def test_mul_2(self):
-        #~ model1 = self.createH(0.7, -0.1)
-        #~ model2 = 0.2 * model1
-        #~ res = array([[ 0.15527864+0.j        ,  0.13240440+0.20314791j],
-       #~ [ 0.13240440-0.20314791j, -0.15527864+0.j        ]])
-
-        #~ self.assertFullAlmostEqual(res, model2.hamilton([0.1, 0.2, 0.7]))
-
-    #~ def test_div(self):
-        #~ model1 = self.createH(0.7, -0.1)
-        #~ model2 = model1 / 3
-        #~ model3 = model1 * (1. / 3)
-        #~ res = array([[ 0.25879773+0.j        ,  0.22067400+0.33857985j],
-       #~ [ 0.22067400-0.33857985j, -0.25879773+0.j        ]])
-
-        #~ self.assertFullAlmostEqual(res, model2.hamilton([0.1, 0.2, 0.7]))
-        #~ self.assertFullAlmostEqual(model2.hamilton([0.1, 0.21783, 0.2]), model3.hamilton([0.1, 0.21783, 0.2]))
-
-#~ if __name__ == "__main__":
-    #~ unittest.main()
+@pytest.mark.parametrize('t1', t_values)
+@pytest.mark.parametrize('t2', t_values)
+@pytest.mark.parametrize('k', kpt)
+def test_sub_2(t1, t2, k, get_model, compare_equal):
+    m1 = get_model(*t1)
+    m2 = get_model(*t2)
+    m3 = -m1 - m2
+    compare_equal(m3.hamilton(k))
+    
+@pytest.mark.parametrize('t', t_values)
+@pytest.mark.parametrize('c', np.linspace(-2, 2, 5))
+@pytest.mark.parametrize('k', kpt)
+def test_mul(t, c, k, get_model, compare_equal):
+    m = get_model(*t)
+    m *= c
+    compare_equal(m.hamilton(k))
+    
+@pytest.mark.parametrize('t', t_values)
+@pytest.mark.parametrize('c', np.linspace(-2, 2, 4))
+@pytest.mark.parametrize('k', kpt)
+def test_div(t, c, k, get_model, compare_equal):
+    m = get_model(*t)
+    m /= c
+    compare_equal(m.hamilton(k))
+    
+@pytest.mark.parametrize('t', t_values)
+@pytest.mark.parametrize('c', np.linspace(-2, 2, 4))
+@pytest.mark.parametrize('k', kpt)
+def test_div_consistency(t, c, k, get_model, compare_equal):
+    m = get_model(*t)
+    m2 = m / c
+    m3 = m * (1. / c)
+    assert np.isclose(m3.hamilton(k), m2.hamilton(k)).all()
