@@ -6,37 +6,38 @@
 # File:    uc_mapping.py
 
 from common import *
+import collections as co
 
 import numpy as np
 
 class UcMappingTestCase(CommonTestCase):
     def uc_mapping(self, t1, t2, k):
-        builder = tbmodels.Builder()
+        hoppings = co.defaultdict(lambda: np.zeros((4, 4), dtype=complex))
+        for phase, G in zip([1, -1j, 1j, -1], tbmodels.helpers.combine([0, -1], [0, -1], 0)):
+            mat = np.zeros((4, 4), dtype=complex)
+            mat[0, 1] += phase * t1
+            hoppings[tuple(G)] += mat
+            hoppings[tuple([-x for x in G])] += mat.conjugate().transpose()
 
-        # create the two atoms
-        builder.add_atom([1], [0, -0.1, 0.], 1)
-        builder.add_atom([-1], [2.15, 0.5, -0.2], 0)
-        builder.add_atom([0.], [1.75, 0.25, 0.6], 0)
-        builder.add_atom([0.], [0.75, -0.15, 0.6], 0)
+        for G in tbmodels.helpers.neighbours([0, 1], forward_only=True):
+            mat = np.zeros((4, 4), dtype=complex)
+            mat[0, 0] = t2
+            mat[1, 1] = -t2
+            hoppings[tuple(G)] += mat
+            hoppings[tuple(-x for x in G)] += mat.conjugate().transpose()
 
-        # add hopping between different atoms
-        builder.add_hopping(((0, 0), (1, 0)),
-                           tbmodels.helpers.combine([0, -1], [0, -1], 0),
-                           t1,
-                           phase=[1, -1j, 1j, -1])
+        model = tbmodels.Model(
+            on_site=[1, -1, 0, 0],
+            hop=hoppings,
+            pos=[
+                [0, -0.1, 0.],
+                [2.15, 0.5, -0.2],
+                [1.75, 0.25, 0.6],
+                [0.75, -0.15, 0.6],
+            ],
+            occ=1,
+            )
 
-        # add hopping between neighbouring orbitals of the same type
-        builder.add_hopping(((0, 0), (0, 0)),
-                           tbmodels.helpers.neighbours([0, 1],
-                                                        forward_only=True),
-                           t2,
-                           phase=[1])
-        builder.add_hopping(((1, 0), (1, 0)),
-                           tbmodels.helpers.neighbours([0, 1],
-                                                        forward_only=True),
-                           -t2,
-                           phase=[1])
-        model = builder.create()
         return model.hamilton(k)
 
     def test_uc_mapping(self):

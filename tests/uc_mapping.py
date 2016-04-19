@@ -6,9 +6,9 @@
 # File:    uc_mapping.py
 
 from common import *
+import collections as co
 
 import numpy as np
-import collections as co
 
 class UcMappingTestCase(CommonTestCase):
     def uc_mapping(self, t1, t2, k):

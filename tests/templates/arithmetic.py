@@ -12,33 +12,7 @@ import copy
 import types
 import shutil
 
-class ArithmeticTestCase(CommonTestCase):
-    def createH(self, t1, t2):
-
-        builder = tbmodels.Builder()
-
-        # create the two atoms
-        builder.add_atom([1], [0, 0, 0], 1)
-        builder.add_atom([-1], [0.5, 0.5, 0], 0)
-
-        # add hopping between different atoms
-        builder.add_hopping(((0, 0), (1, 0)),
-                           tbmodels.helpers.combine([0, -1], [0, -1], 0),
-                           t1,
-                           phase=[1, -1j, 1j, -1])
-
-        # add hopping between neighbouring orbitals of the same type
-        builder.add_hopping(((0, 0), (0, 0)),
-                           tbmodels.helpers.neighbours([0, 1],
-                                                        forward_only=True),
-                           t2,
-                           phase=[1])
-        builder.add_hopping(((1, 0), (1, 0)),
-                           tbmodels.helpers.neighbours([0, 1],
-                                                        forward_only=True),
-                           -t2,
-                           phase=[1])
-        return builder.create()
+class ArithmeticTestCase(SimpleModelTestCase):
 
     def test_add_1(self):
         model1 = self.createH(0.2, 0.3)

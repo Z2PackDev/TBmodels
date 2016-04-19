@@ -311,8 +311,8 @@ class Model(object):
 
     def _entries_section(self, name, entries):
         """
-        Only supports simple data for now. Expand when necessary.
         """
+        # Only supports simple data for now. Expand when necessary.
         res = ''
         lines = []
         for key, value in entries.items():

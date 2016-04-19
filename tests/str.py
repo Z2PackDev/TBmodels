@@ -22,13 +22,14 @@ class StrTestCase(SimpleModelTestCase):
     def test_load(self):
         self.createH(0.1, 0.3)
         new_model = tbmodels.read_model.tbm(str(self.model))
+        self.assertFullEqual(self.model.dim, new_model.dim)
+        self.assertFullEqual(self.model.size, new_model.size)
         self.assertFullEqual(self.model.uc, new_model.uc)
         self.assertFullEqual(self.model.pos, new_model.pos)
         self.assertFullEqual(
             {key: np.array(val) for key, val in self.model.hop.items()},
             {key: np.array(val) for key, val in new_model.hop.items()}
         )
-        #~ self.assertFullEqual(self.model.hop, new_model.hop)
 
 if __name__ == "__main__":
     unittest.main()

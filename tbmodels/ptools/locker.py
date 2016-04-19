@@ -24,6 +24,24 @@ class LockerBase(type):
                     self.attr_mod_ctrl = cls.locker_type
             return inner
 
+        # getattr
+        @decorator.decorator
+        def decorate_get(fct, self, key, val):
+            """
+            decorator for __getattr__
+            """
+            return _decorator_set_impl(fct)(self, key, val)
+
+        def _decorate_get_impl(fct):
+            def inner(self, key):
+                # for the attr_mod_ctrl key, the getattre behaviour should not change
+                # when e.g. the user does some redirecting
+                if key == 'attr_mod_ctrl':
+                    raise AttributeError
+                else:
+                    return fct(self, key)
+            return inner
+
         # setattr
         @decorator.decorator
         def decorate_set(fct, self, key, val):
@@ -34,8 +52,6 @@ class LockerBase(type):
 
         def _decorate_set_impl(fct):
             def inner(self, key, val):
-                #~ print(self)
-                #~ print('check for {} from {}'.format(key, type(self).__name__))
                 if hasattr(self, 'attr_mod_ctrl'):
                     assert(self.attr_mod_ctrl in ['none', 'new', 'all', 'const'])
                     if self.attr_mod_ctrl == 'new' and (not hasattr(self, key)):
@@ -68,9 +84,17 @@ class LockerBase(type):
             cls.__init__ = decorate_init(cls.__init__.im_func)
         except AttributeError:
             cls.__init__ = _decorate_init_impl(cls.__init__)
-            
         
         if not any([isinstance(b, LockerBase) for b in bases]):
+            try:
+                cls.__getattr__ = decorate_get(cls.__getattr__.im_func)
+            except AttributeError:
+                try:
+                    cls.__getattr__ = _decorate_get_impl(cls.__getattr__)
+                # if __getattr__ does not exist, there is no need for this extra
+                # safety measure.
+                except AttributeError:
+                    pass
             try:
                 cls.__setattr__ = decorate_set(cls.__setattr__.im_func)
             except AttributeError:

@@ -29,7 +29,10 @@ class csr(ArrayConvertible, sp.csr_matrix):
             'shape={0.shape}, dtype=np.{0.dtype})'.format(self)
         )
         return res
-    
+
+    # This is here because scipy throws NotImplementedError
+    def __iadd__(self, other):
+        return self + other
     
 class coo(ArrayConvertible, sp.coo_matrix):
     pass

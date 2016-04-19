@@ -25,7 +25,7 @@ tbmodels/ptools/.git
 tbmodels/ptools/.gitignore
 
 # selectively choose ptools
-tbmodels/ptools/*.py
+tbmodels/ptools/*
 !tbmodels/ptools/__init__.py  
 !tbmodels/ptools/locker.py
 !tbmodels/ptools/replace.py  
