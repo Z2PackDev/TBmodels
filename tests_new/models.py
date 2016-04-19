@@ -6,11 +6,11 @@
 # File:    common.py
 
 import pytest
-import tbmodles
+import tbmodels
 
 @pytest.fixture
-def get_model(t1, t2, dim=3, uc=None):
-    def inner():
+def get_model():
+    def inner(t1, t2, dim=3, uc=None):
         pos = [[0] * 2, [0.5] * 2]
         if dim < 2:
             raise ValueError('dimension must be at least 2')

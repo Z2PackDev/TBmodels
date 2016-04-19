@@ -43,3 +43,6 @@ decorator.py
 
 # virtualenvs
 venv*
+
+# pytest
+.cache
