@@ -10,7 +10,7 @@ import numpy as np
 
 from models import get_model
 
-t_values = [(t1, t2) for t1 in [-0.1, 0.2, 0.3, 0.9] for t2 in [0.2, 0.4, 0.5]]
+t_values = [(t1, t2) for t1 in [-0.1, 0.2, 0.3] for t2 in [-0.2, 0.5]]
 
 kpt = [(0.1, 0.2, 0.7), (-0.3, 0.5, 0.2), (0., 0., 0.), (0.1, -0.9, -0.7)]
 
@@ -42,7 +42,7 @@ def test_sub_2(t1, t2, k, get_model, compare_equal):
     compare_equal(m3.hamilton(k))
     
 @pytest.mark.parametrize('t', t_values)
-@pytest.mark.parametrize('c', np.linspace(-2, 2, 5))
+@pytest.mark.parametrize('c', np.linspace(-1, 1, 3))
 @pytest.mark.parametrize('k', kpt)
 def test_mul(t, c, k, get_model, compare_equal):
     m = get_model(*t)
@@ -50,7 +50,7 @@ def test_mul(t, c, k, get_model, compare_equal):
     compare_equal(m.hamilton(k))
     
 @pytest.mark.parametrize('t', t_values)
-@pytest.mark.parametrize('c', np.linspace(-2, 2, 4))
+@pytest.mark.parametrize('c', np.linspace(-1, 0.5, 3)) # should be non-zero
 @pytest.mark.parametrize('k', kpt)
 def test_div(t, c, k, get_model, compare_equal):
     m = get_model(*t)
@@ -58,7 +58,7 @@ def test_div(t, c, k, get_model, compare_equal):
     compare_equal(m.hamilton(k))
     
 @pytest.mark.parametrize('t', t_values)
-@pytest.mark.parametrize('c', np.linspace(-2, 2, 4))
+@pytest.mark.parametrize('c', np.linspace(-1, 0.5, 3)) # should be non-zero
 @pytest.mark.parametrize('k', kpt)
 def test_div_consistency(t, c, k, get_model, compare_equal):
     m = get_model(*t)
