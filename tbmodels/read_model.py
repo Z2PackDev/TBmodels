@@ -58,15 +58,15 @@ class _tbm_read_impl(object):
         self.occ = None
         self.pos = None
         self.size = None
-        #~ self.size = None
         # set up all default inputs to Model
+        # order is important!
         self.sections = self._get_sections(string)
-        sections_parsing_dict = co.OrderedDict(
-            general=self._parse_general_section,
-            uc=self._parse_uc_section,
-            pos=self._parse_pos_section,
-            hop=self._parse_hop_section,
-        )
+        sections_parsing_dict = co.OrderedDict()
+        sections_parsing_dict['general'] = self._parse_general_section
+        sections_parsing_dict['uc'] = self._parse_uc_section
+        sections_parsing_dict['pos'] = self._parse_pos_section
+        sections_parsing_dict['hop'] = self._parse_hop_section
+
         # validate section names
         for key in self.sections.keys():
             if key not in sections_parsing_dict.keys():
@@ -140,8 +140,11 @@ class _tbm_read_impl(object):
             i1 = int(items[1])
             t = complex(''.join(items[2:]))
             res.append(t, i0, i1)
-        return sp.csr((res.data, (res.row_idx, res.col_idx)), dtype=complex, shape=(self.size, self.size))
-        #~ return sp.csr((res.data, (res.row_idx, res.col_idx)), dtype=complex)
+        return sp.csr(
+            (res.data, (res.row_idx, res.col_idx)),
+            shape=(self.size, self.size),
+            dtype=complex,
+        )
 
     @clean_string
     def _parse_general_section(self, string):

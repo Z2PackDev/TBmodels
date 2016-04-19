@@ -12,6 +12,7 @@ import numpy as np
 
 class StrTestCase(SimpleModelTestCase):
     def test_print(self):
+        self.maxDiff = None # to print the full diff when test fails
         self.createH(0.1, 0.2)
         self.model.pos = np.array([[0., 0., 0.5], [-0.2, -0.1, 0.]])
         self.model.change_uc(np.array([[1, 2, 0], [0, 10, 0], [0, 0, 0.1]]))
