@@ -14,6 +14,7 @@ import six
 import copy
 import time
 import warnings
+import functools
 import numpy as np
 import collections as co
 import scipy.linalg as la
@@ -114,7 +115,10 @@ class Model(object):
             hop = self._reduce_hop(hop, cc_tol)
         else:
             hop = self._map_hop_positive_R(hop)
-        self.hop = co.defaultdict(lambda: sp.csr((self.size, self.size), dtype=complex))
+        # use partial instead of lambda to allow for pickling
+        self.hop = co.defaultdict(
+            functools.partial(sp.csr, (self.size, self.size), dtype=complex)
+        )
         for R, h_mat in hop.items():
             self.hop[R] = sp.csr(h_mat)
         # add on-site terms
