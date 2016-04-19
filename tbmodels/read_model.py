@@ -6,8 +6,8 @@
 # File:    read_model.py
 
 from ._tb_model import Model
-from .ptools.locker import Locker
-from .ptools import sparse_matrix as sp
+from ._ptools.locker import Locker
+from ._ptools import sparse_matrix as sp
 
 import re
 import six

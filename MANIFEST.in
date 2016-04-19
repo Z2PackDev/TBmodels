@@ -8,13 +8,13 @@ prune tests
 prune doc
 
 # selectively include ptools
-prune tbmodels/ptools
+prune tbmodels/_ptools
 prune futures
-include tbmodels/ptools/__init__.py
-# include tbmodels/ptools/parse_dict.py
-# include tbmodels/ptools/string_tools.py
-include tbmodels/ptools/csv_parser.py
-include tbmodels/ptools/sparse_matrix.py
+include tbmodels/_ptools/__init__.py
+# include tbmodels/_ptools/parse_dict.py
+# include tbmodels/_ptools/string_tools.py
+include tbmodels/_ptools/csv_parser.py
+include tbmodels/_ptools/sparse_matrix.py
 
 # installation related
 exclude MANIFEST.in

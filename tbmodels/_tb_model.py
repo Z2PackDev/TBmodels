@@ -7,8 +7,8 @@
 
 from __future__ import division, print_function
 
-from .ptools.locker import Locker
-from .ptools import sparse_matrix as sp
+from ._ptools.locker import Locker
+from ._ptools import sparse_matrix as sp
 
 import six
 import copy

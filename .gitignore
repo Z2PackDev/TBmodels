@@ -20,19 +20,19 @@ MANIFEST
 *.tar.gz
 files*.txt
 
-# ignoring the ptools git
-tbmodels/ptools/.git
-tbmodels/ptools/.gitignore
+# ignoring the _ptools git
+tbmodels/_ptools/.git
+tbmodels/_ptools/.gitignore
 
-# selectively choose ptools
-tbmodels/ptools/*
-!tbmodels/ptools/__init__.py  
-!tbmodels/ptools/locker.py
-!tbmodels/ptools/replace.py  
-!tbmodels/ptools/csv_parser.py  
-!tbmodels/ptools/sparse_matrix.py
-# !tbmodels/ptools/parse_dict.py  
-# !tbmodels/ptools/string_tools.py  
+# selectively choose _ptools
+tbmodels/_ptools/*
+!tbmodels/_ptools/__init__.py  
+!tbmodels/_ptools/locker.py
+!tbmodels/_ptools/replace.py  
+!tbmodels/_ptools/csv_parser.py  
+!tbmodels/_ptools/sparse_matrix.py
+# !tbmodels/_ptools/parse_dict.py  
+# !tbmodels/_ptools/string_tools.py  
 
 # debug folder
 debug

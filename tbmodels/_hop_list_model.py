@@ -6,7 +6,7 @@
 # File:    _hoppings_list_model.py
 
 from ._tb_model import Model
-from .ptools import sparse_matrix as sp
+from ._ptools import sparse_matrix as sp
 
 import collections as co
 
