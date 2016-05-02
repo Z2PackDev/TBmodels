@@ -7,7 +7,6 @@
 
 from __future__ import division, print_function
 
-from ._ptools.locker import Locker
 from ._ptools import sparse_matrix as sp
 
 import six
@@ -19,7 +18,6 @@ import numpy as np
 import collections as co
 import scipy.linalg as la
 
-@six.add_metaclass(Locker)
 class Model(object):
     r"""
 

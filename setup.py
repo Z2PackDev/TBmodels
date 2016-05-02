@@ -42,5 +42,5 @@ setup(
         'Topic :: Scientific/Engineering :: Physics'
     ],
     license='GPL',
-    packages=['tbmodels']
+    packages=['tbmodels', 'tbmodels._ptools']
 )

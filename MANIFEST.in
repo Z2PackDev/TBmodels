@@ -13,7 +13,7 @@ prune futures
 include tbmodels/_ptools/__init__.py
 # include tbmodels/_ptools/parse_dict.py
 # include tbmodels/_ptools/string_tools.py
-include tbmodels/_ptools/csv_parser.py
+# include tbmodels/_ptools/csv_parser.py
 include tbmodels/_ptools/sparse_matrix.py
 
 # installation related
