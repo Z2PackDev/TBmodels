@@ -634,6 +634,8 @@ class Model(object):
         Creates a new model with a different unit cell. The new unit cell must have the same volume as the previous one, i.e. the number of atoms per unit cell stays the same, and cannot change chirality.
 
         :param uc: The new unit cell, given w.r.t. to the old one. Lattice vectors are given as column vectors in a 3x3 matrix.
+        
+        TODO: add an option that the new UC can also be given in cartesian coordinates.
         """
         uc = np.array(uc)
         if la.det(uc) != 1:

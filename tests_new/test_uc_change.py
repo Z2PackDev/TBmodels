@@ -5,14 +5,14 @@
 # Date:    19.04.2016 11:55:35 CEST
 # File:    test_uc_change.py
 
-from common import *
-
+import pytest
 import numpy as np
 
-from models import get_models
+import tbmodels
 
-class ChangeUcTestCase(CommonTestCase):
-    def createH(self, t1, t2, uc=None):
+@pytest.fixture
+def get_model():
+    def inner(t1, t2, dim=3, uc=None, pos=None):
         model = tbmodels.Model(
             on_site=[1, -1, 0],
             pos=[
@@ -32,77 +32,86 @@ class ChangeUcTestCase(CommonTestCase):
             model.add_hop(t2, 0, 0, G)
             model.add_hop(-t2, 1, 1, G)
 
-        self.model = model
+        return model
+    return inner
 
-    def test_no_uc_unity(self):
-        self.createH(0.1, 0.2)
-        new_model = self.model.change_uc(uc=np.identity(3))
-        self.assertFullAlmostEqual(new_model.uc, self.model.uc)
-        self.assertFullAlmostEqual(self.model.pos, new_model.pos)
-            
-    def test_uc_unity(self):
-        self.createH(0.1, 0.2, uc=np.diag([1, 2, 3]))
-        new_model = self.model.change_uc(uc=np.identity(3))
-        self.assertFullAlmostEqual(new_model.uc, self.model.uc)
-        self.assertFullAlmostEqual(self.model.pos, new_model.pos)
-            
-    def test_uc_1(self):
-        self.createH(0.1, 0.2, uc=np.diag([1, 2, 3]))
-        new_model = self.model.change_uc(uc=np.array([[1, 2, 0], [0, 1, 3], [0, 0, 1]]))
+def test_no_uc_unity(get_model):
+    model = get_model(0.1, 0.2)
+    new_model = model.change_uc(uc=np.identity(3))
+    assert new_model.uc == model.uc
+    assert np.isclose(model.pos, new_model.pos).all()
 
-        res_uc = array([[1, 2, 0],
-       [0, 2, 6],
-       [0, 0, 3]])
-        res_pos = array([[ 0.  ,  0.  ,  0.  ],
-       [ 0.7 ,  0.9 ,  0.2 ],
-       [ 0.05,  0.35,  0.6 ]])
-        self.assertFullAlmostEqual(new_model.uc, res_uc)
-        self.assertFullAlmostEqual(new_model.pos, res_pos)
+def test_uc_unity(get_model):
+    model = get_model(0.1, 0.2, uc=np.diag([1, 2, 3]))
+    new_model = model.change_uc(uc=np.identity(3))
+    assert np.isclose(new_model.uc, model.uc).all()
+    assert np.isclose(model.pos, new_model.pos).all()
             
-    def test_uc_2(self):
-        self.createH(0.1, 0.2, uc=np.array([[0, 1, 0], [2, 0, 1], [1, 0, 1]]))
-        new_model = self.model.change_uc(uc=np.array([[1, 2, 0], [0, 1, 3], [0, 0, 1]]))
+def test_uc_1(get_model):
+    model = get_model(0.1, 0.2, uc=np.diag([1, 2, 3]))
+    new_model = model.change_uc(uc=np.array([[1, 2, 0], [0, 1, 3], [0, 0, 1]]))
 
-        res_uc = array([[0, 1, 3],
-       [2, 4, 1],
-       [1, 2, 1]])
-        res_pos = array([[ 0.  ,  0.  ,  0.  ],
-       [ 0.7 ,  0.9 ,  0.2 ],
-       [ 0.05,  0.35,  0.6 ]])
-        self.assertFullAlmostEqual(new_model.uc, res_uc)
-        self.assertFullAlmostEqual(new_model.pos, res_pos)
+    res_uc = np.array([
+        [1, 2, 0],
+        [0, 2, 6],
+        [0, 0, 3]
+    ])
+    res_pos = np.array([
+        [0., 0., 0.],
+        [0.7, 0.9, 0.2],
+        [0.05, 0.35, 0.6]
+    ])
+    assert np.isclose(new_model.uc, res_uc).all()
+    assert np.isclose(new_model.pos, res_pos).all()
+            
+def test_uc_2(get_model):
+    model = get_model(0.1, 0.2, uc=np.array([[0, 1, 0], [2, 0, 1], [1, 0, 1]]))
+    new_model = model.change_uc(uc=np.array([[1, 2, 0], [0, 1, 3], [0, 0, 1]]))
+
+    res_uc = np.array([
+        [0, 1, 3],
+        [2, 4, 1],
+        [1, 2, 1]
+    ])
+    res_pos = np.array([
+        [0., 0., 0.],
+        [0.7, 0.9, 0.2],
+        [0.05, 0.35, 0.6]
+    ])
+    assert np.isclose(new_model.uc, res_uc).all()
+    assert np.isclose(new_model.pos, res_pos).all()
         
-    def test_uc_hamilton_unity(self):
-        self.createH(0.1, 0.2, uc=np.diag([1, 2, 3]))
-        new_model = self.model.change_uc(uc=np.identity(3))
+    #~ def test_uc_hamilton_unity(get_model):
+        #~ model = get_model(0.1, 0.2, uc=np.diag([1, 2, 3]))
+        #~ new_model = model.change_uc(uc=np.identity(3))
 
-        res = array([[ 1.0+0.j       ,  0.2+0.1618034j,  0.0+0.j       ],
-       [ 0.2-0.1618034j, -1.0+0.j       ,  0.0+0.j       ],
-       [ 0.0+0.j       ,  0.0+0.j       ,  0.0+0.j       ]])
-        self.assertFullAlmostEqual(res, new_model.hamilton([0.1, 0.4, 0.7]))
+        #~ res = array([[ 1.0+0.j       ,  0.2+0.1618034j,  0.0+0.j       ],
+       #~ [ 0.2-0.1618034j, -1.0+0.j       ,  0.0+0.j       ],
+       #~ [ 0.0+0.j       ,  0.0+0.j       ,  0.0+0.j       ]])
+        #~ assert np.isclose(res, new_model.hamilton([0.1, 0.4, 0.7]))
         
-    def test_uc_hamilton_1(self):
-        self.createH(0.1, 0.2, uc=np.diag([1, 2, 3]))
-        new_model = self.model.change_uc(uc=np.array([[1, 2, 0], [0, 1, 3], [0, 0, 1]]))
+    #~ def test_uc_hamilton_1(get_model):
+        #~ model = get_model(0.1, 0.2, uc=np.diag([1, 2, 3]))
+        #~ new_model = model.change_uc(uc=np.array([[1, 2, 0], [0, 1, 3], [0, 0, 1]]))
 
-        res = array([[ 1.44721360+0.j        ,  0.00877853-0.17298248j,  0.00000000+0.j        ],
-       [ 0.00877853+0.17298248j, -1.44721360+0.j        ,  0.00000000+0.j        ],
-       [ 0.00000000+0.j        ,  0.00000000+0.j        ,  0.00000000+0.j        ]])
-        self.assertFullAlmostEqual(res, new_model.hamilton([0.1, 0.4, 0.7]))
+        #~ res = array([[ 1.44721360+0.j        ,  0.00877853-0.17298248j,  0.00000000+0.j        ],
+       #~ [ 0.00877853+0.17298248j, -1.44721360+0.j        ,  0.00000000+0.j        ],
+       #~ [ 0.00000000+0.j        ,  0.00000000+0.j        ,  0.00000000+0.j        ]])
+        #~ assert np.isclose(res, new_model.hamilton([0.1, 0.4, 0.7]))
         
-    def test_uc_hamilton_2(self):
-        self.createH(0.1, 0.2, uc=np.array([[0, 1, 0], [2, 0, 1], [1, 0, 1]]))
-        new_model = self.model.change_uc(uc=np.array([[1, 2, 0], [0, 1, 3], [0, 0, 1]]))
+    #~ def test_uc_hamilton_2(get_model):
+        #~ model = get_model(0.1, 0.2, uc=np.array([[0, 1, 0], [2, 0, 1], [1, 0, 1]]))
+        #~ new_model = model.change_uc(uc=np.array([[1, 2, 0], [0, 1, 3], [0, 0, 1]]))
 
-        res = array([[ 1.44721360+0.j        ,  0.00877853-0.17298248j,  0.00000000+0.j        ],
-       [ 0.00877853+0.17298248j, -1.44721360+0.j        ,  0.00000000+0.j        ],
-       [ 0.00000000+0.j        ,  0.00000000+0.j        ,  0.00000000+0.j        ]])
-        self.assertFullAlmostEqual(res, new_model.hamilton([0.1, 0.4, 0.7]))
+        #~ res = array([[ 1.44721360+0.j        ,  0.00877853-0.17298248j,  0.00000000+0.j        ],
+       #~ [ 0.00877853+0.17298248j, -1.44721360+0.j        ,  0.00000000+0.j        ],
+       #~ [ 0.00000000+0.j        ,  0.00000000+0.j        ,  0.00000000+0.j        ]])
+        #~ assert np.isclose(res, new_model.hamilton([0.1, 0.4, 0.7]))
             
-    def test_error(self):
-        self.createH(0.1, 0.2, uc=np.identity(3))
-        self.assertRaises(ValueError, self.model.change_uc, uc=np.diag([2, 1, 1]))
+    #~ def test_error(get_model):
+        #~ model = get_model(0.1, 0.2, uc=np.identity(3))
+        #~ self.assertRaises(ValueError, model.change_uc, uc=np.diag([2, 1, 1]))
     
 
-if __name__ == "__main__":
-    unittest.main()
+#~ if __name__ == "__main__":
+    #~ unittest.main()
