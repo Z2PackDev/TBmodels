@@ -421,7 +421,7 @@ class Model(object):
 
         # check if the size of the hopping matrices match
         if self.size != model.size:
-            raise ValueError('Error when adding Models: the number of states ({0}, {1}) doesn\'t match'.format(len(self.size), len(model.size)))
+            raise ValueError('Error when adding Models: the number of states ({0}, {1}) doesn\'t match'.format(self.size, model.size))
 
         # check if the unit cells match
         uc_match = True
