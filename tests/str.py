@@ -6,7 +6,7 @@
 # File:    str.py
 
 from common import *
-from ptools.sparse_matrix import csr
+from tbmodels._ptools.sparse_matrix import csr
 
 import numpy as np
 
