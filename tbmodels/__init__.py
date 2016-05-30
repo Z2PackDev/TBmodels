@@ -14,7 +14,9 @@ from ._version import __version__
 from ._tb_model import Model
 from ._hop_list_model import HopListModel
 from ._hr_model import HrModel
+from ._builder import Builder
 
 from . import read_model
 
 from . import helpers
+from . import vectors

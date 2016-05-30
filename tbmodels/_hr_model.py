@@ -5,6 +5,8 @@
 # Date:    05.05.2015 12:04:36 CEST
 # File:    _hr_hamilton.py
 
+from __future__ import division
+
 import numpy as np
 
 from ._hop_list_model import HopListModel
