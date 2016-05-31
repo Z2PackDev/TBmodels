@@ -12,8 +12,9 @@ import numpy as np
 
 kpt = [(0.1, 0.2, 0.7), (-0.3, 0.5, 0.2), (0., 0., 0.), (0.1, -0.9, -0.7)]
 
-def test_hr(compare_data):
-    model = tbmodels.HrModel('./samples/hr_hamilton.dat', occ=28)
+@pytest.mark.parametrize('hr_file', ['./samples/hr_hamilton.dat', './samples/wannier90_hr.dat'])
+def test_hr(compare_data, hr_file):
+    model = tbmodels.HrModel(hr_file, occ=28)
     H_list = np.array([model.hamilton(k) for k in kpt])
 
     compare_data(lambda x, y: np.isclose(x, y).all(), H_list)
