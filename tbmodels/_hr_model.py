@@ -59,7 +59,7 @@ def _read_hr(file_handle):
             int(entry[3]) - 1,
             int(entry[4]) - 1,
             [int(x) for x in entry[:3]],
-            float(entry[5]) + 1j * float(entry[6]) / (deg_pts[i // num_wann_square])
+            (float(entry[5]) + 1j * float(entry[6])) / (deg_pts[i // num_wann_square])
         ]
 
     hop_list = (to_entry(line, i) for i, line in enumerate(file_handle))
