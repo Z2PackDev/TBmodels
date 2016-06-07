@@ -233,7 +233,7 @@ class Model(object):
 
         :returns:   list of eigenvalues
         """
-        return la.eigh(self.hamilton(k))[0]
+        return la.eigvalsh(self.hamilton(k))
 
     def to_hr(self):
         """
