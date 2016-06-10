@@ -20,6 +20,12 @@ def test_hr(compare_data, hr_file):
     compare_data(lambda x, y: np.isclose(x, y).all(), H_list)
         
 
+@pytest.mark.parametrize('hr_file', ['./samples/wannier90_inconsistent.dat', './samples/wannier90_inconsistent_v2.dat'])
+def test_inconsistent(hr_file):
+    with pytest.raises(ValueError):
+        model = tbmodels.HrModel(hr_file)
+
+
 def test_emptylines():
     """test whether the input file with some random empty lines is correctly parsed"""
     model1 = tbmodels.HrModel('./samples/wannier90_hr.dat')
