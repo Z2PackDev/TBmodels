@@ -62,6 +62,8 @@ def _read_hr(file_handle):
             (float(entry[5]) + 1j * float(entry[6])) / (deg_pts[i // num_wann_square])
         ]
 
-    hop_list = (to_entry(line, i) for i, line in enumerate(file_handle))
+    # skip random empty lines
+    lines_nonempty = (l for l in file_handle if l.strip())
+    hop_list = (to_entry(line, i) for i, line in enumerate(lines_nonempty))
 
     return num_wann, hop_list
