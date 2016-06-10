@@ -60,8 +60,13 @@ def _read_hr(file_handle):
         orbital_a = int(entry[3]) - 1
         orbital_b = int(entry[4]) - 1
         # test consistency of orbital numbers
-        if not (orbital_a == i % num_wann and orbital_b == (i % num_wann_square) // num_wann):
-            raise ValueError('Inconsistent orbital numbers in line number {}'.format(line_no + 1))
+        if not (
+            orbital_a == i % num_wann and 
+            orbital_b == (i % num_wann_square) // num_wann
+        ):
+            raise ValueError(
+                'Inconsistent orbital numbers in line number {}'.format(line_no + 1)
+            )
         return [
             orbital_a,
             orbital_b,
