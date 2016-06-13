@@ -19,4 +19,3 @@ from ._builder import Builder
 from . import read_model
 
 from . import helpers
-from . import vectors
