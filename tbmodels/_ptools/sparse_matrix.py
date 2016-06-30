@@ -12,6 +12,7 @@ class ArrayConvertible(object):
     def __array__(self):
         return self.toarray()
 
+    # Because transpose / conjugate return scipy sparse arrays.
     def transpose(self):
         return self.__class__(super(ArrayConvertible, self).transpose())
 
@@ -31,6 +32,7 @@ class csr(ArrayConvertible, sp.csr_matrix):
         return res
 
     # This is here because scipy throws NotImplementedError
+    # Is not needed for newer versions of scipy
     def __iadd__(self, other):
         return self + other
     
@@ -39,11 +41,3 @@ class coo(ArrayConvertible, sp.coo_matrix):
 
 class lil(ArrayConvertible, sp.lil_matrix):
     pass
-
-
-if __name__ == "__main__":
-    a = csr([[0, 1j], [0, 0]])
-    #~ print(a.conjugate())
-    print(np.array(a.conjugate()))
-    print(np.array(a.transpose()))
-    print("sparse_matrix.py")

@@ -43,3 +43,4 @@ venv*
 
 # pytest
 .cache
+tests/.coverage
