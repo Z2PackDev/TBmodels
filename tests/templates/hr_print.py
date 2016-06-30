@@ -15,11 +15,11 @@ class HrPrintTestCase(CommonTestCase):
         model = tbmodels.Model(on_site=[1, -1, 0], pos=[[0, 0, 0], [0.5, 0.5, 0], [0.75, 0.15, 0.6]], occ=1, uc=uc, dim=3)
 
         for phase, G in zip([1, -1j, 1j, -1], tbmodels.helpers.combine([0, -1], [0, -1], 0)):
-            model.add_hop(t1 * phase, 0, 1, G)
+            model.add_hopping(t1 * phase, 0, 1, G)
 
         for G in tbmodels.helpers.neighbours([0, 1], forward_only=True):
-            model.add_hop(t2, 0, 0, G)
-            model.add_hop(-t2, 1, 1, G)
+            model.add_hopping(t2, 0, 0, G)
+            model.add_hopping(-t2, 1, 1, G)
             
         self.model = model
         return self.model
