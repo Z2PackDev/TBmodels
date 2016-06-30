@@ -9,57 +9,54 @@ import pytest
 import numpy as np
 
 from models import get_model
+from parameters import T_VALUES, KPT
 
-t_values = [(t1, t2) for t1 in [-0.1, 0.2, 0.3] for t2 in [-0.2, 0.5]]
-
-kpt = [(0.1, 0.2, 0.7), (-0.3, 0.5, 0.2), (0., 0., 0.), (0.1, -0.9, -0.7)]
-
-@pytest.mark.parametrize('t1', t_values)
-@pytest.mark.parametrize('t2', t_values)
-@pytest.mark.parametrize('k', kpt)
+@pytest.mark.parametrize('t1', T_VALUES)
+@pytest.mark.parametrize('t2', T_VALUES)
+@pytest.mark.parametrize('k', KPT)
 def test_add(t1, t2, k, get_model, compare_equal):
     m1 = get_model(*t1)
     m2 = get_model(*t2)
     m3 = m1 + m2
     compare_equal(m3.hamilton(k))
 
-@pytest.mark.parametrize('t1', t_values)
-@pytest.mark.parametrize('t2', t_values)
-@pytest.mark.parametrize('k', kpt)
+@pytest.mark.parametrize('t1', T_VALUES)
+@pytest.mark.parametrize('t2', T_VALUES)
+@pytest.mark.parametrize('k', KPT)
 def test_sub(t1, t2, k, get_model, compare_equal):
     m1 = get_model(*t1)
     m2 = get_model(*t2)
     m3 = m1 - m2
     compare_equal(m3.hamilton(k))
     
-@pytest.mark.parametrize('t1', t_values)
-@pytest.mark.parametrize('t2', t_values)
-@pytest.mark.parametrize('k', kpt)
+@pytest.mark.parametrize('t1', T_VALUES)
+@pytest.mark.parametrize('t2', T_VALUES)
+@pytest.mark.parametrize('k', KPT)
 def test_sub_2(t1, t2, k, get_model, compare_equal):
     m1 = get_model(*t1)
     m2 = get_model(*t2)
     m3 = -m1 - m2
     compare_equal(m3.hamilton(k))
     
-@pytest.mark.parametrize('t', t_values)
+@pytest.mark.parametrize('t', T_VALUES)
 @pytest.mark.parametrize('c', np.linspace(-1, 1, 3))
-@pytest.mark.parametrize('k', kpt)
+@pytest.mark.parametrize('k', KPT)
 def test_mul(t, c, k, get_model, compare_equal):
     m = get_model(*t)
     m *= c
     compare_equal(m.hamilton(k))
     
-@pytest.mark.parametrize('t', t_values)
+@pytest.mark.parametrize('t', T_VALUES)
 @pytest.mark.parametrize('c', np.linspace(-1, 0.5, 3)) # should be non-zero
-@pytest.mark.parametrize('k', kpt)
+@pytest.mark.parametrize('k', KPT)
 def test_div(t, c, k, get_model, compare_equal):
     m = get_model(*t)
     m /= c
     compare_equal(m.hamilton(k))
     
-@pytest.mark.parametrize('t', t_values)
+@pytest.mark.parametrize('t', T_VALUES)
 @pytest.mark.parametrize('c', np.linspace(-1, 0.5, 3)) # should be non-zero
-@pytest.mark.parametrize('k', kpt)
+@pytest.mark.parametrize('k', KPT)
 def test_div_consistency(t, c, k, get_model, compare_equal):
     m = get_model(*t)
     m2 = m / c

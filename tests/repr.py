@@ -14,6 +14,8 @@ class ReprTestCase(SimpleModelTestCase):
     def test_print(self):
         self.createH(0.1, 0.2)
         
+        raise ValueError(str(self.model))
+        
         new_model = eval(repr(self.model))
 
         self.assertFullAlmostEqual(self.model.hamilton([0.1, 0.6, 0.9]), new_model.hamilton([0.1, 0.6, 0.9]))

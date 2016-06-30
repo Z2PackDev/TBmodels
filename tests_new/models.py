@@ -20,10 +20,10 @@ def get_model():
         model = tbmodels.Model(size=2, on_site=[1, -1], pos=pos, occ=1, uc=uc)
 
         for phase, R in zip([1, -1j, 1j, -1], tbmodels.helpers.combine([0, -1], [0, -1], 0)):
-            model.add_hop(t1 * phase, 0, 1, R)
+            model.add_hopping(t1 * phase, 0, 1, R)
 
         for R in tbmodels.helpers.neighbours([0, 1], forward_only=True):
-            model.add_hop(t2, 0, 0, R)
-            model.add_hop(-t2, 1, 1, R)
+            model.add_hopping(t2, 0, 0, R)
+            model.add_hopping(-t2, 1, 1, R)
         return model
     return inner
