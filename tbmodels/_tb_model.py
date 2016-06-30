@@ -430,7 +430,7 @@ class Model(object):
     #---- arithmetic operations ----#
     def __add__(self, model):
         """
-        TODO
+        Adds two models together by adding their hopping terms.
         """
         if not isinstance(model, Model):
             raise ValueError('Invalid argument type for Model.__add__: {}'.format(type(model)))
@@ -489,26 +489,26 @@ class Model(object):
 
     def __radd__(self, model):
         """
-        Addition is commutative.
+        Adds two models together by adding their hopping terms.
         """
         return self.__add__(model)
 
     def __sub__(self, model):
         """
-        TODO
+        Substracts one model from another by substracting all hopping terms.
         """
         return self + -model
 
     def __neg__(self):
         """
-        TODO
+        Changes the sign of all hopping terms.
         """
         return -1 * self
 
 
     def __mul__(self, x):
         """
-        Multiply hopping parameter strengths by a constant factor.
+        Multiplies hopping terms by x.
         """
         new_hop = dict()
         for R, hop_mat in self.hop.items():
@@ -524,19 +524,19 @@ class Model(object):
 
     def __rmul__(self, x):
         """
-        Multiplication with constant factors is commutative.
+        Multiplies hopping terms by x.
         """
         return self.__mul__(x)
 
     def __div__(self, x):
         """
-        Division by a constant factor.
+        Divides hopping terms by x.
         """
         return self * (1. / x)
 
     # for Python 3
     def __truediv__(self, x):
         """
-        Division by a constant factor.
+        Divides hopping terms by x.
         """
         return self.__div__(x)
