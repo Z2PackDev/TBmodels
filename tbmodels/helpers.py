@@ -60,32 +60,3 @@ def neighbours(axes, forward_only=True):
             res.append([-1 if(i == axis) else 0 for i in range(3)])
 
     return res
-
-
-def combine(x_vals, y_vals, z_vals):
-    """
-    Creates all possible combinations of the given values. ``z`` changes \
-    fastest, ``x`` slowest.
-
-    :param x_vals:      Possible values for ``x``
-    :type x_vals:       int or list(int)
-    :param y_vals:      Possible values for ``y``
-    :type y_vals:       int or list(int)
-    :param z_vals:      Possible values for ``z``
-    :type z_vals:       int or list(int)
-    """
-    res = []
-    try:
-        for x in x_vals:
-            res.extend(combine(x, y_vals, z_vals))
-    except TypeError:
-        try:
-            for y in y_vals:
-                res.extend(combine(x_vals, y, z_vals))
-        except TypeError:
-            try:
-                for z in z_vals:
-                    res.extend(combine(x_vals, y_vals, z))
-            except TypeError:
-                res.append([x_vals, y_vals, z_vals])
-    return res

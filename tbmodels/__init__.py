@@ -16,6 +16,4 @@ from ._hop_list_model import HopListModel
 from ._hr_model import HrModel
 from ._builder import Builder
 
-from . import read_model
-
 from . import helpers
