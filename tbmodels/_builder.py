@@ -7,7 +7,7 @@
 
 import numpy as np
 
-from ._hop_list_model import HopListModel
+from ._tb_model import Model
 
 class Builder(object):
     """
@@ -176,4 +176,4 @@ class Builder(object):
             count += num_orbitals_atom
         # use orbital_to_index to create hoppings with the correct (orbital) labels
         hop_total = [[orbital_to_index[idx0[0]][idx0[1]], orbital_to_index[idx1[0]][idx1[1]], G, t] for t, idx0, idx1, G in self._hoppings]
-        return HopListModel(len(orbitals_total), on_site=orbitals_total, hop_list=hop_total, pos=pos_total, occ=occ_total, add_cc=add_cc)
+        return Model.from_hopping_list(size=len(orbitals_total), on_site=orbitals_total, hop_list=hop_total, pos=pos_total, occ=occ_total, add_cc=add_cc)

@@ -19,7 +19,7 @@ def test_hr_print(t, get_model, compare_equal):
     compare_equal(model.to_hr().splitlines()[1:]) # timestamp in first line isn't equal
     
 def test_consistency():
-    model = tbmodels.HrModel('./samples/hr_hamilton.dat', occ=28)
+    model = tbmodels.Model.from_hr('./samples/hr_hamilton.dat', occ=28)
     lines_new = model.to_hr().split('\n')
     with open('./samples/hr_hamilton.dat', 'r') as f:
         lines_old = [line.rstrip(' \r\n') for line in f.readlines()]

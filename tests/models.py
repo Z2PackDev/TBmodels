@@ -5,6 +5,8 @@
 # Date:    15.10.2014 10:18:11 CEST
 # File:    common.py
 
+import itertools
+
 import pytest
 import tbmodels
 
@@ -19,7 +21,7 @@ def get_model():
                 p.extend([0] * (dim - 2))
         model = tbmodels.Model(size=2, on_site=[1, -1], pos=pos, occ=1, uc=uc)
 
-        for phase, R in zip([1, -1j, 1j, -1], tbmodels.helpers.combine([0, -1], [0, -1], 0)):
+        for phase, R in zip([1, -1j, 1j, -1], itertools.product([0, -1], [0, -1], [0])):
             model.add_hopping(t1 * phase, 0, 1, R)
 
         for R in tbmodels.helpers.neighbours([0, 1], forward_only=True):
