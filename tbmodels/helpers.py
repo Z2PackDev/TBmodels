@@ -33,30 +33,3 @@ def matrix_to_hoppings(mat, orbitals=None, G=(0, 0, 0), multiplier=1.):
         for j, x in enumerate(row):
             hop.append([orbitals[i], orbitals[j], np.array(G, dtype=int), multiplier * x])
     return hop
-
-
-def neighbours(axes, forward_only=True):
-    """
-    Adds vectors for every axis, either two (with +-1) or one (with +1, \
-    default) in that axis (0 on
-    the other coordinates).
-
-    :param axes:            Axes for which neighbours are to be added, \
-    either as different arguments or as a list
-    :type args:             int or list(int)
-    :param forward_only:    If True, adds only the neighbour in positive \
-    direction (+1) instead of both directions (+-1) ``Default: True``
-    :type forward_only:     Boolean
-    """
-    res = []
-    if isinstance(axes, int):
-        axes = [axes]
-
-    for axis in axes:
-        if not isinstance(axis, int):
-            raise TypeError('axis must be an int')
-        res.append([1 if(i == axis) else 0 for i in range(3)])
-        if not forward_only:
-            res.append([-1 if(i == axis) else 0 for i in range(3)])
-
-    return res
