@@ -22,3 +22,14 @@ def test_no_size_given(get_model, models_equal):
 def test_size_unknown(get_model):
     with pytest.raises(ValueError):
         get_model(0.1, 0.2, size=None, on_site=None)
+
+def test_add_on_site(get_model, models_equal):
+    model1 = get_model(0.1, 0.2, on_site=(1, -2))
+    model2 = get_model(0.1, 0.2, size=2, on_site=None)
+    model2.add_on_site((1, -2))
+    models_equal(model1, model2)
+    
+def test_invalid_add_on_site(get_model):
+    model = get_model(0.1, 0.2)
+    with pytest.raises(ValueError):
+        model.add_on_site((1, 2, 3))

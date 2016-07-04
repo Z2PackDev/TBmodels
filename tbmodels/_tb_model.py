@@ -422,11 +422,14 @@ class Model(object):
             mat[orbital_1, orbital_2] = overlap
         self.hop[R] += sp.csr(mat)
 
-    def add_on_site(self, energy, orbital):
+    def add_on_site(self, on_site):
         """
         TODO
         """
-        self.add_hop(energy / 2., orbital, orbital, self._zero_vec)
+        if self.size != len(on_site):
+            raise ValueError('The number of on-site energy terms should be {}, but is {}.'.format(self.size, len(on_site)))
+        for orbital, energy in enumerate(on_site):
+            self.add_hopping(energy / 2., orbital, orbital, self._zero_vec)
 
     #-------------------CREATING DERIVED MODELS-------------------------#
     #---- arithmetic operations ----#
