@@ -489,12 +489,6 @@ class Model(object):
             contains_cc=False,
         )
 
-    def __radd__(self, model):
-        """
-        Adds two models together by adding their hopping terms.
-        """
-        return self.__add__(model)
-
     def __sub__(self, model):
         """
         Substracts one model from another by substracting all hopping terms.

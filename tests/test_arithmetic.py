@@ -19,6 +19,7 @@ def test_add(t1, t2, k, get_model, compare_equal):
     m2 = get_model(*t2)
     m3 = m1 + m2
     compare_equal(m3.hamilton(k))
+    compare_equal(m3.eigenval(k), tag='eigenval')
 
 @pytest.mark.parametrize('t1', T_VALUES)
 @pytest.mark.parametrize('t2', T_VALUES)
@@ -28,6 +29,7 @@ def test_sub(t1, t2, k, get_model, compare_equal):
     m2 = get_model(*t2)
     m3 = m1 - m2
     compare_equal(m3.hamilton(k))
+    compare_equal(m3.eigenval(k), tag='eigenval')
     
 @pytest.mark.parametrize('t1', T_VALUES)
 @pytest.mark.parametrize('t2', T_VALUES)
@@ -37,6 +39,7 @@ def test_sub_2(t1, t2, k, get_model, compare_equal):
     m2 = get_model(*t2)
     m3 = -m1 - m2
     compare_equal(m3.hamilton(k))
+    compare_equal(m3.eigenval(k), tag='eigenval')
     
 @pytest.mark.parametrize('t', T_VALUES)
 @pytest.mark.parametrize('c', np.linspace(-1, 1, 3))
@@ -45,6 +48,7 @@ def test_mul(t, c, k, get_model, compare_equal):
     m = get_model(*t)
     m *= c
     compare_equal(m.hamilton(k))
+    compare_equal(m.eigenval(k), tag='eigenval')
     
 @pytest.mark.parametrize('t', T_VALUES)
 @pytest.mark.parametrize('c', np.linspace(-1, 0.5, 3)) # should be non-zero
@@ -53,6 +57,7 @@ def test_div(t, c, k, get_model, compare_equal):
     m = get_model(*t)
     m /= c
     compare_equal(m.hamilton(k))
+    compare_equal(m.eigenval(k), tag='eigenval')
     
 @pytest.mark.parametrize('t', T_VALUES)
 @pytest.mark.parametrize('c', np.linspace(-1, 0.5, 3)) # should be non-zero
@@ -62,3 +67,4 @@ def test_div_consistency(t, c, k, get_model, compare_equal):
     m2 = m / c
     m3 = m * (1. / c)
     assert np.isclose(m3.hamilton(k), m2.hamilton(k)).all()
+    assert np.isclose(m3.eigenval(k), m2.eigenval(k)).all()
