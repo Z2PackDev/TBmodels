@@ -59,13 +59,15 @@ class Model(object):
 
         # ---- CONSISTENCY CHECK FOR SIZE ----
         self._check_size_hop()
-        # ---- CONSISTENCY CHECK FOR DIM ----
 
         # ---- UNIT CELL ----
         self.uc = None if uc is None else np.array(uc) # implicit copy
 
         # ---- OCCUPATION NR ----
         self.occ = None if (occ is None) else int(occ)
+        
+        # ---- CONSISTENCY CHECK FOR DIM ----
+        self._check_dim()
 
     #---------------- INIT HELPER FUNCTIONS --------------------------------#
     def _init_size(self, size, on_site, hop):
@@ -207,7 +209,7 @@ class Model(object):
                 raise ValueError('The length of R = {0} does not match the dimensionality of the system ({1})'.format(key, self.dim))
         for p in self.pos:
             if len(p) != self.dim:
-                raise ValueError('The length of position r = {0} does not match the dimensionality of the system ({1})'.format(len(p), self.dim))
+                raise ValueError('The length of position r = {0} does not match the dimensionality of the system ({1})'.format(p, self.dim))
         if self.uc is not None:
             if self.uc.shape != (self.dim, self.dim):
                 raise ValueError('Inconsistend dimension of the unit cell: {0}, does not match the dimensionality of the system ({1})'.format(self.uc.shape, self.dim))

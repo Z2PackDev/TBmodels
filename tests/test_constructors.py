@@ -90,3 +90,11 @@ def test_non_hermitian_1():
 def test_non_hermitian_2():
     with pytest.raises(ValueError):
         model = tbmodels.Model(size=2, hop={(0, 0, 0): np.eye(2), (1, 0, 0): np.eye(2), (-1, 0, 0): 2 * np.eye(2)})
+        
+def test_wrong_key_length():
+    with pytest.raises(ValueError):
+        model = tbmodels.Model(size=2, hop={(0, 0, 0): np.eye(2), (1, 0, 0): np.eye(2), (-1, 0, 0, 0): np.eye(2)}, contains_cc=False)
+
+def test_wrong_pos_length():
+    with pytest.raises(ValueError):
+        model = tbmodels.Model(size=2, hop={(0, 0, 0): np.eye(2), (1, 0, 0): np.eye(2), (-1, 0, 0): np.eye(2)}, contains_cc=False, pos=((0.,) * 3, (0.5,) * 4))
