@@ -98,3 +98,8 @@ def test_wrong_key_length():
 def test_wrong_pos_length():
     with pytest.raises(ValueError):
         model = tbmodels.Model(size=2, hop={(0, 0, 0): np.eye(2), (1, 0, 0): np.eye(2), (-1, 0, 0): np.eye(2)}, contains_cc=False, pos=((0.,) * 3, (0.5,) * 4))
+
+def test_wrong_uc_shape():
+    with pytest.raises(ValueError):
+        model = tbmodels.Model(size=2, hop={(0, 0, 0): np.eye(2), (1, 0, 0): np.eye(2), (-1, 0, 0): np.eye(2)}, contains_cc=False, pos=((0.,) * 3, (0.5,) * 3), uc=np.array([[1, 2], [3, 4], [5, 6]]))
+    
