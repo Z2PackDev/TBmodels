@@ -241,11 +241,13 @@ class Model(object):
         return cls(size=size, hop=hop_dict, **kwargs)
         
     @classmethod
-    def from_hr(cls, hr_file, h_cutoff=None, **kwargs):
+    def from_hr(cls, hr_file, *, h_cutoff=None, **kwargs):
         with open(hr_file, 'r') as file_handle:
             num_wann, h_entries = cls._read_hr(file_handle)
-            if h_cutoff is not None:
-                h_entries = [hopping for hopping in h_entries if abs(hopping[3]) > h_cutoff]
+            if h_cutoff is None:
+                h_cutoff = 0
+            
+            h_entries = (hopping for hopping in h_entries if abs(hopping[3]) > h_cutoff)
 
             return cls.from_hopping_list(size=num_wann, hopping_list=h_entries, **kwargs)
 
