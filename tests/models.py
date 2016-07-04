@@ -6,20 +6,25 @@
 # File:    common.py
 
 import itertools
+from collections import ChainMap
 
 import pytest
 import tbmodels
 
 @pytest.fixture
 def get_model():
-    def inner(t1, t2, dim=3, uc=None, pos=None):
-        pos = [[0] * 2, [0.5] * 2]
+    def inner(t1, t2, dim=3, **kwargs):
+        defaults = {}
+        defaults['pos'] = [[0] * 2, [0.5] * 2]
         if dim < 2:
             raise ValueError('dimension must be at least 2')
         elif dim > 2:
-            for p in pos:
+            for p in defaults['pos']:
                 p.extend([0] * (dim - 2))
-        model = tbmodels.Model(size=2, on_site=[1, -1], pos=pos, occ=1, uc=uc)
+        defaults['occ'] = 1
+        defaults['on_site'] = (1, -1)
+        defaults['size'] = 2
+        model = tbmodels.Model(**ChainMap(kwargs, defaults))
 
         for phase, R in zip([1, -1j, 1j, -1], itertools.product([0, -1], [0, -1], [0])):
             model.add_hopping(t1 * phase, 0, 1, R)

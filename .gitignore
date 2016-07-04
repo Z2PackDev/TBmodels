@@ -43,4 +43,5 @@ venv*
 
 # pytest
 .cache
+htmlcov
 tests/.coverage

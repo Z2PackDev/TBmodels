@@ -108,3 +108,16 @@ def compare_data(request, test_name, scope="session"):
 @pytest.fixture
 def compare_equal(compare_data):
     return lambda data, tag=None: compare_data(lambda x, y: x == y, data, tag)
+    
+@pytest.fixture
+def models_equal():
+    def inner(model1, model2):
+        assert model1.size == model2.size
+        assert model1.dim == model2.dim
+        assert model1.uc == model2.uc
+        assert model1.occ == model2.occ
+        for k in model1.hop.keys() | model2.hop.keys():
+            assert (np.array(model1.hop[k]) == np.array(model2.hop[k])).all()
+        assert (model1.pos == model2.pos).all()
+    return inner
+
