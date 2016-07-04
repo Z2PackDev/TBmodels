@@ -9,6 +9,7 @@ import itertools
 
 import pytest
 import tbmodels
+import numpy as np
 
 from models import get_model
 
@@ -50,7 +51,7 @@ def test_pos_outside_uc(get_model, models_equal):
     model2 = get_model(0.1, 0.2)
     models_equal(model1, model2)
 
-def test_from_hopping_list(get_model, models_equal):
+def test_from_hop_list(get_model, models_equal):
     t1 = 0.1
     t2 = 0.2
     hoppings = []
@@ -60,7 +61,7 @@ def test_from_hopping_list(get_model, models_equal):
     for R in ((*r, 0) for r in itertools.permutations([0, 1])):
         hoppings.append([t2, 0, 0, R])
         hoppings.append([-t2, 1, 1, R])
-    model1 = tbmodels.Model.from_hopping_list(hopping_list=hoppings, contains_cc=False, on_site=(1, -1), occ=1, pos=((0.,) * 3, (0.5, 0.5, 0.)))
+    model1 = tbmodels.Model.from_hop_list(hop_list=hoppings, contains_cc=False, on_site=(1, -1), occ=1, pos=((0.,) * 3, (0.5, 0.5, 0.)))
     model2 = get_model(t1, t2)
     models_equal(model1, model2)
     
@@ -74,6 +75,18 @@ def test_pos_outside_uc_with_hoppings(get_model, models_equal):
     for R in ((*r, 0) for r in itertools.permutations([0, 1])):
         hoppings.append([t2, 0, 0, R])
         hoppings.append([-t2, 1, 1, R])
-    model1 = tbmodels.Model.from_hopping_list(hopping_list=hoppings, contains_cc=False, on_site=(1, -1), occ=1, pos=((0.,) * 3, (-0.5, -0.5, 0.)))
+    model1 = tbmodels.Model.from_hop_list(hop_list=hoppings, contains_cc=False, on_site=(1, -1), occ=1, pos=((0.,) * 3, (-0.5, -0.5, 0.)))
     model2 = get_model(t1, t2)
     models_equal(model1, model2)
+
+def test_invalid_hopping_matrix():
+    with pytest.raises(ValueError):
+        model = tbmodels.Model(size=2, hop={(0, 0, 0): np.eye(4)})
+        
+def test_non_hermitian_1():
+    with pytest.raises(ValueError):
+        model = tbmodels.Model(size=2, hop={(0, 0, 0): np.eye(2), (1, 0, 0): np.eye(2)})
+
+def test_non_hermitian_2():
+    with pytest.raises(ValueError):
+        model = tbmodels.Model(size=2, hop={(0, 0, 0): np.eye(2), (1, 0, 0): np.eye(2), (-1, 0, 0): 2 * np.eye(2)})

@@ -157,7 +157,10 @@ class Model(object):
         """
         # Consistency checks
         for R, hop_csr in hop.items():
-            if la.norm(hop_csr - hop[tuple(-x for x in R)].T.conjugate()) > cc_tol:
+            if la.norm(
+                hop_csr - 
+                hop.get(tuple(-x for x in R), np.zeros(hop_csr.shape)).T.conjugate()
+            ) > cc_tol:
                 raise ValueError('The provided hoppings do not correspond to a hermitian Hamiltonian. hoppings[-R] = hoppings[R].H is not fulfilled.')
 
         res = dict()
@@ -212,7 +215,7 @@ class Model(object):
     #----------------ALTERNATE CONSTRUCTORS---------------------------------#
 
     @classmethod
-    def from_hopping_list(cls, *, size=None, hopping_list=(), **kwargs):
+    def from_hop_list(cls, *, hop_list=(), size=None, **kwargs):
         if size is None:
             try:
                 size = len(kwargs['on_site'])
@@ -235,7 +238,7 @@ class Model(object):
 
         # create data, row_idx, col_idx for setting up the CSR matrices
         hop_list_dict = co.defaultdict(_hop)
-        for t, i, j, R in hopping_list:
+        for t, i, j, R in hop_list:
             R_vec = tuple(R)
             hop_list_dict[R_vec].append(t, i, j)
 
@@ -253,9 +256,9 @@ class Model(object):
             if h_cutoff is None:
                 h_cutoff = 0
             
-            h_entries = (hopping for hopping in h_entries if abs(hopping[0]) > h_cutoff)
+            h_entries = (hop for hop in h_entries if abs(hop[0]) > h_cutoff)
 
-            return cls.from_hopping_list(size=num_wann, hopping_list=h_entries, **kwargs)
+            return cls.from_hop_list(size=num_wann, hop_list=h_entries, **kwargs)
 
     @staticmethod
     def _read_hr(file_handle):
@@ -391,7 +394,7 @@ class Model(object):
         return ' '.join('tbmodels.Model(hop={1}, pos={0.pos!r}, uc={0.uc!r}, occ={0.occ}, contains_cc=False)'.format(self, dict(self.hop)).replace('\n', ' ').replace('array', 'np.array').split())
 
     #-------------------MODIFYING THE MODEL ----------------------------#
-    def add_hopping(self, overlap, orbital_1, orbital_2, R):
+    def add_hop(self, overlap, orbital_1, orbital_2, R):
         r"""
         Adds a hopping term of a given overlap between an orbital in the home unit cell (``orbital_1``) and another orbital (``orbital_2``) located in the unit cell pointed to by ``R``.
 
@@ -435,7 +438,7 @@ class Model(object):
         if self.size != len(on_site):
             raise ValueError('The number of on-site energy terms should be {}, but is {}.'.format(self.size, len(on_site)))
         for orbital, energy in enumerate(on_site):
-            self.add_hopping(energy / 2., orbital, orbital, self._zero_vec)
+            self.add_hop(energy / 2., orbital, orbital, self._zero_vec)
 
     #-------------------CREATING DERIVED MODELS-------------------------#
     #---- arithmetic operations ----#
