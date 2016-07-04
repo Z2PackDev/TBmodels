@@ -212,7 +212,13 @@ class Model(object):
     #----------------ALTERNATE CONSTRUCTORS---------------------------------#
 
     @classmethod
-    def from_hopping_list(cls, *, size, hopping_list=(), **kwargs):
+    def from_hopping_list(cls, *, size=None, hopping_list=(), **kwargs):
+        if size is None:
+            try:
+                size = len(kwargs['on_site'])
+            except KeyError:
+                raise ValueError('No on-site energies and no size given. The size of the system cannot be determined.')
+        
         class _hop(object):
             """
             POD for hoppings
