@@ -48,6 +48,9 @@ class Model(object):
         # ---- DIMENSION ----
         self._init_dim(dim=dim, hop=hop, pos=pos)
 
+        # ---- UNIT CELL ----
+        self.uc = None if uc is None else np.array(uc) # implicit copy
+
         # ---- HOPPING TERMS AND POSITIONS ----
         self._init_hop_pos(
             on_site=on_site,
@@ -59,15 +62,12 @@ class Model(object):
 
         # ---- CONSISTENCY CHECK FOR SIZE ----
         self._check_size_hop()
-
-        # ---- UNIT CELL ----
-        self.uc = None if uc is None else np.array(uc) # implicit copy
-
-        # ---- OCCUPATION NR ----
-        self.occ = None if (occ is None) else int(occ)
         
         # ---- CONSISTENCY CHECK FOR DIM ----
         self._check_dim()
+
+        # ---- OCCUPATION NR ----
+        self.occ = None if (occ is None) else int(occ)
 
     #---------------- INIT HELPER FUNCTIONS --------------------------------#
     def _init_size(self, size, on_site, hop):
@@ -103,14 +103,19 @@ class Model(object):
         Sets the hopping terms and positions, mapping the positions to the UC (and changing the hoppings accordingly) if necessary.
         """
         hop = {tuple(key): sp.csr(value, dtype=complex) for key, value in hop.items()}
+        
         # positions
         if pos is None:
             self.pos = [np.array(self._zero_vec) for _ in range(self.size)]
-        elif len(pos) == self.size:
+        elif len(pos) == self.size and all(len(p) == self.dim for p in pos):
             pos, hop = self._map_to_uc(pos, hop)
             self.pos = np.array(pos) # implicit copy
         else:
-            raise ValueError('invalid argument for "pos": must be either None or of the same length as the size of the system')
+            if len(pos) != self.size:
+                raise ValueError("Invalid argument for 'pos': The number of positions must be the same as the size (number of orbitals) of the system.")
+            else:
+                raise ValueError("Invalid argument for 'pos': The length of each position must be the same as the dimensionality of the system.")
+        
         if contains_cc:
             hop = self._reduce_hop(hop, cc_tol)
         else:
@@ -203,13 +208,10 @@ class Model(object):
                 raise ValueError('Hopping matrix of shape {0} found, should be ({1},{1}).'.format(h_mat.shape, self.size))
 
     def _check_dim(self):
-        """Consistency check for the dimension."""
+        """Consistency check for the dimension of the hoppings and unit cell. The position is checked in _init_hop_pos"""
         for key in self.hop.keys():
             if len(key) != self.dim:
                 raise ValueError('The length of R = {0} does not match the dimensionality of the system ({1})'.format(key, self.dim))
-        for p in self.pos:
-            if len(p) != self.dim:
-                raise ValueError('The length of position r = {0} does not match the dimensionality of the system ({1})'.format(p, self.dim))
         if self.uc is not None:
             if self.uc.shape != (self.dim, self.dim):
                 raise ValueError('Inconsistend dimension of the unit cell: {0}, does not match the dimensionality of the system ({1})'.format(self.uc.shape, self.dim))
@@ -475,7 +477,7 @@ class Model(object):
                         uc_match = False
                         break
         if not uc_match:
-            raise ValueError('Error when adding Models: unit cells don\'t match.\nModel 1: {0.pos}\nModel 2: {1.pos}'.format(self, model))
+            raise ValueError('Error when adding Models: unit cells don\'t match.\nModel 1:\n{0.uc}\n\nModel 2:\n{1.uc}'.format(self, model))
 
         # check if the positions match
         pos_match = True
@@ -488,7 +490,7 @@ class Model(object):
                     pos_match = False
                     break
         if not pos_match:
-            raise ValueError('Error when adding Models: positions don\'t match.\nModel 1: {0.pos}\nModel 2: {1.pos}'.format(self, model))
+            raise ValueError('Error when adding Models: positions don\'t match.\nModel 1:\n{0.pos}\n\nModel 2:\n{1.pos}'.format(self, model))
 
         # ---- MAIN PART ----
         new_hop = copy.deepcopy(self.hop)

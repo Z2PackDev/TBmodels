@@ -17,7 +17,7 @@ def test_consistency(get_model, models_equal):
     
     hoppings = []
     for k, v in model1.hop.items():
-        hoppings.extend(tbmodels.helpers.matrix_to_hop(np.array(v), G=k))
+        hoppings.extend(tbmodels.helpers.matrix_to_hop(np.array(v), R=k))
         
     model2 = tbmodels.Model.from_hop_list(size=2, hop_list=hoppings, contains_cc=False, occ=1, pos=((0.,) * 3, (0.5, 0.5, 0.)))
     models_equal(model1, model2)

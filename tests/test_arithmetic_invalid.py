@@ -6,6 +6,7 @@
 # File:    arithmetics.py
 
 import pytest
+import tbmodels
 import numpy as np
 
 from models import get_model
@@ -23,3 +24,33 @@ def test_add_invalid_occ(get_model, compare_equal):
     m2 = get_model(*T1, occ=2)
     with pytest.raises(ValueError):
         m3 = m1 + m2
+
+def test_add_invalid_uc(get_model, compare_equal):
+    m1 = get_model(*T1, uc=np.eye(3))
+    m2 = get_model(*T1, uc=2 * np.eye(3))
+    with pytest.raises(ValueError):
+        m1 + m2
+
+def test_add_invalid_uc_2(get_model, compare_equal):
+    m1 = get_model(*T1, uc=None)
+    m2 = get_model(*T1, uc=2 * np.eye(3))
+    with pytest.raises(ValueError):
+        m1 + m2
+
+def test_add_invalid_nstates(get_model, compare_equal):
+    m1 = tbmodels.Model.from_hop_list(size=3, dim=3)
+    m2 = tbmodels.Model.from_hop_list(size=4, dim=3)
+    with pytest.raises(ValueError):
+        m1 + m2
+
+def test_add_invalid_pos(get_model, compare_equal):
+    m1 = tbmodels.Model.from_hop_list(size=2, dim=2, pos=((0, 0), (0, 0)))
+    m2 = tbmodels.Model.from_hop_list(size=2, dim=2, pos=((0, 0), (0.5, 0.5)))
+    with pytest.raises(ValueError):
+        m1 + m2
+
+def test_add_invalid_pos_2(get_model, compare_equal):
+    m1 = tbmodels.Model.from_hop_list(size=2, dim=2, pos=((0, 0), (0, 0)))
+    m2 = tbmodels.Model.from_hop_list(size=2, dim=2, pos=((0.5, 0), (0.5, 0.5)))
+    with pytest.raises(ValueError):
+        m1 + m2
