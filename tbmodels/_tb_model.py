@@ -229,7 +229,7 @@ class Model(object):
 
         # create data, row_idx, col_idx for setting up the CSR matrices
         hop_list_dict = co.defaultdict(_hop)
-        for i, j, R, t in hopping_list:
+        for t, i, j, R in hopping_list:
             R_vec = tuple(R)
             hop_list_dict[R_vec].append(t, i, j)
 
@@ -247,7 +247,7 @@ class Model(object):
             if h_cutoff is None:
                 h_cutoff = 0
             
-            h_entries = (hopping for hopping in h_entries if abs(hopping[3]) > h_cutoff)
+            h_entries = (hopping for hopping in h_entries if abs(hopping[0]) > h_cutoff)
 
             return cls.from_hopping_list(size=num_wann, hopping_list=h_entries, **kwargs)
 
@@ -285,10 +285,10 @@ class Model(object):
                     'Inconsistent orbital numbers in line number {}'.format(line_no + 1)
                 )
             return [
+                (float(entry[5]) + 1j * float(entry[6])) / (deg_pts[i // num_wann_square]),
                 orbital_a,
                 orbital_b,
-                [int(x) for x in entry[:3]],
-                (float(entry[5]) + 1j * float(entry[6])) / (deg_pts[i // num_wann_square])
+                [int(x) for x in entry[:3]]
             ]
 
         # skip random empty lines
@@ -334,7 +334,7 @@ class Model(object):
         lines.append(tagline)
         lines.append('{0:>12}'.format(self.size))
         num_g = len(self.hop.keys()) * 2 - 1
-        if num_g == 0:
+        if num_g <= 0:
             raise ValueError('Cannot print empty model to hr format.')
         lines.append('{0:>12}'.format(num_g))
         tmp = ''

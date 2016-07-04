@@ -33,3 +33,8 @@ def test_consistency_no_hcutoff(hr_file):
     with open(hr_file, 'r') as f:
         lines_old = [line.rstrip(' \r\n') for line in f.readlines()]
     assert lines_new[1:] == lines_old[1:]
+
+def test_invalid_empty():
+    model = tbmodels.Model(size=2, dim=3)
+    with pytest.raises(ValueError):
+        model.to_hr()

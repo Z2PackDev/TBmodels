@@ -13,7 +13,8 @@ import tbmodels
 
 @pytest.fixture
 def get_model():
-    def inner(t1, t2, dim=3, **kwargs):
+    def inner(t1, t2, **kwargs):
+        dim = kwargs.get('dim', 3)
         defaults = {}
         defaults['pos'] = [[0] * 2, [0.5] * 2]
         if dim < 2:
@@ -24,6 +25,7 @@ def get_model():
         defaults['occ'] = 1
         defaults['on_site'] = (1, -1)
         defaults['size'] = 2
+        defaults['dim'] = None
         model = tbmodels.Model(**ChainMap(kwargs, defaults))
 
         for phase, R in zip([1, -1j, 1j, -1], itertools.product([0, -1], [0, -1], [0])):

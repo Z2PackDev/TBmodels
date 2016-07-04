@@ -23,9 +23,3 @@ def test_add_invalid_occ(get_model, compare_equal):
     m2 = get_model(*T1, occ=2)
     with pytest.raises(ValueError):
         m3 = m1 + m2
-
-#~ def test_add_invalid_size(get_model, compare_equal):
-    #~ m1 = get_model(*T1)
-    #~ m2 = get_model(*T1, size=4, pos=None, dim=2)
-    #~ with pytest.raises(ValueError):
-        #~ m3 = m1 + m2
