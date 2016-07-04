@@ -25,3 +25,11 @@ def test_consistency(hr_file):
     with open(hr_file, 'r') as f:
         lines_old = [line.rstrip(' \r\n') for line in f.readlines()]
     assert lines_new[1:] == lines_old[1:]
+
+@pytest.mark.parametrize('hr_file', ['./samples/hr_hamilton.dat', './samples/hr_hamilton_full.dat'])
+def test_consistency_no_hcutoff(hr_file):
+    model = tbmodels.Model.from_hr(hr_file, occ=28, h_cutoff=-1)
+    lines_new = model.to_hr().split('\n')
+    with open(hr_file, 'r') as f:
+        lines_old = [line.rstrip(' \r\n') for line in f.readlines()]
+    assert lines_new[1:] == lines_old[1:]
