@@ -16,9 +16,11 @@ import collections as co
 
 import numpy as np
 import scipy.linalg as la
+from fsc.export import export
 
 from ._ptools import sparse_matrix as sp
 
+@export
 class Model(object):
     r"""
 

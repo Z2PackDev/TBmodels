@@ -29,7 +29,7 @@ setup(
     author='Dominik Gresch',
     author_email='greschd@gmx.ch',
     description='Reading, creating and modifying tight-binding models.',
-    install_requires=['numpy', 'scipy'],
+    install_requires=['numpy', 'scipy', 'fsc.export'],
     long_description=readme,
     classifiers=[
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',

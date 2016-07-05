@@ -15,11 +15,13 @@ from functools import singledispatch
 from collections.abc import Iterable
 
 import numpy as np
+from fsc.export import export
 
 from ._ptools import sparse_matrix as sp
 
 from ._tb_model import Model
 
+@export
 def matrix_to_hop(mat, orbitals=None, R=(0, 0, 0), multiplier=1.):
     r"""
     Turns a square matrix into a series of hopping terms.
@@ -45,6 +47,7 @@ def matrix_to_hop(mat, orbitals=None, R=(0, 0, 0), multiplier=1.):
 
 #-------------------------------ENCODING--------------------------------#
 
+@export
 @singledispatch
 def encode(obj):
     """
@@ -94,25 +97,29 @@ def _encode_hoppings(hoppings):
 
 #-------------------------------DECODING--------------------------------#
 
-def decode_tb_model(obj):
+def _decode_tb_model(obj):
     del obj['__tb_model__']
     return Model(contains_cc=False, **obj)
     
-def decode_hoppings(obj):
+def _decode_hoppings(obj):
     return {
         tuple(R): sp.csr(tuple(mat), shape=shape)
         for R, mat, shape in obj['__hoppings__']
     }
     
-def decode_complex(obj):
+def _decode_complex(obj):
     return complex(obj['real'], obj['imag'])
 
+@export
 def decode(dct):
+    """
+    Decodes JSON / msgpack - compatible types into TBmodels types.
+    """
     with contextlib.suppress(AttributeError):
         dct = {k.decode('utf-8'): v for k, v in dct.items()}
     special_markers = [key for key in dct.keys() if key.startswith('__')]
     if len(special_markers) == 1:
         name = special_markers[0].strip('__')
-        return globals()['decode_' + name](dct)
+        return globals()['_decode_' + name](dct)
     else:
         return dct

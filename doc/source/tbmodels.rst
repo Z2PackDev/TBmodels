@@ -7,7 +7,6 @@ Documentation
     :maxdepth:  2
 
     model.rst
-    builder.rst
     helpers.rst
 
 
