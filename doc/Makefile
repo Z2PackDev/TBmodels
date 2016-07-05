@@ -54,8 +54,8 @@ help:
 	@echo "  coverage   to run coverage check of the documentation (if enabled)"
 
 clean:
-	rm -rf $(BUILDDIR)/*
-	rm -rf $(HTMLBUILDDIR)/*
+	rm -rf $(BUILDDIR)
+	rm -rf $(HTMLBUILDDIR)
 
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(HTMLBUILDDIR)
