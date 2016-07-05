@@ -628,15 +628,8 @@ class Model:
         """
         return self.__mul__(x)
 
-    def __div__(self, x):
-        """
-        Divides hopping terms by x.
-        """
-        return self * (1. / x)
-
-    # for Python 3
     def __truediv__(self, x):
         """
         Divides hopping terms by x.
         """
-        return self.__div__(x)
+        return self * (1. / x)
