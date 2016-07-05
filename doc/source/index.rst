@@ -17,17 +17,12 @@ consider citing it (not yet published).
 .. ~ TODO!
 
 
-News
-====
-
-
-Tutorial & Examples
-===================
+Tutorial
+========
 .. toctree::
     :maxdepth: 2
     
     tutorial.rst
-    examples.rst
 
 Documentation
 =============
@@ -35,11 +30,6 @@ Documentation
     :maxdepth: 2
 
     tbmodels.rst
-
-.. ~ .. toctree::
-.. ~     :hidden:
-.. ~ 
-.. ~     genindex </genindex.html>
 
 
 Getting in touch

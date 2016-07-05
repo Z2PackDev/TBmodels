@@ -1,4 +1,4 @@
-.. _tutorial_tb:
+.. _tutorial:
 
 Tight - Binding Calculations
 ============================
