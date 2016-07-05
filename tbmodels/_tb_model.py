@@ -21,7 +21,7 @@ from fsc.export import export
 from ._ptools import sparse_matrix as sp
 
 @export
-class Model(object):
+class Model:
     r"""
 
     :param hop:    Hopping matrices, as a dict containing the corresponding R as a key.
@@ -42,7 +42,19 @@ class Model(object):
     :param cc_tol:    Tolerance when the complex conjugate terms are checked for consistency.
     :type cc_tol:     float
     """
-    def __init__(self, on_site=None, hop=None, size=None, dim=None, occ=None, pos=None, uc=None, contains_cc=True, cc_tol=1e-12):
+    def __init__(
+        self, 
+        *, 
+        on_site=None,
+        hop=None,
+        size=None,
+        dim=None,
+        occ=None,
+        pos=None,
+        uc=None,
+        contains_cc=True, 
+        cc_tol=1e-12
+    ):
         if hop is None:
             hop = dict()
         # ---- SIZE ----
@@ -257,9 +269,19 @@ class Model(object):
         return cls(size=size, hop=hop_dict, **kwargs)
     
     @classmethod
-    def from_hr(cls, hr_string, *, h_cutoff=None, **kwargs):
+    def from_hr(cls, hr_string, *, h_cutoff=0., **kwargs):
         """
-        TODO
+        Create a :class:`.Model` instance from a string in Wannier90's ``hr.dat`` format.
+        
+        :param hr_string:   Input string
+        :type hr_string:    str
+        
+        :param h_cutoff:    Cutoff value for the hopping strength. Hoppings with a smaller absolute value are ignored.
+        :type h_cutoff:     float
+        
+        :param kwargs:      :class:`.Model` keyword arguments.
+        
+        .. warning :: When loading a :class:`.Model` from the ``hr.dat`` format, parameters such as the positions of the orbitals, unit cell shape and occupation number must be set explicitly.
         """
         return cls._from_hr_iterator(
             iter(hr_string.splitlines()),
@@ -269,18 +291,19 @@ class Model(object):
         
     
     @classmethod
-    def from_hr_file(cls, hr_file, *, h_cutoff=None, **kwargs):
+    def from_hr_file(cls, hr_file, *, h_cutoff=0., **kwargs):
+        """
+        Create a :class:`.Model` instance from a file in Wannier90's ``hr.dat`` format. The keyword arguments are the same as for :meth:`.from_hr`.
+        
+        :param hr_file:     Path of the input file.
+        :type hr_file:      str
+        """
         with open(hr_file, 'r') as file_handle:
-            """
-            TODO
-            """
             return cls._from_hr_iterator(file_handle, h_cutoff=h_cutoff, **kwargs)
 
     @classmethod
-    def _from_hr_iterator(cls, hr_iterator, *, h_cutoff=None, **kwargs):
+    def _from_hr_iterator(cls, hr_iterator, *, h_cutoff=0., **kwargs):
         num_wann, h_entries = cls._read_hr(hr_iterator)
-        if h_cutoff is None:
-            h_cutoff = 0
         
         h_entries = (hop for hop in h_entries if abs(hop[0]) > h_cutoff)
 
