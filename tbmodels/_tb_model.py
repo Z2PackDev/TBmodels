@@ -106,7 +106,7 @@ class Model(object):
         
         # positions
         if pos is None:
-            self.pos = [np.array(self._zero_vec) for _ in range(self.size)]
+            self.pos = np.zeros((self.size, self.dim))
         elif len(pos) == self.size and all(len(p) == self.dim for p in pos):
             pos, hop = self._map_to_uc(pos, hop)
             self.pos = np.array(pos) # implicit copy
@@ -401,6 +401,13 @@ class Model(object):
                 ))
 
         return '\n'.join(lines)
+        
+    def to_hr_file(self, hr_file):
+        """
+        Write to file.. 
+        """
+        with open(hr_file, 'w') as f:
+            f.write(self.to_hr())
 
     @staticmethod
     def _mat_to_hr(R, mat):
