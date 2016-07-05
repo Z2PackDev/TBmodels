@@ -34,7 +34,7 @@ def matrix_to_hop(mat, orbitals=None, R=(0, 0, 0), multiplier=1.):
     :param R:   Lattice vector for all the hopping terms.
     :type R:    list
 
-    :param multiplier:  Multiplicative constant for the hoppings strength.
+    :param multiplier:  Multiplicative constant for the hopping strength.
     :type multiplier: float / complex
     """
     if orbitals is None:
