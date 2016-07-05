@@ -5,6 +5,7 @@
 # Date:    02.06.2015 17:50:33 CEST
 # File:    _tb_model.py
 
+
 from __future__ import division, print_function
 
 import copy
@@ -22,25 +23,29 @@ from ._ptools import sparse_matrix as sp
 
 @export
 class Model:
-    r"""
+    """
+    A class describing a tight-binding model. It contains methods for modifying the model, evaluating the Hamiltonian or eigenvalues at specific k-points, and writing to and from different file formats.
 
-    :param hop:    Hopping matrices, as a dict containing the corresponding R as a key.
+    :param hop:    Hopping matrices, as a dict containing the corresponding lattice vector R as a key.
     :type hop:     dict
 
-    :param size:        Number of states. Defaults to the size of the hopping matrices, if those are given.
+    :param size:        Number of states. Defaults to the size of the hopping matrices, if such are given.
     :type size:         int
+
+    :param dim:         Dimension of the tight-binding model. By default, the dimension is guessed from the other parameters if possible.
+    :type dim:          int
 
     :param occ:         Number of occupied states.
     :type occ:          int
 
-    :param pos:         Positions of the atoms. Defaults to [0., 0., 0.]. Must be in the home UC.
-    :type pos:          list(array)
+    :param pos:         Positions of the orbitals, in reduced coordinates. By default, all orbitals are set to be at the origin, i.e. at [0., 0., 0.].
+    :type pos:          array
+    
+    :param uc:          Unit cell of the system. 
+    :type uc:           array
 
-    :param contains_cc: Whether the full overlaps are given, or only the reduced representation which does not contain the complex conjugate terms (and only half the zero-terms).
+    :param contains_cc: Specifies whether the hopping matrices and on-site energies are given fully (``contains_cc=True``), or only a reduced set, such that the complex conjugate should be added for each term to obtain the full model.
     :type contains_cc:  bool
-
-    :param cc_tol:    Tolerance when the complex conjugate terms are checked for consistency.
-    :type cc_tol:     float
     """
     def __init__(
         self, 
@@ -52,8 +57,7 @@ class Model:
         occ=None,
         pos=None,
         uc=None,
-        contains_cc=True, 
-        cc_tol=1e-12
+        contains_cc=True
     ):
         if hop is None:
             hop = dict()
@@ -71,8 +75,7 @@ class Model:
             on_site=on_site,
             hop=hop,
             pos=pos,
-            contains_cc=contains_cc,
-            cc_tol=cc_tol
+            contains_cc=contains_cc
         )
 
         # ---- CONSISTENCY CHECK FOR SIZE ----
@@ -113,7 +116,7 @@ class Model:
 
         self._zero_vec = tuple([0] * self.dim)
 
-    def _init_hop_pos(self, on_site, hop, pos, contains_cc, cc_tol):
+    def _init_hop_pos(self, on_site, hop, pos, contains_cc):
         """
         Sets the hopping terms and positions, mapping the positions to the UC (and changing the hoppings accordingly) if necessary.
         """
@@ -132,7 +135,7 @@ class Model:
                 raise ValueError("Invalid argument for 'pos': The length of each position must be the same as the dimensionality of the system.")
         
         if contains_cc:
-            hop = self._reduce_hop(hop, cc_tol)
+            hop = self._reduce_hop(hop)
         else:
             hop = self._map_hop_positive_R(hop)
         # use partial instead of lambda to allow for pickling
@@ -171,7 +174,7 @@ class Model:
         return new_pos, new_hop
 
     @staticmethod
-    def _reduce_hop(hop, cc_tol):
+    def _reduce_hop(hop):
         """
         Reduce the full hoppings representation (with cc) to the reduced one (without cc, zero-terms halved).
 
@@ -182,7 +185,7 @@ class Model:
             if la.norm(
                 hop_csr - 
                 hop.get(tuple(-x for x in R), np.zeros(hop_csr.shape)).T.conjugate()
-            ) > cc_tol:
+            ) > 1e-12:
                 raise ValueError('The provided hoppings do not correspond to a hermitian Hamiltonian. hoppings[-R] = hoppings[R].H is not fulfilled.')
 
         res = dict()
