@@ -335,6 +335,12 @@ class Model(object):
     def from_json(cls, json_string):
         from .helpers import decode
         return json.loads(json_string, object_hook=decode)
+        
+    @classmethod
+    def from_json_file(cls, json_file):
+        from .helpers import decode
+        with open(json_file, 'r') as f:
+            return json.load(f, object_hook=decode)
 
     #------------------SERIALIZATION TO DIFFERENT FORMATS---------------#
     
@@ -392,8 +398,20 @@ class Model(object):
             f.write(self.to_hr())
 
     def to_json(self):
+        """
+        TODO
+        """
         from .helpers import encode
         return json.dumps(self, default=encode)
+        
+    def to_json_file(self, json_file):
+        """
+        TODO
+        """
+        from .helpers import encode
+        with open(json_file, 'w') as f:
+            json.dump(self, f, default=encode)
+    
 
     @staticmethod
     def _mat_to_hr(R, mat):
