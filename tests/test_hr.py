@@ -14,7 +14,7 @@ kpt = [(0.1, 0.2, 0.7), (-0.3, 0.5, 0.2), (0., 0., 0.), (0.1, -0.9, -0.7)]
 
 @pytest.mark.parametrize('hr_file', ['./samples/hr_hamilton.dat', './samples/wannier90_hr.dat', './samples/wannier90_hr_v2.dat'])
 def test_hr(compare_data, hr_file):
-    model = tbmodels.Model.from_hr(hr_file, occ=28)
+    model = tbmodels.Model.from_hr_file(hr_file, occ=28)
     H_list = np.array([model.hamilton(k) for k in kpt])
 
     compare_data(lambda x, y: np.isclose(x, y).all(), H_list)
@@ -23,13 +23,13 @@ def test_hr(compare_data, hr_file):
 @pytest.mark.parametrize('hr_file', ['./samples/wannier90_inconsistent.dat', './samples/wannier90_inconsistent_v2.dat'])
 def test_inconsistent(hr_file):
     with pytest.raises(ValueError):
-        model = tbmodels.Model.from_hr(hr_file)
+        model = tbmodels.Model.from_hr_file(hr_file)
 
 
 def test_emptylines():
     """test whether the input file with some random empty lines is correctly parsed"""
-    model1 = tbmodels.Model.from_hr('./samples/wannier90_hr.dat')
-    model2 = tbmodels.Model.from_hr('./samples/wannier90_hr_v2.dat')
+    model1 = tbmodels.Model.from_hr_file('./samples/wannier90_hr.dat')
+    model2 = tbmodels.Model.from_hr_file('./samples/wannier90_hr_v2.dat')
     hop1 = model1.hop
     hop2 = model2.hop
     for k in hop1.keys() | hop2.keys():
@@ -37,4 +37,4 @@ def test_emptylines():
 
 def test_error():
     with pytest.raises(ValueError):
-        tbmodels.Model.from_hr('./samples/hr_hamilton.dat', occ=28, pos=[[1., 1., 1.]])
+        tbmodels.Model.from_hr_file('./samples/hr_hamilton.dat', occ=28, pos=[[1., 1., 1.]])

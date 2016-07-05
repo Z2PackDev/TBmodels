@@ -252,33 +252,53 @@ class Model(object):
             hop_dict[key] = sp.csr((val.data, (val.row_idx, val.col_idx)), dtype=complex, shape=(size, size))
 
         return cls(size=size, hop=hop_dict, **kwargs)
-        
+    
     @classmethod
-    def from_hr(cls, hr_file, *, h_cutoff=None, **kwargs):
+    def from_hr(cls, hr_string, *, h_cutoff=None, **kwargs):
+        """
+        TODO
+        """
+        return cls._from_hr_iterator(
+            iter(hr_string.splitlines()),
+            h_cutoff=h_cutoff,
+            **kwargs
+        )
+        
+    
+    @classmethod
+    def from_hr_file(cls, hr_file, *, h_cutoff=None, **kwargs):
         with open(hr_file, 'r') as file_handle:
-            num_wann, h_entries = cls._read_hr(file_handle)
-            if h_cutoff is None:
-                h_cutoff = 0
-            
-            h_entries = (hop for hop in h_entries if abs(hop[0]) > h_cutoff)
+            """
+            TODO
+            """
+            return cls._from_hr_iterator(file_handle, h_cutoff=h_cutoff, **kwargs)
 
-            return cls.from_hop_list(size=num_wann, hop_list=h_entries, **kwargs)
+    @classmethod
+    def _from_hr_iterator(cls, hr_iterator, *, h_cutoff=None, **kwargs):
+        num_wann, h_entries = cls._read_hr(hr_iterator)
+        if h_cutoff is None:
+            h_cutoff = 0
+        
+        h_entries = (hop for hop in h_entries if abs(hop[0]) > h_cutoff)
+
+        return cls.from_hop_list(size=num_wann, hop_list=h_entries, **kwargs)
+    
 
     @staticmethod
-    def _read_hr(file_handle):
+    def _read_hr(iterator):
         r"""
         read the number of wannier functions and the hopping entries
         from *hr.dat and converts them into the right format
         """
-        file_handle = enumerate(file_handle)
-        next(file_handle) # skip first line
-        num_wann = int(next(file_handle)[1])
-        nrpts = int(next(file_handle)[1])
+        iterator = enumerate(iterator)
+        next(iterator) # skip first line
+        num_wann = int(next(iterator)[1])
+        nrpts = int(next(iterator)[1])
 
         # get degeneracy points
         deg_pts = []
         # order in zip important because else the next data element is consumed
-        for _, (_, line) in zip(range(int(np.ceil(nrpts / 15))), file_handle):
+        for _, (_, line) in zip(range(int(np.ceil(nrpts / 15))), iterator):
             deg_pts.extend(int(x) for x in line.split())
         assert len(deg_pts) == nrpts
 
@@ -305,7 +325,7 @@ class Model(object):
             ]
 
         # skip random empty lines
-        lines_nonempty = (l for l in file_handle if l[1].strip())
+        lines_nonempty = (l for l in iterator if l[1].strip())
         hop_list = (to_entry(line, i) for i, line in enumerate(lines_nonempty))
 
         return num_wann, hop_list
@@ -341,6 +361,8 @@ class Model(object):
         Returns a string containing the model in Wannier90's ``*_hr.dat`` format.
 
         :returns: str
+        
+        .. warning :: ....
         """
         lines = []
         tagline = ' created by the TBModels package    ' + time.strftime('%a, %d %b %Y %H:%M:%S %Z')
