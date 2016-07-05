@@ -94,13 +94,6 @@ def _encode_hoppings(hoppings):
 
 #-------------------------------DECODING--------------------------------#
 
-@singledispatch
-def decode(obj):
-    """
-    Decodes JSON / msgpack objects into the corresponding TBmodels types.
-    """
-    return obj
-
 def decode_tb_model(obj):
     del obj['__tb_model__']
     return Model(contains_cc=False, **obj)
@@ -114,13 +107,12 @@ def decode_hoppings(obj):
 def decode_complex(obj):
     return complex(obj['real'], obj['imag'])
 
-@decode.register(dict)
 def decode(dct):
     with contextlib.suppress(AttributeError):
-        obj = {k.decode('utf-8'): v for k, v in obj.items()}
-    special_markers = [key for key in obj.keys() if key.startswith('__')]
+        dct = {k.decode('utf-8'): v for k, v in dct.items()}
+    special_markers = [key for key in dct.keys() if key.startswith('__')]
     if len(special_markers) == 1:
         name = special_markers[0].strip('__')
-        return globals()['decode_' + name](obj)
+        return globals()['decode_' + name](dct)
     else:
-        return obj
+        return dct
