@@ -1,7 +1,7 @@
 .. _tutorial:
 
-Tight - Binding Calculations
-============================
+Tutorial
+========
 
 Tutorial on the :mod:`z2pack.tb` submodule.
 

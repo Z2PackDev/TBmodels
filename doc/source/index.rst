@@ -29,7 +29,7 @@ Documentation
 .. toctree::
     :maxdepth: 2
 
-    tbmodels.rst
+    documentation.rst
 
 
 Getting in touch

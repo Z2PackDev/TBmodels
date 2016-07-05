@@ -6,7 +6,7 @@
 # File:    helpers.py
 
 """
-TODO
+This module contains a helper function to create a list of hoppings from a given matrix (:meth:`matrix_to_hop`), and functions for encoding / decoding to JSON - compatible datastructures (:meth:`encode`, :meth:`decode`).
 """
 
 import numbers
@@ -51,7 +51,21 @@ def matrix_to_hop(mat, orbitals=None, R=(0, 0, 0), multiplier=1.):
 @singledispatch
 def encode(obj):
     """
-    Encodes TBmodels types into JSON / msgpack - compatible types.
+    Encodes TBmodels types into JSON / msgpack - compatible types. This can be used for the ``default`` keyword with the builtin :py:func:`json.dump` and :py:func:`json.dumps`, or with the corresponding functions in :py:mod:`msgpack`.
+    
+    .. code::
+    
+        import json
+        import tbmodels
+        
+        model = ... # create a tbmodels.Model object
+        
+        with open('file.json', 'w') as f:
+            json.dump(model, f, default=tbmodels.helpers.encode)
+    
+    .. note ::
+        
+        It is recommended to use :meth:`.Model.to_json` or :meth:`.Model.to_json_file` unless the encode function is needed explicitly.
     """
     raise TypeError('cannot JSONify {} object {}'.format(type(obj), obj))
 
@@ -113,7 +127,19 @@ def _decode_complex(obj):
 @export
 def decode(dct):
     """
-    Decodes JSON / msgpack - compatible types into TBmodels types.
+    Decodes JSON / msgpack - compatible types into TBmodels types. This can be used for the ``object_hook`` keyword with the builtin :py:func:`json.load` and :py:func:`json.loads`, or with the corresponding functions in :py:mod:`msgpack`.
+    
+    .. code::
+    
+        import json
+        import tbmodels
+        
+        with open('file.json', 'r') as f:
+            json.load(f, object_hook=tbmodels.helpers.decode)
+    
+    .. note ::
+        
+        It is recommended to use :meth:`.Model.from_json` or :meth:`.Model.from_json_file` unless the decode function is needed explicitly.
     """
     with contextlib.suppress(AttributeError):
         dct = {k.decode('utf-8'): v for k, v in dct.items()}
