@@ -6,10 +6,19 @@
 # File:    helpers.py
 
 """
-Helper functions for creating tight-binding models.
+TODO
 """
 
+import numbers
+import contextlib
+from functools import singledispatch
+from collections.abc import Iterable
+
 import numpy as np
+
+from ._ptools import sparse_matrix as sp
+
+from ._tb_model import Model
 
 def matrix_to_hop(mat, orbitals=None, R=(0, 0, 0), multiplier=1.):
     r"""
@@ -33,3 +42,85 @@ def matrix_to_hop(mat, orbitals=None, R=(0, 0, 0), multiplier=1.):
         for j, x in enumerate(row):
             hop.append([multiplier * x, orbitals[i], orbitals[j], np.array(R, dtype=int)])
     return hop
+
+#-------------------------------ENCODING--------------------------------#
+
+@singledispatch
+def encode(obj):
+    """
+    Encodes TBmodels types into JSON / msgpack - compatible types.
+    """
+    raise TypeError('cannot JSONify {} object {}'.format(type(obj), obj))
+
+@encode.register(np.bool_)
+def _(obj):
+    return bool(obj)
+
+@encode.register(numbers.Integral)
+def _(obj):
+    return int(obj)
+
+@encode.register(numbers.Real)
+def _(obj):
+    return float(obj)
+    
+@encode.register(numbers.Complex)
+def _(obj):
+    return dict(__complex__=True, real=encode(obj.real), imag=encode(obj.imag))
+
+@encode.register(Iterable)
+def _(obj):
+    return list(obj)
+
+@encode.register(Model)
+def _(obj):
+    return dict(
+        __tb_model__=True,
+        uc=obj.uc,
+        occ=obj.occ,
+        size=obj.size,
+        dim=obj.dim,
+        pos=obj.pos,
+        hop=_encode_hoppings(obj.hop)
+    )
+
+def _encode_hoppings(hoppings):
+    return dict(
+        __hoppings__=[
+            (R, (mat.data, mat.indices, mat.indptr), mat.shape)
+            for R, mat in hoppings.items()
+        ]
+    )
+
+#-------------------------------DECODING--------------------------------#
+
+@singledispatch
+def decode(obj):
+    """
+    Decodes JSON / msgpack objects into the corresponding TBmodels types.
+    """
+    return obj
+
+def decode_tb_model(obj):
+    del obj['__tb_model__']
+    return Model(contains_cc=False, **obj)
+    
+def decode_hoppings(obj):
+    return {
+        tuple(R): sp.csr(tuple(mat), shape=shape)
+        for R, mat, shape in obj['__hoppings__']
+    }
+    
+def decode_complex(obj):
+    return complex(obj['real'], obj['imag'])
+
+@decode.register(dict)
+def decode(dct):
+    with contextlib.suppress(AttributeError):
+        obj = {k.decode('utf-8'): v for k, v in obj.items()}
+    special_markers = [key for key in obj.keys() if key.startswith('__')]
+    if len(special_markers) == 1:
+        name = special_markers[0].strip('__')
+        return globals()['decode_' + name](obj)
+    else:
+        return obj

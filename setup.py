@@ -12,8 +12,8 @@ except:
     from distutils.core import setup
 
 import sys
-if sys.version_info < (2, 5):
-    raise 'must use Python version 2.6 or higher, or 3.x'
+if sys.version_info < (3, 4):
+    raise 'must use Python version 3.4 or higher'
 
 readme = r"""TBModels is a tool for reading, creating and modifying tight-binding models.
 """
@@ -29,15 +29,15 @@ setup(
     author='Dominik Gresch',
     author_email='greschd@gmx.ch',
     description='Reading, creating and modifying tight-binding models.',
-    install_requires=['six', 'numpy', 'scipy', 'decorator'],
+    install_requires=['numpy', 'scipy'],
     long_description=readme,
     classifiers=[
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Natural Language :: English',
         'Operating System :: Unix',
-        'Programming Language :: Python :: 2.6',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
         'Intended Audience :: Science/Research',
         'Topic :: Scientific/Engineering :: Physics'
     ],

@@ -58,7 +58,7 @@ def test_from_hop_list(get_model, models_equal):
     for phase, R in zip([1, -1j, 1j, -1], itertools.product([0, -1], [0, -1], [0])):
         hoppings.append([t1 * phase, 0, 1, R])
 
-    for R in ((*r, 0) for r in itertools.permutations([0, 1])):
+    for R in ((r[0], r[1], 0) for r in itertools.permutations([0, 1])):
         hoppings.append([t2, 0, 0, R])
         hoppings.append([-t2, 1, 1, R])
     model1 = tbmodels.Model.from_hop_list(hop_list=hoppings, contains_cc=False, on_site=(1, -1), occ=1, pos=((0.,) * 3, (0.5, 0.5, 0.)))
@@ -72,7 +72,7 @@ def test_pos_outside_uc_with_hoppings(get_model, models_equal):
     for phase, R in zip([1, -1j, 1j, -1], [(1, 1, 0), (1, 0, 0), (0, 1, 0), (0, 0, 0)]):
         hoppings.append([t1 * phase, 0, 1, R])
 
-    for R in ((*r, 0) for r in itertools.permutations([0, 1])):
+    for R in ((r[0], r[1], 0) for r in itertools.permutations([0, 1])):
         hoppings.append([t2, 0, 0, R])
         hoppings.append([-t2, 1, 1, R])
     model1 = tbmodels.Model.from_hop_list(hop_list=hoppings, contains_cc=False, on_site=(1, -1), occ=1, pos=((0.,) * 3, (-0.5, -0.5, 0.)))

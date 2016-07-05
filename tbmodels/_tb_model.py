@@ -7,16 +7,17 @@
 
 from __future__ import division, print_function
 
-from ._ptools import sparse_matrix as sp
-
-import six
 import copy
+import json
 import time
 import warnings
 import functools
-import numpy as np
 import collections as co
+
+import numpy as np
 import scipy.linalg as la
+
+from ._ptools import sparse_matrix as sp
 
 class Model(object):
     r"""
@@ -79,7 +80,7 @@ class Model(object):
         elif on_site is not None:
             self.size = len(on_site)
         elif len(hop) != 0:
-            self.size = six.next(six.itervalues(hop)).shape[0]
+            self.size = next(iter(hop.values())).shape[0]
         else:
             raise ValueError('Empty hoppings dictionary supplied and no size given. Cannot determine the size of the system.')
 
@@ -329,33 +330,14 @@ class Model(object):
         hop_list = (to_entry(line, i) for i, line in enumerate(lines_nonempty))
 
         return num_wann, hop_list
+        
+    @classmethod
+    def from_json(cls, json_string):
+        from .helpers import decode
+        return json.loads(json_string, object_hook=decode)
 
-    #---------------- BASIC FUNCTIONALITY ----------------------------------#
-    def hamilton(self, k):
-        """
-        Creates the Hamiltonian matrix.
-
-        :param k:   k-point
-        :type k:    list
-
-        :returns:   2D numpy array
-        """
-        k = np.array(k)
-        H = sum(np.array(hop) * np.exp(2j * np.pi * np.dot(R, k)) for R, hop in self.hop.items())
-        H += H.conjugate().T
-        return np.array(H)
-
-    def eigenval(self, k):
-        """
-        Returns the eigenvalues at a given k point.
-
-        :param k:   k-point
-        :type k:    list
-
-        :returns:   list of eigenvalues
-        """
-        return la.eigvalsh(self.hamilton(k))
-
+    #------------------SERIALIZATION TO DIFFERENT FORMATS---------------#
+    
     def to_hr(self):
         """
         Returns a string containing the model in Wannier90's ``*_hr.dat`` format.
@@ -409,6 +391,10 @@ class Model(object):
         with open(hr_file, 'w') as f:
             f.write(self.to_hr())
 
+    def to_json(self):
+        from .helpers import encode
+        return json.dumps(self, default=encode)
+
     @staticmethod
     def _mat_to_hr(R, mat):
         """
@@ -425,6 +411,33 @@ class Model(object):
 
     def __repr__(self):
         return ' '.join('tbmodels.Model(hop={1}, pos={0.pos!r}, uc={0.uc!r}, occ={0.occ}, contains_cc=False)'.format(self, dict(self.hop)).replace('\n', ' ').replace('array', 'np.array').split())
+
+    #---------------- BASIC FUNCTIONALITY ----------------------------------#
+    def hamilton(self, k):
+        """
+        Creates the Hamiltonian matrix.
+
+        :param k:   k-point
+        :type k:    list
+
+        :returns:   2D numpy array
+        """
+        k = np.array(k)
+        H = sum(np.array(hop) * np.exp(2j * np.pi * np.dot(R, k)) for R, hop in self.hop.items())
+        H += H.conjugate().T
+        return np.array(H)
+
+    def eigenval(self, k):
+        """
+        Returns the eigenvalues at a given k point.
+
+        :param k:   k-point
+        :type k:    list
+
+        :returns:   list of eigenvalues
+        """
+        return la.eigvalsh(self.hamilton(k))
+
 
     #-------------------MODIFYING THE MODEL ----------------------------#
     def add_hop(self, overlap, orbital_1, orbital_2, R):
