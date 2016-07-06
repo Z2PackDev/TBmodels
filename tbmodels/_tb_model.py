@@ -135,7 +135,9 @@ class Model:
         """
         Sets the hopping terms and positions, mapping the positions to the UC (and changing the hoppings accordingly) if necessary.
         """
-        hop = {tuple(key): self._matrix_type(value, dtype=complex) for key, value in hop.items()}
+        # The double-constructor is needed to avoid a double-constructor in the sparse to-array
+        # but still allow for the dtype argument.
+        hop = {tuple(key): self._matrix_type(self._matrix_type(value), dtype=complex) for key, value in hop.items()}
         
         # positions
         if pos is None:
@@ -149,13 +151,14 @@ class Model:
             else:
                 raise ValueError("Invalid argument for 'pos': The length of each position must be the same as the dimensionality of the system.")
         
+        
         if contains_cc:
             hop = self._reduce_hop(hop)
         else:
             hop = self._map_hop_positive_R(hop)
         # use partial instead of lambda to allow for pickling
         self.hop = co.defaultdict(
-            functools.partial(self._to_matrix, (self.size, self.size), dtype=complex)
+            functools.partial(self._empty_matrix, self.size)
         )
         for R, h_mat in hop.items():
             self.hop[R] = self._matrix_type(h_mat)
@@ -577,8 +580,8 @@ class Model:
         for orbital, energy in enumerate(on_site):
             self.add_hop(energy / 2., orbital, orbital, self._zero_vec)
             
-    def _to_matrix(self, *args, **kwargs):
-        return self._matrix_type(*args, **kwargs)
+    def _empty_matrix(self, size):
+        return self._matrix_type(np.zeros((self.size, self.size), dtype=complex))
             
     def set_sparse(self, sparse=True):
         """

@@ -45,3 +45,5 @@ venv*
 .cache
 htmlcov
 tests/.coverage
+
+speed_test/data
