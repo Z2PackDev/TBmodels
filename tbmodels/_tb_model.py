@@ -244,6 +244,22 @@ class Model:
 
     @classmethod
     def from_hop_list(cls, *, hop_list=(), size=None, **kwargs):
+        """
+        Create a :class:`.Model` from a list of hopping terms. 
+        
+        
+        :param hop_list: List of hopping terms. Each hopping term has the form [t, orbital_1, orbital_2, R], where
+        
+            * ``t``: strength of the hopping
+            * ``orbital_1``: index of the first involved orbital
+            * ``orbital_2``: index of the second involved orbital
+            * ``R``: lattice vector of the unit cell containing the second orbital.
+            
+        :param size:    Number of states. Defaults to the length of the on-site energies given, if such are given.
+        :type size:     int
+        
+        :param kwargs:  :class:`.Model` keyword arguments.
+        """
         if size is None:
             try:
                 size = len(kwargs['on_site'])
