@@ -13,6 +13,7 @@ import json
 import time
 import warnings
 import functools
+import contextlib
 import collections as co
 
 import numpy as np
@@ -68,6 +69,9 @@ class Model:
     ):
         if hop is None:
             hop = dict()
+            
+        self.set_sparse(sparse)
+
         # ---- SIZE ----
         self._init_size(size=size, on_site=on_site, hop=hop)
 
@@ -131,7 +135,7 @@ class Model:
         """
         Sets the hopping terms and positions, mapping the positions to the UC (and changing the hoppings accordingly) if necessary.
         """
-        hop = {tuple(key): sp.csr(value, dtype=complex) for key, value in hop.items()}
+        hop = {tuple(key): self._matrix_type(value, dtype=complex) for key, value in hop.items()}
         
         # positions
         if pos is None:
@@ -151,15 +155,15 @@ class Model:
             hop = self._map_hop_positive_R(hop)
         # use partial instead of lambda to allow for pickling
         self.hop = co.defaultdict(
-            functools.partial(sp.csr, (self.size, self.size), dtype=complex)
+            functools.partial(self._to_matrix, (self.size, self.size), dtype=complex)
         )
         for R, h_mat in hop.items():
-            self.hop[R] = sp.csr(h_mat)
+            self.hop[R] = self._matrix_type(h_mat)
         # add on-site terms
         if on_site is not None:
             if len(on_site) != self.size:
                 raise ValueError('The number of on-site energies {0} does not match the size of the system {1}'.format(len(on_site), self.size))
-            self.hop[self._zero_vec] += 0.5 * sp.csr(np.diag(on_site))
+            self.hop[self._zero_vec] += 0.5 * self._matrix_type(np.diag(on_site))
 
     # helpers for _init_hop_pos
     def _map_to_uc(self, pos, hop):
@@ -181,7 +185,7 @@ class Model:
                     if t != 0:
                         R_new = tuple(np.array(R, dtype=int) + uc_offsets[i1] - uc_offsets[i0])
                         new_hop[R_new][i0][i1] += t
-        new_hop = {key: sp.csr(value) for key, value in new_hop.items()}
+        new_hop = {key: self._matrix_type(value) for key, value in new_hop.items()}
         return new_pos, new_hop
 
     @staticmethod
@@ -215,7 +219,7 @@ class Model:
         """
         Maps hoppings with a negative first non-zero index in R to their positive counterpart.
         """
-        new_hop = co.defaultdict(lambda: sp.csr((self.size, self.size), dtype=complex))
+        new_hop = co.defaultdict(lambda: self._matrix_type((self.size, self.size), dtype=complex))
         for R, hop_csr in hop.items():
             try:
                 if R[np.nonzero(R)[0][0]] > 0:
@@ -562,7 +566,7 @@ class Model:
         else:
             R = tuple(-x for x in R)
             mat[orbital_2, orbital_1] += overlap.conjugate()
-        self.hop[R] += sp.csr(mat)
+        self.hop[R] += self._matrix_type(mat)
 
     def add_on_site(self, on_site):
         """
@@ -573,30 +577,36 @@ class Model:
         for orbital, energy in enumerate(on_site):
             self.add_hop(energy / 2., orbital, orbital, self._zero_vec)
             
+    def _to_matrix(self, *args, **kwargs):
+        return self._matrix_type(*args, **kwargs)
+            
     def set_sparse(self, sparse=True):
         """
         Defines whether sparse or dense matrices should be used to represent the system.
         """
         # check if the right sparsity is alredy set
-        if sparse == self._sparse:
-            return
-
-        # change existing matrices
-        if sparse:
-            for k, v in self.hop.items():
-                self.hop[k] = sp.csr(v)
-        else:
-            for k, v in self.hop.items():
-                self.hop[k] = np.array(v)
+        # when using from __init__, self._sparse is not set
+        with contextlib.suppress(AttributeError):
+            if sparse == self._sparse:
+                return
         
-        # set new default in self.hop
-        if sparse:
-            self.hop.default_factory = functools.partial(sp.csr, (self.size, self.size), dtype=complex)
-        else:
-            self.hop.default_factory = functools.partial(np.array, (self.size, self.size), dtype=complex)
-        
-        # set flag
         self._sparse = sparse
+        if sparse:
+            self._matrix_type = sp.csr
+            self._array_cast = np.array
+        else:
+            self._matrix_type = np.array
+            self._array_cast = self._trivial_return
+            
+        # change existing matrices
+        with contextlib.suppress(AttributeError):
+            for k, v in self.hop.items():
+                self.hop[k] = self._matrix_type(v)
+        
+    # This is needed s.t. it is picklable.
+    @staticmethod
+    def _trivial_return(x):
+        return x
 
     #-------------------CREATING DERIVED MODELS-------------------------#
     #---- arithmetic operations ----#
