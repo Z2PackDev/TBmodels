@@ -117,7 +117,31 @@ def models_equal():
         assert np.array(model1.uc == model2.uc).all()
         assert model1.occ == model2.occ
         for k in model1.hop.keys() | model2.hop.keys():
+            print('k:', k)
+            print('model1:\n', np.array(model1.hop[k]))
+            print('model2:\n', np.array(model2.hop[k]))
             assert (np.array(model1.hop[k]) == np.array(model2.hop[k])).all()
         assert (model1.pos == model2.pos).all()
+    return inner
+    
+@pytest.fixture
+def models_close():
+    def inner(model1, model2):
+        assert model1.size == model2.size
+        assert model1.dim == model2.dim
+        if model1.uc is None:
+            assert model1.uc == model2.uc
+        else:
+            assert np.isclose(model1.uc, model2.uc).all()
+        assert model1.occ == model2.occ
+        for k in model1.hop.keys() | model2.hop.keys():
+            print('k:', k)
+            print('model1:\n', np.array(model1.hop[k]))
+            print('model2:\n', np.array(model2.hop[k]))
+            assert np.isclose(np.array(model1.hop[k]), np.array(model2.hop[k])).all()
+        if model1.pos is None:
+            assert model1.pos == model2.pos
+        else:
+            assert np.isclose(model1.pos, model2.pos).all()
     return inner
 

@@ -26,6 +26,9 @@ class Model:
     """
     A class describing a tight-binding model. It contains methods for modifying the model, evaluating the Hamiltonian or eigenvalues at specific k-points, and writing to and from different file formats.
 
+    :param on-site: On-site energy of the states. This is equivalent to having a hopping within the same state and the same unit cell (diagonal terms of the R=(0, 0, 0) hopping matrix). The length of the list must be the same as the number of states.
+    :type on-site:  list
+
     :param hop:    Hopping matrices, as a dict containing the corresponding lattice vector R as a key.
     :type hop:     dict
 
@@ -41,10 +44,10 @@ class Model:
     :param pos:         Positions of the orbitals, in reduced coordinates. By default, all orbitals are set to be at the origin, i.e. at [0., 0., 0.].
     :type pos:          array
     
-    :param uc:          Unit cell of the system. 
+    :param uc:          Unit cell of the system. The unit cell vectors are given as rows in a ``dim`` x ``dim`` array
     :type uc:           array
 
-    :param contains_cc: Specifies whether the hopping matrices and on-site energies are given fully (``contains_cc=True``), or only a reduced set, such that the complex conjugate should be added for each term to obtain the full model.
+    :param contains_cc: Specifies whether the hopping matrices and on-site energies are given fully (``contains_cc=True``), such that the complex conjugate should be added for each term to obtain the full model.
     :type contains_cc:  bool
     """
     def __init__(
@@ -213,7 +216,10 @@ class Model:
                     minus_R = tuple(-x for x in R)
                     new_hop[minus_R] += hop_csr.transpose().conjugate()
             except IndexError:
-                new_hop[R] += hop_csr
+                # make sure the zero term is also hermitian
+                # This only really needed s.t. the representation is unique. 
+                # The Hamiltonian is anyway made hermitian later.
+                new_hop[R] += 0.5 * hop_csr + 0.5 * hop_csr.conjugate().transpose()
         return new_hop
     # end helpers for _init_hop_pos
 
@@ -504,7 +510,7 @@ class Model:
         :param orbital_2:   Index of the second orbital.
         :type orbital_2:    int
 
-        :param R:           Lattice vector pointing to the unit cell where `orbital_2` lies.
+        :param R:           Lattice vector pointing to the unit cell where ``orbital_2`` lies.
         :type R:            list(int)
 
         .. warning::
@@ -513,14 +519,15 @@ class Model:
         """
         R = tuple(R)
         mat = np.zeros((self.size, self.size), dtype=complex)
-        try:
-            if R[np.nonzero(R)[0][0]] > 0:
-                mat[orbital_1, orbital_2] = overlap
-            else:
-                R = tuple(-x for x in R)
-                mat[orbital_2, orbital_1] = overlap.conjugate()
-        except IndexError:
-            mat[orbital_1, orbital_2] = overlap
+        nonzero_idx = np.nonzero(R)[0]
+        if len(nonzero_idx) == 0:
+            mat[orbital_1, orbital_2] += overlap / 2.
+            mat[orbital_2, orbital_1] += overlap.conjugate() / 2.
+        elif R[nonzero_idx[0]] > 0:
+            mat[orbital_1, orbital_2] += overlap
+        else:
+            R = tuple(-x for x in R)
+            mat[orbital_2, orbital_1] += overlap.conjugate()
         self.hop[R] += sp.csr(mat)
 
     def add_on_site(self, on_site):

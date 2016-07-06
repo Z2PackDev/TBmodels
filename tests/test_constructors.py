@@ -65,6 +65,25 @@ def test_from_hop_list(get_model, models_equal):
     model2 = get_model(t1, t2)
     models_equal(model1, model2)
     
+def test_from_hop_list_with_cc(get_model, models_close):
+    t1 = 0.1
+    t2 = 0.2
+    hoppings = []
+    for phase, R in zip([1, -1j, 1j, -1], itertools.product([0, -1], [0, -1], [0])):
+        hoppings.append([t1 * phase, 0, 1, R])
+
+    for phase, R in zip([1, -1j, 1j, -1], itertools.product([0, -1], [0, -1], [0])):
+        hoppings.append([np.conjugate(t1 * phase), 1, 0, tuple(-x for x in R)])
+
+    for R in ((r[0], r[1], 0) for r in itertools.permutations([0, 1])):
+        hoppings.append([t2, 0, 0, R])
+        hoppings.append([t2, 0, 0, tuple(-x for x in R)])
+        hoppings.append([-t2, 1, 1, R])
+        hoppings.append([-t2, 1, 1, tuple(-x for x in R)])
+    model1 = tbmodels.Model.from_hop_list(hop_list=hoppings, contains_cc=True, on_site=(1, -1), occ=1, pos=((0.,) * 3, (0.5, 0.5, 0.)))
+    model2 = get_model(t1, t2)
+    models_close(model1, model2)
+    
 def test_pos_outside_uc_with_hoppings(get_model, models_equal):
     t1 = 0.1
     t2 = 0.2
