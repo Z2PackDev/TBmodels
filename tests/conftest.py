@@ -18,66 +18,7 @@ except ImportError:
 import numpy as np
 
 import tbmodels
-
-#--------------------------ENCODING-------------------------------------#
-
-@singledispatch
-def encode(obj):
-    raise TypeError('cannot JSONify {} object {}'.format(type(obj), obj))
-
-@encode.register(bool)
-@encode.register(np.bool_)
-def _(obj):
-    return bool(obj)
-
-@encode.register(numbers.Integral)
-def _(obj):
-    return int(obj)
-
-@encode.register(numbers.Real)
-def _(obj):
-    return float(obj)
-    
-@encode.register(numbers.Complex)
-def _(obj):
-    return dict(__complex__=True, real=encode(obj.real), imag=encode(obj.imag))
-
-@encode.register(str)
-def _(obj):
-    return obj
-
-@encode.register(Iterable)
-def _(obj):
-    return list(obj)
-        
-#--------------------------DECODING-------------------------------------#
-
-@singledispatch
-def decode(obj):
-    return obj
-
-@decode.register(str)
-def _(obj):
-    return obj
-
-@decode.register(Iterable)
-def _(obj):
-    return [decode(x) for x in obj]
-
-def decode_complex(obj):
-    return complex(obj['real'], obj['imag'])
-
-
-@decode.register(dict)
-def _(obj):
-    with contextlib.suppress(AttributeError):
-        obj = {k.decode('utf-8'): v for k, v in obj.items()}
-    special_markers = [key for key in obj.keys() if key.startswith('__')]
-    if len(special_markers) == 1:
-        name = special_markers[0].strip('__')
-        return globals()['decode_' + name](obj)
-    else:
-        return obj
+from tbmodels.helpers import encode, decode
 
 #--------------------------FIXTURES-------------------------------------#
 
@@ -109,6 +50,7 @@ def compare_data(request, test_name, scope="session"):
 def compare_equal(compare_data):
     return lambda data, tag=None: compare_data(lambda x, y: x == y, data, tag)
     
+    
 @pytest.fixture
 def models_equal():
     def inner(model1, model2):
@@ -122,6 +64,7 @@ def models_equal():
             print('model2:\n', np.array(model2.hop[k]))
             assert (np.array(model1.hop[k]) == np.array(model2.hop[k])).all()
         assert (model1.pos == model2.pos).all()
+        return True
     return inner
     
 @pytest.fixture
@@ -143,5 +86,6 @@ def models_close():
             assert model1.pos == model2.pos
         else:
             assert np.isclose(model1.pos, model2.pos).all()
+        return True
     return inner
 
