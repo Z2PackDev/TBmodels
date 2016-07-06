@@ -47,7 +47,7 @@ class Model:
     :param uc:          Unit cell of the system. The unit cell vectors are given as rows in a ``dim`` x ``dim`` array
     :type uc:           array
 
-    :param contains_cc: Specifies whether the hopping matrices and on-site energies are given fully (``contains_cc=True``), such that the complex conjugate should be added for each term to obtain the full model.
+    :param contains_cc: Specifies whether the hopping matrices and on-site energies are given fully (``contains_cc=True``), such that the complex conjugate should be added for each term to obtain the full model. The on-site energies are not affected by this.
     :type contains_cc:  bool
     """
     def __init__(
