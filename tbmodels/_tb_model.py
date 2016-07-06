@@ -49,6 +49,9 @@ class Model:
 
     :param contains_cc: Specifies whether the hopping matrices and on-site energies are given fully (``contains_cc=True``), such that the complex conjugate should be added for each term to obtain the full model. The on-site energies are not affected by this.
     :type contains_cc:  bool
+    
+    :param sparse:      Specifies whether the hopping matrices should be saved in sparse or dense format.
+    :type sparse:       bool
     """
     def __init__(
         self, 
@@ -60,7 +63,8 @@ class Model:
         occ=None,
         pos=None,
         uc=None,
-        contains_cc=True
+        contains_cc=True,
+        sparse=True
     ):
         if hop is None:
             hop = dict()
@@ -89,6 +93,10 @@ class Model:
 
         # ---- OCCUPATION NR ----
         self.occ = None if (occ is None) else int(occ)
+
+        # ---- SPARSITY ----
+        self._sparse = True
+        self.set_sparse(sparse)
 
     #---------------- INIT HELPER FUNCTIONS --------------------------------#
     def _init_size(self, size, on_site, hop):
@@ -564,6 +572,31 @@ class Model:
             raise ValueError('The number of on-site energy terms should be {}, but is {}.'.format(self.size, len(on_site)))
         for orbital, energy in enumerate(on_site):
             self.add_hop(energy / 2., orbital, orbital, self._zero_vec)
+            
+    def set_sparse(self, sparse=True):
+        """
+        Defines whether sparse or dense matrices should be used to represent the system.
+        """
+        # check if the right sparsity is alredy set
+        if sparse == self._sparse:
+            return
+
+        # change existing matrices
+        if sparse:
+            for k, v in self.hop.items():
+                self.hop[k] = sp.csr(v)
+        else:
+            for k, v in self.hop.items():
+                self.hop[k] = np.array(v)
+        
+        # set new default in self.hop
+        if sparse:
+            self.hop.default_factory = functools.partial(sp.csr, (self.size, self.size), dtype=complex)
+        else:
+            self.hop.default_factory = functools.partial(np.array, (self.size, self.size), dtype=complex)
+        
+        # set flag
+        self._sparse = sparse
 
     #-------------------CREATING DERIVED MODELS-------------------------#
     #---- arithmetic operations ----#
