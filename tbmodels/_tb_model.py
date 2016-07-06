@@ -383,11 +383,17 @@ class Model:
         
     @classmethod
     def from_json(cls, json_string):
+        """
+        TODO
+        """
         from .helpers import decode
         return json.loads(json_string, object_hook=decode)
         
     @classmethod
     def from_json_file(cls, json_file):
+        """
+        TODO
+        """
         from .helpers import decode
         with open(json_file, 'r') as f:
             return json.load(f, object_hook=decode)
@@ -396,6 +402,7 @@ class Model:
     
     def to_hr(self):
         """
+        TODO
         Returns a string containing the model in Wannier90's ``*_hr.dat`` format.
 
         :returns: str
@@ -442,6 +449,7 @@ class Model:
         
     def to_hr_file(self, hr_file):
         """
+        TODO
         Write to file.. 
         """
         with open(hr_file, 'w') as f:
@@ -483,6 +491,7 @@ class Model:
     #---------------- BASIC FUNCTIONALITY ----------------------------------#
     def hamilton(self, k):
         """
+        TODO
         Creates the Hamiltonian matrix.
 
         :param k:   k-point
@@ -497,6 +506,7 @@ class Model:
 
     def eigenval(self, k):
         """
+        TODO
         Returns the eigenvalues at a given k point.
 
         :param k:   k-point
