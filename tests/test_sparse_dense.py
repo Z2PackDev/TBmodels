@@ -13,12 +13,18 @@ from models import get_model
 from parameters import T_VALUES, KPT
 
 @pytest.mark.parametrize('t1', T_VALUES)
-@pytest.mark.parametrize('k', KPT)
-def test_simple(t1, get_model, k):
-    m1 = get_model(*t1, sparse=True)
-    m2 = get_model(*t1, sparse=False)
+def test_simple(t1, get_model):
+    model1 = get_model(*t1, sparse=True)
+    model2 = get_model(*t1, sparse=False)
+
+    for k in KPT:
+        assert np.isclose(model1.hamilton(k), model2.hamilton(k)).all()
     
-    assert np.isclose(m1.hamilton(k), m2.hamilton(k)).all()
+
+@pytest.mark.parametrize('hr_file', ['./samples/hr_hamilton.dat', './samples/wannier90_hr.dat', './samples/wannier90_hr_v2.dat'])
+def test_hr(hr_file):
+    model1 = tbmodels.Model.from_hr_file(hr_file, occ=28, sparse=False)
+    model2 = tbmodels.Model.from_hr_file(hr_file, occ=28, sparse=True)
     
-    #~ compare_equal(m.hamilton(k), tag='hamilton')
-    #~ compare_equal(m.eigenval(k), tag='eigenval')
+    for k in KPT:
+        assert np.isclose(model1.hamilton(k), model2.hamilton(k)).all()
