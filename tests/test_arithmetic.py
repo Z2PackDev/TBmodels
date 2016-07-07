@@ -20,6 +20,10 @@ def test_add(t1, t2, k, get_model, compare_equal):
     m3 = m1 + m2
     compare_equal(m3.hamilton(k))
     compare_equal(m3.eigenval(k), tag='eigenval')
+    m4 = get_model(*t1, sparse=False)
+    m5 = get_model(*t2, sparse=False)
+    m6 = m4 + m5
+    assert np.isclose(m3.hamilton(k), m6.hamilton(k)).all()
 
 @pytest.mark.parametrize('t1', T_VALUES)
 @pytest.mark.parametrize('t2', T_VALUES)

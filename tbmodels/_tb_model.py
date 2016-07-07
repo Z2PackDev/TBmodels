@@ -51,7 +51,7 @@ class Model:
     :param contains_cc: Specifies whether the hopping matrices and on-site energies are given fully (``contains_cc=True``), such that the complex conjugate should be added for each term to obtain the full model. The on-site energies are not affected by this.
     :type contains_cc:  bool
     
-    :param sparse:      Specifies whether the hopping matrices should be saved in sparse or dense format.
+    :param sparse:      Specifies whether the hopping matrices should be saved in sparse format.
     :type sparse:       bool
     """
     def __init__(
@@ -157,9 +157,7 @@ class Model:
         else:
             hop = self._map_hop_positive_R(hop)
         # use partial instead of lambda to allow for pickling
-        self.hop = co.defaultdict(
-            functools.partial(self._empty_matrix, self.size)
-        )
+        self.hop = co.defaultdict(self._empty_matrix)
         for R, h_mat in hop.items():
             self.hop[R] = self._matrix_type(h_mat)
         # add on-site terms
@@ -199,42 +197,42 @@ class Model:
         hop is in CSR format
         """
         # Consistency checks
-        for R, hop_csr in hop.items():
+        for R, mat in hop.items():
             if la.norm(
-                hop_csr - 
-                hop.get(tuple(-x for x in R), np.zeros(hop_csr.shape)).T.conjugate()
+                mat - 
+                hop.get(tuple(-x for x in R), np.zeros(mat.shape)).T.conjugate()
             ) > 1e-12:
                 raise ValueError('The provided hoppings do not correspond to a hermitian Hamiltonian. hoppings[-R] = hoppings[R].H is not fulfilled.')
 
         res = dict()
-        for R, hop_csr in hop.items():
+        for R, mat in hop.items():
             try:
                 if R[np.nonzero(R)[0][0]] > 0:
-                    res[R] = hop_csr
+                    res[R] = mat
                 else:
                     continue
             # zero case
             except IndexError:
-                res[R] = 0.5 * hop_csr
+                res[R] = 0.5 * mat
         return res
 
     def _map_hop_positive_R(self, hop):
         """
         Maps hoppings with a negative first non-zero index in R to their positive counterpart.
         """
-        new_hop = co.defaultdict(lambda: self._matrix_type((self.size, self.size), dtype=complex))
-        for R, hop_csr in hop.items():
+        new_hop = co.defaultdict(self._empty_matrix)
+        for R, mat in hop.items():
             try:
                 if R[np.nonzero(R)[0][0]] > 0:
-                    new_hop[R] += hop_csr
+                    new_hop[R] += mat
                 else:
                     minus_R = tuple(-x for x in R)
-                    new_hop[minus_R] += hop_csr.transpose().conjugate()
+                    new_hop[minus_R] += mat.transpose().conjugate()
             except IndexError:
                 # make sure the zero term is also hermitian
                 # This only really needed s.t. the representation is unique. 
                 # The Hamiltonian is anyway made hermitian later.
-                new_hop[R] += 0.5 * hop_csr + 0.5 * hop_csr.conjugate().transpose()
+                new_hop[R] += 0.5 * mat + 0.5 * mat.conjugate().transpose()
         return new_hop
     # end helpers for _init_hop_pos
 
@@ -580,7 +578,7 @@ class Model:
         for orbital, energy in enumerate(on_site):
             self.add_hop(energy / 2., orbital, orbital, self._zero_vec)
             
-    def _empty_matrix(self, size):
+    def _empty_matrix(self):
         return self._matrix_type(np.zeros((self.size, self.size), dtype=complex))
             
     def set_sparse(self, sparse=True):
@@ -670,6 +668,7 @@ class Model:
             occ=self.occ,
             uc=self.uc,
             contains_cc=False,
+            sparse=self._sparse
         )
 
     def __sub__(self, model):
@@ -699,6 +698,7 @@ class Model:
             occ=self.occ,
             uc=self.uc,
             contains_cc=False,
+            sparse=self._sparse
         )
 
     def __rmul__(self, x):
