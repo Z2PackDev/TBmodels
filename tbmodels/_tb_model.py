@@ -193,8 +193,6 @@ class Model:
     def _reduce_hop(hop):
         """
         Reduce the full hoppings representation (with cc) to the reduced one (without cc, zero-terms halved).
-
-        hop is in CSR format
         """
         # Consistency checks
         for R, mat in hop.items():
@@ -395,9 +393,12 @@ class Model:
         return num_wann, hop_list
         
     @classmethod
-    def from_json(cls, json_string):
+    def from_json(cls, json_string, **kwargs):
         """
-        TODO
+        Create a ``Model`` instance from a string which contains a JSON - serialized model.
+        
+        :param json_string: Input string
+        :type json_string:  str        
         """
         from .helpers import decode
         return json.loads(json_string, object_hook=decode)
@@ -405,7 +406,10 @@ class Model:
     @classmethod
     def from_json_file(cls, json_file):
         """
-        TODO
+        Create a ``Model`` instance containing a JSON - serialized model. 
+        
+        :param json_file:   Path of the input file
+        :type json_file:    str
         """
         from .helpers import decode
         with open(json_file, 'r') as f:
@@ -415,12 +419,13 @@ class Model:
     
     def to_hr(self):
         """
-        TODO
         Returns a string containing the model in Wannier90's ``*_hr.dat`` format.
 
         :returns: str
         
-        .. warning :: ....
+        .. note :: The ``*_hr.dat`` format does not contain information about the position of the atoms or the shape of the unit cell. Consequently, this information is lost when saving the model in this format.
+        
+        .. warning :: The ``*_hr.dat`` format does not preserve the full precision of the hopping strengths. This could lead to numerical errors.
         """
         lines = []
         tagline = ' created by the TBModels package    ' + time.strftime('%a, %d %b %Y %H:%M:%S %Z')
@@ -462,22 +467,33 @@ class Model:
         
     def to_hr_file(self, hr_file):
         """
-        TODO
-        Write to file.. 
+        Writes to a file, using Wannier90's ``*_hr.dat`` format.
+        
+        :param hr_file:     Path of the output file
+        :type hr_file:      str
+        
+        .. note :: The ``*_hr.dat`` format does not contain information about the position of the atoms or the shape of the unit cell. Consequently, this information is lost when saving the model in this format.
+        
+        .. warning :: The ``*_hr.dat`` format does not preserve the full precision of the hopping strengths. This could lead to numerical errors.
         """
         with open(hr_file, 'w') as f:
             f.write(self.to_hr())
 
     def to_json(self):
         """
-        TODO
+        Serializes the model instance to a string in JSON format.
+    
+        :returns:   str
         """
         from .helpers import encode
         return json.dumps(self, default=encode)
         
     def to_json_file(self, json_file):
         """
-        TODO
+        Saves the model instance to a file, using a JSON format.
+        
+        :param json_file:   Path to the output file.
+        :type json_file:    str
         """
         from .helpers import encode
         with open(json_file, 'w') as f:
@@ -504,8 +520,7 @@ class Model:
     #---------------- BASIC FUNCTIONALITY ----------------------------------#
     def hamilton(self, k):
         """
-        TODO
-        Creates the Hamiltonian matrix.
+        Creates the Hamilton matrix for a given k-point, using Convention II (see explanation in `the PythTB documentation  <http://www.physics.rutgers.edu/pythtb/_downloads/pythtb-formalism.pdf>`_ )
 
         :param k:   k-point
         :type k:    list
@@ -519,13 +534,12 @@ class Model:
 
     def eigenval(self, k):
         """
-        TODO
-        Returns the eigenvalues at a given k point.
+        Returns the eigenvalues at a given k point, using Convention II (see explanation in `the PythTB documentation  <http://www.physics.rutgers.edu/pythtb/_downloads/pythtb-formalism.pdf>`_ )
 
         :param k:   k-point
         :type k:    list
 
-        :returns:   list of eigenvalues
+        :returns:   array of eigenvalues
         """
         return la.eigvalsh(self.hamilton(k))
 
@@ -571,7 +585,10 @@ class Model:
 
     def add_on_site(self, on_site):
         """
-        TODO
+        Adds on-site energy to the orbitals. This adds to the existing on-site energy, and does not erase it.
+        
+        :param on_site:     On-site energies. This must be a sequence of real numbers, of the same length as the number of orbitals
+        :type on_site:      collections.abc.Sequence(numbers.Real)  
         """
         if self.size != len(on_site):
             raise ValueError('The number of on-site energy terms should be {}, but is {}.'.format(self.size, len(on_site)))
@@ -583,7 +600,10 @@ class Model:
             
     def set_sparse(self, sparse=True):
         """
-        Defines whether sparse or dense matrices should be used to represent the system.
+        Defines whether sparse or dense matrices should be used to represent the system, and changes the system accordingly if needed.
+        
+        :param sparse:  Flag to determine whether the system is set to be sparse (``True``) or dense (``False``).
+        :type sparse:   bool
         """
         # check if the right sparsity is alredy set
         # when using from __init__, self._sparse is not set
