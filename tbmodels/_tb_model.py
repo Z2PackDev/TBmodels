@@ -625,7 +625,7 @@ class Model:
     # If Python 3.4 support is dropped this could be made more straightforwardly
     # However, for now the default pickle protocol (and thus multiprocessing)
     # does not support that.
-    def _array_cast(x):
+    def _array_cast(self, x):
         """Casts a matrix type to a numpy array."""
         if self._sparse:
             return np.array(x)
