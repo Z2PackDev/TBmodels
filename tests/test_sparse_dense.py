@@ -19,7 +19,20 @@ def test_simple(t1, get_model):
 
     for k in KPT:
         assert np.isclose(model1.hamilton(k), model2.hamilton(k)).all()
+
+@pytest.mark.parametrize('t1', T_VALUES)
+def test_change_to_dense(t1, get_model, models_close):
+    model1 = get_model(*t1, sparse=True)
+    model2 = get_model(*t1, sparse=False)
+    model1.set_sparse(False)
+    assert models_close(model1, model2)
     
+@pytest.mark.parametrize('t1', T_VALUES)
+def test_change_to_sparse(t1, get_model, models_close):
+    model1 = get_model(*t1, sparse=True)
+    model2 = get_model(*t1, sparse=False)
+    model2.set_sparse(True)
+    assert models_close(model1, model2)
 
 @pytest.mark.parametrize('hr_file', ['./samples/hr_hamilton.dat', './samples/wannier90_hr.dat', './samples/wannier90_hr_v2.dat'])
 def test_hr(hr_file):
