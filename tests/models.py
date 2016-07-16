@@ -11,8 +11,8 @@ from collections import ChainMap
 import pytest
 import tbmodels
 
-@pytest.fixture
-def get_model():
+@pytest.fixture(params=[True, False]) # params is for sparse / dense
+def get_model(request):
     def inner(t1, t2, **kwargs):
         dim = kwargs.get('dim', 3)
         defaults = {}
@@ -26,6 +26,7 @@ def get_model():
         defaults['on_site'] = (1, -1)
         defaults['size'] = 2
         defaults['dim'] = None
+        defaults['sparse'] = request.param
         model = tbmodels.Model(**ChainMap(kwargs, defaults))
 
         for phase, R in zip([1, -1j, 1j, -1], itertools.product([0, -1], [0, -1], [0])):

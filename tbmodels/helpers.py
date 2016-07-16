@@ -98,15 +98,21 @@ def _(obj):
         size=obj.size,
         dim=obj.dim,
         pos=obj.pos,
-        hop=_encode_hoppings(obj.hop)
+        sparse=obj._sparse,
+        hop=_encode_hoppings_sparse(obj.hop) if obj._sparse else _encode_hoppings_dense(obj.hop)
     )
 
-def _encode_hoppings(hoppings):
+def _encode_hoppings_sparse(hoppings):
     return dict(
-        __hoppings__=[
+        __hoppings_sparse__=[
             (R, (mat.data, mat.indices, mat.indptr), mat.shape)
             for R, mat in hoppings.items()
         ]
+    )
+
+def _encode_hoppings_dense(hoppings):
+    return dict(
+        __hoppings_dense__=list(hoppings.items())
     )
 
 #-------------------------------DECODING--------------------------------#
@@ -115,10 +121,16 @@ def _decode_tb_model(obj):
     del obj['__tb_model__']
     return Model(contains_cc=False, **obj)
     
-def _decode_hoppings(obj):
+def _decode_hoppings_sparse(obj):
     return {
         tuple(R): sp.csr(tuple(mat), shape=shape)
-        for R, mat, shape in obj['__hoppings__']
+        for R, mat, shape in obj['__hoppings_sparse__']
+    }
+
+def _decode_hoppings_dense(obj):
+    return {
+        tuple(R): np.array(mat, dtype=complex)
+        for R, mat in obj['__hoppings_dense__']
     }
     
 def _decode_complex(obj):
