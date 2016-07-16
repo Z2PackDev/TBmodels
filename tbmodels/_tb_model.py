@@ -614,21 +614,24 @@ class Model:
         self._sparse = sparse
         if sparse:
             self._matrix_type = sp.csr
-            self._array_cast = np.array
         else:
             self._matrix_type = np.array
-            self._array_cast = self._trivial_return
             
         # change existing matrices
         with contextlib.suppress(AttributeError):
             for k, v in self.hop.items():
                 self.hop[k] = self._matrix_type(v)
         
-    # This is needed s.t. it is picklable.
-    @staticmethod
-    def _trivial_return(x):
-        return x
-
+    # If Python 3.4 support is dropped this could be made more straightforwardly
+    # However, for now the default pickle protocol (and thus multiprocessing)
+    # does not support that.
+    def _array_cast(x):
+        """Casts a matrix type to a numpy array."""
+        if self._sparse:
+            return np.array(x)
+        else:
+            return x
+        
     #-------------------CREATING DERIVED MODELS-------------------------#
     #---- arithmetic operations ----#
     def __add__(self, model):
