@@ -528,7 +528,7 @@ class Model:
         :returns:   2D numpy array
         """
         k = np.array(k)
-        H = sum(np.array(hop) * np.exp(2j * np.pi * np.dot(R, k)) for R, hop in self.hop.items())
+        H = sum(self._array_cast(hop) * np.exp(2j * np.pi * np.dot(R, k)) for R, hop in self.hop.items())
         H += H.conjugate().T
         return np.array(H)
 
