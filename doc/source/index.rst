@@ -1,50 +1,48 @@
 .. image:: images/tbmodels_logo.jpg
     :width: 300px
-    :alt: TBModels logo
+    :alt: TBmodels logo
 
 |
 |
 
 .. title:: Overview
 
-Welcome!
-========
-Lorem ipsum dolor...
 
-If you use TBModels for your research, please
-consider citing it (not yet published).
+TBmodels is a Python package for evaluating tight-binding models. It features methods for reading and writing tight-binding models to various formats, and evaluating the Hamiltonian and eigenvalues of the system. It is considerably faster than comparable packages, enabling it to handle first-principles derived tight-binding models. 
 
-.. ~ TODO!
+If you use TBmodels for your research, please consider citing it as [D. Gresch and A. Soluyanov, *"The TBmodels package: Speed and memory improvements in evaluating tight-binding models"* (in preparation)].
+
+.. rubric:: Parts of the documentation
 
 
-Tutorial
-========
-.. toctree::
-    :maxdepth: 2
-    
-    tutorial.rst
-
-Documentation
-=============
-.. toctree::
-    :maxdepth: 2
-
-    documentation.rst
+| :ref:`tutorial`
+| start here
+|
+| :ref:`reference`
+| detailed description of the classes and functions
+|
 
 
-Getting in touch
-================
-The development version of TBModels is hosted on `GitHub`_ .
+
+.. rubric:: Getting in touch
+
+The development version of TBmodels is hosted on `GitHub`_ .
 Post an issue there or contact `me`__ directly with questions / suggestions
-/ feedback about TBModels.
+/ feedback about TBmodels.
 
 __ dg_
 
-Indices and tables
-==================
+.. rubric:: Indices and tables
 
-* :ref:`genindex`
-* :ref:`modindex`
+| :ref:`genindex`
+| :ref:`modindex`
+
+.. toctree::
+    :maxdepth: 2
+    :hidden:
+    
+    tutorial.rst
+    reference.rst
 
 .. _dg: http://github.com/greschd
-.. _GitHub: http://github.com/Z2PackDev/TBModels
+.. _GitHub: http://github.com/Z2PackDev/TBmodels

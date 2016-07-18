@@ -425,7 +425,7 @@ class Model:
         .. warning :: The ``*_hr.dat`` format does not preserve the full precision of the hopping strengths. This could lead to numerical errors.
         """
         lines = []
-        tagline = ' created by the TBModels package    ' + time.strftime('%a, %d %b %Y %H:%M:%S %Z')
+        tagline = ' created by the TBmodels package    ' + time.strftime('%a, %d %b %Y %H:%M:%S %Z')
         lines.append(tagline)
         lines.append('{0:>12}'.format(self.size))
         num_g = len(self.hop.keys()) * 2 - 1

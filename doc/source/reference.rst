@@ -1,7 +1,10 @@
-.. _tbmodels:
+.. _reference:
 
-Documentation
-=============
+Reference
+=========
+
+.. contents:: Contents
+    :local:
 
 Model Class
 -----------
