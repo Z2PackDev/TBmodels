@@ -1,4 +1,4 @@
 TBModels
 
 
-- Documentation: <http://tbmodels.ethz.ch/doc>
+- Documentation: <http://z2pack.ethz.ch/tbmodels>

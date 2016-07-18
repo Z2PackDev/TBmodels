@@ -3,6 +3,7 @@ prune examples
 
 # tests are used for development only
 prune tests
+prune speed_test
 
 # Documentation is provided online
 prune doc
