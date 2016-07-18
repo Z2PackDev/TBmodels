@@ -7,7 +7,6 @@
 
 import pytest
 
-from models import get_model
 from parameters import T_VALUES, KPT
 
 @pytest.mark.parametrize('t1', T_VALUES)

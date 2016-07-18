@@ -10,11 +10,8 @@ import tbmodels
 
 import numpy as np
 
-from models import get_model
 from tbmodels._ptools.sparse_matrix import csr
 
-
-from models import get_model
 from parameters import T_VALUES, KPT
 
 @pytest.mark.parametrize('t', T_VALUES)

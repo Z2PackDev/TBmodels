@@ -11,8 +11,6 @@ import pytest
 import tbmodels
 import numpy as np
 
-from models import get_model
-
 def test_on_site_too_long(get_model):
     with pytest.raises(ValueError):
         get_model(0.1, 0.2, on_site=[1, 2, 3])
@@ -51,7 +49,8 @@ def test_pos_outside_uc(get_model, models_equal):
     model2 = get_model(0.1, 0.2)
     models_equal(model1, model2)
 
-def test_from_hop_list(get_model, models_equal):
+@pytest.mark.parametrize('sparse', [True, False])
+def test_from_hop_list(get_model, models_equal, sparse):
     t1 = 0.1
     t2 = 0.2
     hoppings = []
@@ -61,11 +60,12 @@ def test_from_hop_list(get_model, models_equal):
     for R in ((r[0], r[1], 0) for r in itertools.permutations([0, 1])):
         hoppings.append([t2, 0, 0, R])
         hoppings.append([-t2, 1, 1, R])
-    model1 = tbmodels.Model.from_hop_list(hop_list=hoppings, contains_cc=False, on_site=(1, -1), occ=1, pos=((0.,) * 3, (0.5, 0.5, 0.)))
-    model2 = get_model(t1, t2)
+    model1 = tbmodels.Model.from_hop_list(hop_list=hoppings, contains_cc=False, on_site=(1, -1), occ=1, pos=((0.,) * 3, (0.5, 0.5, 0.)), sparse=sparse)
+    model2 = get_model(t1, t2, sparse=sparse)
     models_equal(model1, model2)
     
-def test_from_hop_list_with_cc(get_model, models_close):
+@pytest.mark.parametrize('sparse', [True, False])
+def test_from_hop_list_with_cc(get_model, models_close, sparse):
     t1 = 0.1
     t2 = 0.2
     hoppings = []
@@ -80,11 +80,12 @@ def test_from_hop_list_with_cc(get_model, models_close):
         hoppings.append([t2, 0, 0, tuple(-x for x in R)])
         hoppings.append([-t2, 1, 1, R])
         hoppings.append([-t2, 1, 1, tuple(-x for x in R)])
-    model1 = tbmodels.Model.from_hop_list(hop_list=hoppings, contains_cc=True, on_site=(1, -1), occ=1, pos=((0.,) * 3, (0.5, 0.5, 0.)))
-    model2 = get_model(t1, t2)
+    model1 = tbmodels.Model.from_hop_list(hop_list=hoppings, contains_cc=True, on_site=(1, -1), occ=1, pos=((0.,) * 3, (0.5, 0.5, 0.)), sparse=sparse)
+    model2 = get_model(t1, t2, sparse=sparse)
     models_close(model1, model2)
     
-def test_pos_outside_uc_with_hoppings(get_model, models_equal):
+@pytest.mark.parametrize('sparse', [True, False])
+def test_pos_outside_uc_with_hoppings(get_model, models_equal, sparse):
     t1 = 0.1
     t2 = 0.2
     hoppings = []
@@ -94,8 +95,8 @@ def test_pos_outside_uc_with_hoppings(get_model, models_equal):
     for R in ((r[0], r[1], 0) for r in itertools.permutations([0, 1])):
         hoppings.append([t2, 0, 0, R])
         hoppings.append([-t2, 1, 1, R])
-    model1 = tbmodels.Model.from_hop_list(hop_list=hoppings, contains_cc=False, on_site=(1, -1), occ=1, pos=((0.,) * 3, (-0.5, -0.5, 0.)))
-    model2 = get_model(t1, t2)
+    model1 = tbmodels.Model.from_hop_list(hop_list=hoppings, contains_cc=False, on_site=(1, -1), occ=1, pos=((0.,) * 3, (-0.5, -0.5, 0.)), sparse=sparse)
+    model2 = get_model(t1, t2, sparse=sparse)
     models_equal(model1, model2)
 
 def test_invalid_hopping_matrix():

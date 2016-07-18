@@ -9,7 +9,6 @@ import pytest
 import tbmodels
 import numpy as np
 
-from models import get_model
 from parameters import T_VALUES, KPT
 
 T1 = (0.1, 0.2)
