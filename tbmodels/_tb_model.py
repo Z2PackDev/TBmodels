@@ -11,8 +11,6 @@ from __future__ import division, print_function
 import copy
 import json
 import time
-import warnings
-import functools
 import contextlib
 import collections as co
 
@@ -44,19 +42,19 @@ class Model:
 
     :param pos:         Positions of the orbitals, in reduced coordinates. By default, all orbitals are set to be at the origin, i.e. at [0., 0., 0.].
     :type pos:          array
-    
+
     :param uc:          Unit cell of the system. The unit cell vectors are given as rows in a ``dim`` x ``dim`` array
     :type uc:           array
 
     :param contains_cc: Specifies whether the hopping matrices and on-site energies are given fully (``contains_cc=True``), such that the complex conjugate should be added for each term to obtain the full model. The on-site energies are not affected by this.
     :type contains_cc:  bool
-    
+
     :param sparse:      Specifies whether the hopping matrices should be saved in sparse format.
     :type sparse:       bool
     """
     def __init__(
-        self, 
-        *, 
+        self,
+        *,
         on_site=None,
         hop=None,
         size=None,
@@ -69,7 +67,7 @@ class Model:
     ):
         if hop is None:
             hop = dict()
-            
+
         self.set_sparse(sparse)
 
         # ---- SIZE ----
@@ -91,7 +89,7 @@ class Model:
 
         # ---- CONSISTENCY CHECK FOR SIZE ----
         self._check_size_hop()
-        
+
         # ---- CONSISTENCY CHECK FOR DIM ----
         self._check_dim()
 
@@ -138,7 +136,7 @@ class Model:
         # The double-constructor is needed to avoid a double-constructor in the sparse to-array
         # but still allow for the dtype argument.
         hop = {tuple(key): self._matrix_type(self._matrix_type(value), dtype=complex) for key, value in hop.items()}
-        
+
         # positions
         if pos is None:
             self.pos = np.zeros((self.size, self.dim))
@@ -150,8 +148,8 @@ class Model:
                 raise ValueError("Invalid argument for 'pos': The number of positions must be the same as the size (number of orbitals) of the system.")
             else:
                 raise ValueError("Invalid argument for 'pos': The length of each position must be the same as the dimensionality of the system.")
-        
-        
+
+
         if contains_cc:
             hop = self._reduce_hop(hop)
         else:
@@ -197,7 +195,7 @@ class Model:
         # Consistency checks
         for R, mat in hop.items():
             if la.norm(
-                mat - 
+                mat -
                 hop.get(tuple(-x for x in R), np.zeros(mat.shape)).T.conjugate()
             ) > 1e-12:
                 raise ValueError('The provided hoppings do not correspond to a hermitian Hamiltonian. hoppings[-R] = hoppings[R].H is not fulfilled.')
@@ -228,7 +226,7 @@ class Model:
                     new_hop[minus_R] += mat.transpose().conjugate()
             except IndexError:
                 # make sure the zero term is also hermitian
-                # This only really needed s.t. the representation is unique. 
+                # This only really needed s.t. the representation is unique.
                 # The Hamiltonian is anyway made hermitian later.
                 new_hop[R] += 0.5 * mat + 0.5 * mat.conjugate().transpose()
         return new_hop
@@ -256,19 +254,19 @@ class Model:
     @classmethod
     def from_hop_list(cls, *, hop_list=(), size=None, **kwargs):
         """
-        Create a :class:`.Model` from a list of hopping terms. 
-        
-        
+        Create a :class:`.Model` from a list of hopping terms.
+
+
         :param hop_list: List of hopping terms. Each hopping term has the form [t, orbital_1, orbital_2, R], where
-        
+
             * ``t``: strength of the hopping
             * ``orbital_1``: index of the first involved orbital
             * ``orbital_2``: index of the second involved orbital
             * ``R``: lattice vector of the unit cell containing the second orbital.
-            
+
         :param size:    Number of states. Defaults to the length of the on-site energies given, if such are given.
         :type size:     int
-        
+
         :param kwargs:  :class:`.Model` keyword arguments.
         """
         if size is None:
@@ -276,7 +274,7 @@ class Model:
                 size = len(kwargs['on_site'])
             except KeyError:
                 raise ValueError('No on-site energies and no size given. The size of the system cannot be determined.')
-        
+
         class _hop(object):
             """
             POD for hoppings
@@ -303,20 +301,20 @@ class Model:
             hop_dict[key] = sp.csr((val.data, (val.row_idx, val.col_idx)), dtype=complex, shape=(size, size))
 
         return cls(size=size, hop=hop_dict, **kwargs)
-    
+
     @classmethod
     def from_hr(cls, hr_string, *, h_cutoff=0., **kwargs):
         """
         Create a :class:`.Model` instance from a string in Wannier90's ``hr.dat`` format.
-        
+
         :param hr_string:   Input string
         :type hr_string:    str
-        
+
         :param h_cutoff:    Cutoff value for the hopping strength. Hoppings with a smaller absolute value are ignored.
         :type h_cutoff:     float
-        
+
         :param kwargs:      :class:`.Model` keyword arguments.
-        
+
         .. warning :: When loading a :class:`.Model` from the ``hr.dat`` format, parameters such as the positions of the orbitals, unit cell shape and occupation number must be set explicitly.
         """
         return cls._from_hr_iterator(
@@ -324,13 +322,13 @@ class Model:
             h_cutoff=h_cutoff,
             **kwargs
         )
-        
-    
+
+
     @classmethod
     def from_hr_file(cls, hr_file, *, h_cutoff=0., **kwargs):
         """
         Create a :class:`.Model` instance from a file in Wannier90's ``hr.dat`` format. The keyword arguments are the same as for :meth:`.from_hr`.
-        
+
         :param hr_file:     Path of the input file.
         :type hr_file:      str
         """
@@ -340,11 +338,11 @@ class Model:
     @classmethod
     def _from_hr_iterator(cls, hr_iterator, *, h_cutoff=0., **kwargs):
         num_wann, h_entries = cls._read_hr(hr_iterator)
-        
+
         h_entries = (hop for hop in h_entries if abs(hop[0]) > h_cutoff)
 
         return cls.from_hop_list(size=num_wann, hop_list=h_entries, **kwargs)
-    
+
 
     @staticmethod
     def _read_hr(iterator):
@@ -388,23 +386,23 @@ class Model:
         hop_list = (to_entry(line, i) for i, line in enumerate(lines_nonempty))
 
         return num_wann, hop_list
-        
+
     @classmethod
-    def from_json(cls, json_string, **kwargs):
+    def from_json(cls, json_string):
         """
         Create a ``Model`` instance from a string which contains a JSON - serialized model.
-        
+
         :param json_string: Input string
-        :type json_string:  str        
+        :type json_string:  str
         """
         from .helpers import decode
         return json.loads(json_string, object_hook=decode)
-        
+
     @classmethod
     def from_json_file(cls, json_file):
         """
-        Create a ``Model`` instance containing a JSON - serialized model. 
-        
+        Create a ``Model`` instance containing a JSON - serialized model.
+
         :param json_file:   Path of the input file
         :type json_file:    str
         """
@@ -413,15 +411,15 @@ class Model:
             return json.load(f, object_hook=decode)
 
     #------------------SERIALIZATION TO DIFFERENT FORMATS---------------#
-    
+
     def to_hr(self):
         """
         Returns a string containing the model in Wannier90's ``*_hr.dat`` format.
 
         :returns: str
-        
+
         .. note :: The ``*_hr.dat`` format does not contain information about the position of the atoms or the shape of the unit cell. Consequently, this information is lost when saving the model in this format.
-        
+
         .. warning :: The ``*_hr.dat`` format does not preserve the full precision of the hopping strengths. This could lead to numerical errors.
         """
         lines = []
@@ -461,16 +459,16 @@ class Model:
                 ))
 
         return '\n'.join(lines)
-        
+
     def to_hr_file(self, hr_file):
         """
         Writes to a file, using Wannier90's ``*_hr.dat`` format.
-        
+
         :param hr_file:     Path of the output file
         :type hr_file:      str
-        
+
         .. note :: The ``*_hr.dat`` format does not contain information about the position of the atoms or the shape of the unit cell. Consequently, this information is lost when saving the model in this format.
-        
+
         .. warning :: The ``*_hr.dat`` format does not preserve the full precision of the hopping strengths. This could lead to numerical errors.
         """
         with open(hr_file, 'w') as f:
@@ -479,23 +477,23 @@ class Model:
     def to_json(self):
         """
         Serializes the model instance to a string in JSON format.
-    
+
         :returns:   str
         """
         from .helpers import encode
         return json.dumps(self, default=encode)
-        
+
     def to_json_file(self, json_file):
         """
         Saves the model instance to a file, using a JSON format.
-        
+
         :param json_file:   Path to the output file.
         :type json_file:    str
         """
         from .helpers import encode
         with open(json_file, 'w') as f:
             json.dump(self, f, default=encode)
-    
+
 
     @staticmethod
     def _mat_to_hr(R, mat):
@@ -583,22 +581,23 @@ class Model:
     def add_on_site(self, on_site):
         """
         Adds on-site energy to the orbitals. This adds to the existing on-site energy, and does not erase it.
-        
+
         :param on_site:     On-site energies. This must be a sequence of real numbers, of the same length as the number of orbitals
-        :type on_site:      collections.abc.Sequence(numbers.Real)  
+        :type on_site:      collections.abc.Sequence(numbers.Real)
         """
         if self.size != len(on_site):
             raise ValueError('The number of on-site energy terms should be {}, but is {}.'.format(self.size, len(on_site)))
         for orbital, energy in enumerate(on_site):
             self.add_hop(energy / 2., orbital, orbital, self._zero_vec)
-            
+
     def _empty_matrix(self):
+        """Returns an empty matrix, either sparse or dense according to the current setting. The size is determined by the system's size"""
         return self._matrix_type(np.zeros((self.size, self.size), dtype=complex))
-            
+
     def set_sparse(self, sparse=True):
         """
         Defines whether sparse or dense matrices should be used to represent the system, and changes the system accordingly if needed.
-        
+
         :param sparse:  Flag to determine whether the system is set to be sparse (``True``) or dense (``False``).
         :type sparse:   bool
         """
@@ -607,18 +606,18 @@ class Model:
         with contextlib.suppress(AttributeError):
             if sparse == self._sparse:
                 return
-        
+
         self._sparse = sparse
         if sparse:
             self._matrix_type = sp.csr
         else:
             self._matrix_type = np.array
-            
+
         # change existing matrices
         with contextlib.suppress(AttributeError):
             for k, v in self.hop.items():
                 self.hop[k] = self._matrix_type(v)
-        
+
     # If Python 3.4 support is dropped this could be made more straightforwardly
     # However, for now the default pickle protocol (and thus multiprocessing)
     # does not support that.
@@ -628,7 +627,7 @@ class Model:
             return np.array(x)
         else:
             return x
-        
+
     #-------------------CREATING DERIVED MODELS-------------------------#
     #---- arithmetic operations ----#
     def __add__(self, model):

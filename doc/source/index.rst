@@ -1,5 +1,5 @@
 .. image:: images/tbmodels_logo.jpg
-    :width: 300px
+    :width: 250px
     :alt: TBmodels logo
 
 |
@@ -7,13 +7,16 @@
 
 .. title:: Overview
 
+.. container:: section
 
-TBmodels is a Python package for evaluating tight-binding models. It features methods for reading and writing tight-binding models to various formats, and evaluating the Hamiltonian and eigenvalues of the system. It is considerably faster than comparable packages, enabling it to handle first-principles derived tight-binding models. 
+    TBmodels is a Python package for evaluating tight-binding models. It features methods for reading and writing tight-binding models to various formats, and evaluating the Hamiltonian and eigenvalues of the system. It is considerably faster than comparable packages, enabling it to handle first-principles derived tight-binding models. 
 
-If you use TBmodels for your research, please consider citing it as [D. Gresch and A. Soluyanov, *"The TBmodels package: Speed and memory improvements in evaluating tight-binding models"* (in preparation)].
+
+    .. rubric:: Please cite
+
+    * Dominik Gresch and Alexey A. Soluyanov, "The TBmodels package: Speed and memory improvements in evaluating tight-binding models" [in preparation].
 
 .. rubric:: Parts of the documentation
-
 
 | :ref:`tutorial`
 | start here
@@ -21,8 +24,6 @@ If you use TBmodels for your research, please consider citing it as [D. Gresch a
 | :ref:`reference`
 | detailed description of the classes and functions
 |
-
-
 
 .. rubric:: Getting in touch
 
@@ -35,7 +36,10 @@ __ dg_
 .. rubric:: Indices and tables
 
 | :ref:`genindex`
+| list of all functions and classes
+|
 | :ref:`modindex`
+| list of all modules and submodules
 
 .. toctree::
     :maxdepth: 2

@@ -52,19 +52,19 @@ def matrix_to_hop(mat, orbitals=None, R=(0, 0, 0), multiplier=1.):
 def encode(obj):
     """
     Encodes TBmodels types into JSON / msgpack - compatible types. This can be used for the ``default`` keyword with the builtin :py:func:`json.dump` and :py:func:`json.dumps`, or with the corresponding functions in :py:mod:`msgpack`.
-    
+
     .. code::
-    
+
         import json
         import tbmodels
-        
+
         model = ... # create a tbmodels.Model object
-        
+
         with open('file.json', 'w') as f:
             json.dump(model, f, default=tbmodels.helpers.encode)
-    
+
     .. note ::
-        
+
         It is recommended to use :meth:`.Model.to_json` or :meth:`.Model.to_json_file` unless the encode function is needed explicitly.
     """
     raise TypeError('cannot JSONify {} object {}'.format(type(obj), obj))
@@ -80,7 +80,7 @@ def _(obj):
 @encode.register(numbers.Real)
 def _(obj):
     return float(obj)
-    
+
 @encode.register(numbers.Complex)
 def _(obj):
     return dict(__complex__=True, real=encode(obj.real), imag=encode(obj.imag))
@@ -120,7 +120,7 @@ def _encode_hoppings_dense(hoppings):
 def _decode_tb_model(obj):
     del obj['__tb_model__']
     return Model(contains_cc=False, **obj)
-    
+
 def _decode_hoppings_sparse(obj):
     return {
         tuple(R): sp.csr(tuple(mat), shape=shape)
@@ -132,7 +132,7 @@ def _decode_hoppings_dense(obj):
         tuple(R): np.array(mat, dtype=complex)
         for R, mat in obj['__hoppings_dense__']
     }
-    
+
 def _decode_complex(obj):
     return complex(obj['real'], obj['imag'])
 
@@ -140,17 +140,17 @@ def _decode_complex(obj):
 def decode(dct):
     """
     Decodes JSON / msgpack - compatible types into TBmodels types. This can be used for the ``object_hook`` keyword with the builtin :py:func:`json.load` and :py:func:`json.loads`, or with the corresponding functions in :py:mod:`msgpack`.
-    
+
     .. code::
-    
+
         import json
         import tbmodels
-        
+
         with open('file.json', 'r') as f:
             json.load(f, object_hook=tbmodels.helpers.decode)
-    
+
     .. note ::
-        
+
         It is recommended to use :meth:`.Model.from_json` or :meth:`.Model.from_json_file` unless the decode function is needed explicitly.
     """
     with contextlib.suppress(AttributeError):
