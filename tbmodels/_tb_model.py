@@ -65,7 +65,7 @@ class Model:
         pos=None,
         uc=None,
         contains_cc=True,
-        sparse=True
+        sparse=False
     ):
         if hop is None:
             hop = dict()
