@@ -1,5 +1,5 @@
 language: python
-python:
+matrix:
     - python: "3.4"
       env: DEPS="libgfortran=1.0 numpy scipy matplotlib"
     - python: "3.5"
