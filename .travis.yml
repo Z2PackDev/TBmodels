@@ -2,11 +2,15 @@ language: python
 python:
     - "3.4"
     - "3.5"
-matrix:
-    - python: "3.4"
-      env: DEPS="libgfortran=1.0 numpy scipy matplotlib"
-    - python: "3.5"
-      env: DEPS="numpy scipy matplotlib"
+
+virtualenv:
+    system_site_packages: true
+    SITE_PKG_DIR=$VIRTUAL_ENV/lib/python$TRAVIS_PYTHON_VERSION/site-packages
+    rm -f $VIRTUAL_ENV/lib/python$TRAVIS_PYTHON_VERSION/no-global-site-packages.txt
+    
+before_install:
+    apt-get install python3-numpy
+    apt-get install python3-scipy
 
 install:
   - pip install .
