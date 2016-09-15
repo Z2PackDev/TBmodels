@@ -3,7 +3,6 @@ sudo: true
 python:
     - "3.4"
     - "3.5"
-    - "nightly"
 
 before_install:
     - sudo apt-get update -qq
