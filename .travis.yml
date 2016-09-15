@@ -1,7 +1,9 @@
 language: python
 python:
-  - "3.4"
-  - "3.5"
+    - python: "3.4"
+      env: DEPS="libgfortran=1.0 numpy scipy matplotlib"
+    - python: "3.5"
+      env: DEPS="numpy scipy matplotlib"
 
 install:
   - pip install .
