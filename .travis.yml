@@ -1,20 +1,16 @@
 language: python
 cache: pip
 sudo: false
+
 matrix:
     include:
     - python: "3.4"
       addons:
         apt:
             packages: 
-            - liblapack.so 
+            - liblapack-dev 
                 
     - python: "3.5"
-#~ python:
-
-#~ before_install:
-    #~ - sudo apt-get update -qq
-    #~ - sudo apt-get install -qq liblapack.so 
 
 install:
     - pip install .
