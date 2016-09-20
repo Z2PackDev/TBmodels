@@ -4,10 +4,10 @@ sudo: false
 matrix:
     include:
     - python: "3.4"
-        addon:
-            apt:
-                packages: 
-                - liblapack.so 
+      addons:
+        apt:
+            packages: 
+            - liblapack.so 
                 
     - python: "3.5"
 #~ python:
