@@ -550,7 +550,7 @@ class Model:
             This means that adding a hopping of overlap :math:`\epsilon` between an orbital and itself in the home unit cell increases the orbitals on-site energy by :math:`2 \epsilon`.
 
         :param overlap:    Strength of the hopping term (in energy units).
-        :type overlap:     complex
+        :type overlap:     numbers.Complex
 
         :param orbital_1:   Index of the first orbital.
         :type orbital_1:    int
@@ -559,10 +559,10 @@ class Model:
         :type orbital_2:    int
 
         :param R:           Lattice vector pointing to the unit cell where ``orbital_2`` lies.
-        :type R:            list(int)
+        :type R:            :py:class:`list` (:py:class:`numbers.Integral`)
 
         .. warning::
-            The positions given in the constructor of :class:`Model` are automatically mapped into the home unit cell. This has to be taken into account when determining ``R``.
+            The positions given in the constructor of :class:`.Model` are automatically mapped into the home unit cell. This has to be taken into account when determining ``R``.
 
         """
         R = tuple(R)
@@ -583,7 +583,7 @@ class Model:
         Adds on-site energy to the orbitals. This adds to the existing on-site energy, and does not erase it.
 
         :param on_site:     On-site energies. This must be a sequence of real numbers, of the same length as the number of orbitals
-        :type on_site:      collections.abc.Sequence(numbers.Real)
+        :type on_site:      :py:class:`collections.abc.Sequence` (:py:class:`numbers.Real`)
         """
         if self.size != len(on_site):
             raise ValueError('The number of on-site energy terms should be {}, but is {}.'.format(self.size, len(on_site)))

@@ -31,7 +31,7 @@ In a second step, hopping terms between the two orbitals (nearest-neighbour inte
 Evaluating the model
 --------------------
 
-Once created, a :class:`Model` instance can be evaluated at different k-points in the Brillouin zone using the :meth:`.hamilton` and :meth:`.eigenval` methods. These methods take a single k-point, given in reduced coordinates, as argument.
+Once created, a :class:`.Model` instance can be evaluated at different k-points in the Brillouin zone using the :meth:`.hamilton` and :meth:`.eigenval` methods. These methods take a single k-point, given in reduced coordinates, as argument.
 
 .. code:: python
 
@@ -57,4 +57,4 @@ If compatibility with other codes operating on Wannier90's ``*hr.dat`` format is
     model.to_hr_file('model_hr.dat')
     model3 = tbmodels.Model.from_hr_file('model_hr.dat') # model3 might differ from model
 
-Finally, the :class:`Model` class is also compatible with Python's built-in :py:mod:`pickle` module. However, data saved with :py:mod:`pickle` may not be readable with different versions of TBmodels since pickle serialization depends on the specific names of classes and their attributes. The use of :py:mod:`pickle` compatibility is to enable :py:mod:`multiprocessing` with TBmodels.
+Finally, the :class:`.Model` class is also compatible with Python's built-in :py:mod:`pickle` module. However, data saved with :py:mod:`pickle` may not be readable with different versions of TBmodels since pickle serialization depends on the specific names of classes and their attributes. The use of :py:mod:`pickle` compatibility is to enable :py:mod:`multiprocessing` with TBmodels.
