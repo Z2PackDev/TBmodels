@@ -25,7 +25,7 @@ with open('./tbmodels/_version.py', 'r') as f:
 setup(
     name='tbmodels',
     version=version,
-    url='http://tbmodels.ethz.ch',
+    url='http://z2pack.ethz.ch/tbmodels',
     author='Dominik Gresch',
     author_email='greschd@gmx.ch',
     description='Reading, creating and modifying tight-binding models.',
