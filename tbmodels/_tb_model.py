@@ -411,6 +411,19 @@ class Model:
             return json.load(f, object_hook=decode)
 
     #------------------SERIALIZATION TO DIFFERENT FORMATS---------------#
+    
+    def to_kwant(self):
+        """
+        TODO: Returns the model as a kwant object.
+        """
+        import kwant
+        
+        # self.hop is a mapping containing the H[R] Hamiltonian parts
+        
+        # only positive R, and half of the R=0 term are present
+        # to get the full mapping, we need to add H[-R]:=H[R]^\dagger
+        # for every R in self.hop.keys()
+        raise NotImplementedError
 
     def to_hr(self):
         """

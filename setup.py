@@ -30,6 +30,7 @@ setup(
     author_email='greschd@gmx.ch',
     description='Reading, creating and modifying tight-binding models.',
     install_requires=['numpy', 'scipy', 'fsc.export'],
+    extras_require={'kwant': ['kwant']},
     long_description=readme,
     classifiers=[
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
