@@ -424,16 +424,23 @@ class Model:
         import itertools
 
         #shape = np.ones(self.dims, dtype=np.int_) if not shape else shape
-        print(shape)
         assert len(shape) == self.dim, "Please specify the array of distances in each dimension of the model"
         assert np.all(self.pos == np.zeros((self.size, self.dim))), "Polyatomic lattices are not implemented" 
 
         # Read or create unit cell
         uc = self.uc if isinstance(self.uc, np.ndarray) else np.eye(self.dim)
+        # Find the extent of hopping and define lead symmetries
+        all_hopping_dirs = np.array([np.array(list(k)) for k in self.hop.keys()])
+        max_spacing = np.amax(all_hopping_dirs, axis = 0)
+        global_uc = np.einsum("ij,j->ij",uc,max_spacing)
+        # Define lattice symmetries 
         kw_lat = kwant.lattice.general(uc, name='tbmodels')
+        lead_lattices = [kwant.TranslationalSymmetry(tuple(-x)) for x in global_uc]
         assert np.all(np.abs(kw_lat.prim_vecs - uc) < 1e-12), "Mismatch between tbmodels and kwant in lattice geometry, {} != {}".format(uc, kw_lat.prim_vecs)
+        # Create finite-size lattice and leads
+        leads = [kwant.Builder(l) for l in lead_lattices]
         kw_sys = kwant.Builder()
-        
+
         # Assign on-site values
         on_site = self.hop[self._zero_vec]
         enum_grids = [np.arange(0, x, 1, dtype=np.int_) for x in shape] 
@@ -441,12 +448,28 @@ class Model:
             # convert pair of indices to the actual position on the lattice
             pos = np.einsum('ij,j', uc, p)
             kw_sys[kw_lat(*pos)] = self.hop[self._zero_vec]
+            for l in leads:
+                l[kw_lat(*pos)] = self.hop[self._zero_vec]
             
         # Assign hoppings    
-        for hop_dir, hop_m in self.hop.items():
-            if hop_dir == self._zero_vec:
+        # self.hop is a mapping containing the H[R] Hamiltonian parts
+        # only positive R, and half of the R=0 term are present
+        # to get the full mapping, we need to add H[-R]:=H[R]^\dagger
+        # for every R in self.hop.keys()
+        for hop_d, hop_m in self.hop.items():
+            if hop_d == self._zero_vec:
                 continue
-            kw_sys[kwant.builder.HoppingKind(hop_dir, kw_lat, kw_lat)] = hop_m 
+            R = tuple(np.array(hop_d))
+            minusR = tuple(-np.array(R))
+            kw_sys[kwant.builder.HoppingKind(R, kw_lat, kw_lat)] = hop_m 
+            kw_sys[kwant.builder.HoppingKind(minusR, kw_lat, kw_lat)] = np.transpose(np.conj(hop_m))
+            for l, ld in zip(leads,range(self.dim)):
+                l[kwant.builder.HoppingKind(R, kw_lat, kw_lat)] = hop_m
+                l[kwant.builder.HoppingKind(minusR, kw_lat, kw_lat)] = np.transpose(np.conj(hop_m))
+
+        for l in leads:
+            kw_sys.attach_lead(l)
+            kw_sys.attach_lead(l.reversed())
 
         return kw_sys
 
