@@ -11,6 +11,7 @@ from __future__ import division, print_function
 import copy
 import json
 import time
+import itertools
 import contextlib
 import collections as co
 
@@ -412,7 +413,7 @@ class Model:
 
     #------------------SERIALIZATION TO DIFFERENT FORMATS---------------#
     
-    def to_kwant(self, shape = None):
+    def to_kwant(self, shape=None):
         """
         Returns the model as a kwant object.
         TODO: polyatomic lattices
@@ -420,8 +421,8 @@ class Model:
 
         :param shape: array of unit cell lengths in each dimension to generate kwant.system.FiniteSystem 
         """
+        # import kwant here because it's in extras_require
         import kwant
-        import itertools
 
         #shape = np.ones(self.dims, dtype=np.int_) if not shape else shape
         assert len(shape) == self.dim, "Please specify the array of distances in each dimension of the model"
@@ -432,7 +433,7 @@ class Model:
         # Find the extent of hopping and define lead symmetries
         all_hopping_dirs = np.array([np.array(list(k)) for k in self.hop.keys()])
         max_spacing = np.amax(all_hopping_dirs, axis = 0)
-        global_uc = np.einsum("ij,j->ij",uc,max_spacing)
+        global_uc = np.einsum("ij,j->ij", uc, max_spacing)
         # Define lattice symmetries 
         kw_lat = kwant.lattice.general(uc, name='tbmodels')
         lead_lattices = [kwant.TranslationalSymmetry(tuple(-x)) for x in global_uc]
@@ -442,14 +443,16 @@ class Model:
         kw_sys = kwant.Builder()
 
         # Assign on-site values
-        on_site = self.hop[self._zero_vec]
+        on_site = self._array_cast(self.hop[self._zero_vec])
+        # TODO: check if .conjugate().transpose() needs to be added
+        #~ on_site += on_site.conjugate().transpose()
         enum_grids = [np.arange(0, x, 1, dtype=np.int_) for x in shape] 
         for p in itertools.product(*enum_grids):
             # convert pair of indices to the actual position on the lattice
             pos = np.einsum('ij,j', uc, p)
-            kw_sys[kw_lat(*pos)] = self.hop[self._zero_vec]
+            kw_sys[kw_lat(*pos)] = on_site
             for l in leads:
-                l[kw_lat(*pos)] = self.hop[self._zero_vec]
+                l[kw_lat(*pos)] = on_site
             
         # Assign hoppings    
         # self.hop is a mapping containing the H[R] Hamiltonian parts
@@ -463,7 +466,7 @@ class Model:
             minusR = tuple(-np.array(R))
             kw_sys[kwant.builder.HoppingKind(R, kw_lat, kw_lat)] = hop_m 
             kw_sys[kwant.builder.HoppingKind(minusR, kw_lat, kw_lat)] = np.transpose(np.conj(hop_m))
-            for l, ld in zip(leads,range(self.dim)):
+            for l in leads:
                 l[kwant.builder.HoppingKind(R, kw_lat, kw_lat)] = hop_m
                 l[kwant.builder.HoppingKind(minusR, kw_lat, kw_lat)] = np.transpose(np.conj(hop_m))
 
