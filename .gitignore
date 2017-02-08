@@ -48,3 +48,5 @@ htmlcov
 tests/.coverage
 
 speed_test/data
+
+playground

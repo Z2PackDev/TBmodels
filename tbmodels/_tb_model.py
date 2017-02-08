@@ -386,6 +386,11 @@ class Model:
         hop_list = (to_entry(line, i) for i, line in enumerate(lines_nonempty))
 
         return num_wann, hop_list
+        
+    @classmethod
+    def _read_xyz(iterator):
+        
+    
 
     @classmethod
     def from_json(cls, json_string):
