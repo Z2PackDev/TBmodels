@@ -412,18 +412,43 @@ class Model:
 
     #------------------SERIALIZATION TO DIFFERENT FORMATS---------------#
     
-    def to_kwant(self):
+    def to_kwant(self, shape = None):
         """
-        TODO: Returns the model as a kwant object.
+        Returns the model as a kwant object.
+        TODO: polyatomic lattices
+        TODO: get leads
+
+        :param shape: array of unit cell lengths in each dimension to generate kwant.system.FiniteSystem 
         """
         import kwant
+        import itertools
+
+        #shape = np.ones(self.dims, dtype=np.int_) if not shape else shape
+        print(shape)
+        assert len(shape) == self.dim, "Please specify the array of distances in each dimension of the model"
+        assert np.all(self.pos == np.zeros((self.size, self.dim))), "Polyatomic lattices are not implemented" 
+
+        # Read or create unit cell
+        uc = self.uc if isinstance(self.uc, np.ndarray) else np.eye(self.dim)
+        kw_lat = kwant.lattice.general(uc, name='tbmodels')
+        assert np.all(np.abs(kw_lat.prim_vecs - uc) < 1e-12), "Mismatch between tbmodels and kwant in lattice geometry, {} != {}".format(uc, kw_lat.prim_vecs)
+        kw_sys = kwant.Builder()
         
-        # self.hop is a mapping containing the H[R] Hamiltonian parts
-        
-        # only positive R, and half of the R=0 term are present
-        # to get the full mapping, we need to add H[-R]:=H[R]^\dagger
-        # for every R in self.hop.keys()
-        raise NotImplementedError
+        # Assign on-site values
+        on_site = self.hop[self._zero_vec]
+        enum_grids = [np.arange(0, x, 1, dtype=np.int_) for x in shape] 
+        for p in itertools.product(*enum_grids):
+            # convert pair of indices to the actual position on the lattice
+            pos = np.einsum('ij,j', uc, p)
+            kw_sys[kw_lat(*pos)] = self.hop[self._zero_vec]
+            
+        # Assign hoppings    
+        for hop_dir, hop_m in self.hop.items():
+            if hop_dir == self._zero_vec:
+                continue
+            kw_sys[kwant.builder.HoppingKind(hop_dir, kw_lat, kw_lat)] = hop_m 
+
+        return kw_sys
 
     def to_hr(self):
         """
