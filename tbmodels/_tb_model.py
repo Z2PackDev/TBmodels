@@ -477,6 +477,9 @@ class Model:
         return kw_sys
         
     def to_kwant_lattice(self):
+        """
+        Returns a kwant lattice corresponding to the current model. Orbitals with the same position are grouped into the same Monoatomic sublattice.
+        """
         import kwant
         sublattices, _ = self._get_sublattices()
         uc = self.uc if self.uc is not None else np.eye(self.dim)
@@ -487,14 +490,27 @@ class Model:
             basis=pos_abs
         )
     
-    def _get_sublattices(self, *, pos_tol=1e-6):
+    def add_hoppings_kwant(self, kwant_sys):
+        import kwant
+        sublattices, sublattice_mapping = self._get_sublattices()
+        for R, mat in self.hop.items():
+            mat = self._array_cast(mat)
+            # special case R = 0
+            if R == self._zero_vec:
+                raise NotImplementedError
+            else:
+                for s1 in sublattices:
+                    for s2 in sublattices:
+                        
+    
+    def _get_sublattices(self):
         Sublattice = co.namedtuple('Sublattice', ['pos', 'indices'])
         sublattices = []
         sublattice_mapping = []
         for i, p_orb in enumerate(self.pos):
             # try to match an existing sublattice
             for j, (sub_pos, sub_indices) in enumerate(sublattices):
-                if np.isclose(p_orb, sub_pos, rtol=0, atol=pos_tol).all():
+                if np.isclose(p_orb, sub_pos, rtol=0).all():
                     sub_indices.append(i)
                     sublattice_mapping.append((j, len(sub_indices) - 1))
                     break
