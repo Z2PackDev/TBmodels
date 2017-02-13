@@ -479,6 +479,8 @@ class Model:
     def to_kwant_lattice(self):
         """
         Returns a kwant lattice corresponding to the current model. Orbitals with the same position are grouped into the same Monoatomic sublattice.
+        
+        Note: The TBmodels - Kwant interface is experimental.
         """
         import kwant
         sublattices, _ = self._get_sublattices()
@@ -491,16 +493,45 @@ class Model:
         )
     
     def add_hoppings_kwant(self, kwant_sys):
+        """
+        
+        
+        Note: The TBmodels - Kwant interface is experimental.
+        """
         import kwant
         sublattices, sublattice_mapping = self._get_sublattices()
+        kwant_lattice = self.to_kwant_lattice()
+
+        # handle R = 0 case (on-site)
+        on_site_mat = self._array_cast(self.hop[self._zero_vec])
+        on_site_mat += on_site_mat.conjugate().transpose()
+        for i, s1 in enumerate(sublattices):
+            for j, s2 in enumerate(sublattices):
+                if i == j:
+                    raise NotImplementedError
+                else:
+                    kwant_sys[
+                        kwant.builder.HoppingKind(self._zero_vec, kwant_lattice[i], kwant_lattice[j])
+                    ] = on_site_mat[np.ix_(s1.indices, s2.indices)]
+        
         for R, mat in self.hop.items():
             mat = self._array_cast(mat)
-            # special case R = 0
+            # special case R = 0 handled already
             if R == self._zero_vec:
-                raise NotImplementedError
+                continue
             else:
-                for s1 in sublattices:
-                    for s2 in sublattices:
+                minus_R = tuple(-np.array(R))
+                for i, s1 in enumerate(sublattices):
+                    for j, s2 in enumerate(sublattices):
+                        sub_matrix = hop_m[np.ix_(s1.indices, s2.indices)]
+                        # TODO: check "signs"
+                        kwant_sys[
+                            kwant.builder.HoppingKind(minusR, kwant_lattice[i], kwant_lattice[j])
+                        ] = sub_matrix
+                        kwant_sys[
+                            kwant.builder.HoppingKind(R, kwant_lattice[i], kwant_lattice[j])
+                        ] = np.transpose(np.conj(sub_matrix))
+        return kwant_sys
                         
     
     def _get_sublattices(self):
