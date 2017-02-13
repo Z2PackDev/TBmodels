@@ -386,12 +386,28 @@ class Model:
         hop_list = (to_entry(line, i) for i, line in enumerate(lines_nonempty))
 
         return num_wann, hop_list
-        
-    @classmethod
-    def _read_xyz(iterator):
-        
-    
 
+    
+    @staticmethod
+    def _read_xyz(iterator):
+        """Reads the content of a .xyz file"""
+        # This functionality exists within pymatgen, so it might make sense
+        # to use that if we anyway want pymatgen as a dependency.
+        N = int(next(iterator))
+        next(iterator) # skip comment line
+        wannier_centres = []
+        atom_positions = []
+        AtomPosition = co.namedtuple('AtomPosition', ['kind', 'pos'])
+        for l in iterator:
+            kind, *pos = l.split()
+            pos = tuple(float(x) for x in pos)
+            if kind == 'X':
+                wannier_centres.append(pos)
+            else:
+                atom_positions.append(AtomPosition(kind=kind, pos=pos))
+        assert len(wannier_centres) + len(atom_positions) == N
+        return wannier_centres, atom_positions
+    
     @classmethod
     def from_json(cls, json_string):
         """
