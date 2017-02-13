@@ -52,6 +52,13 @@ def compare_data(request, test_name, scope="session"):
 @pytest.fixture
 def compare_equal(compare_data):
     return lambda data, tag=None: compare_data(lambda x, y: x == y, data, tag)
+
+@pytest.fixture
+def compare_isclose(compare_data):
+    def compare_fct(x, y):
+        return np.all(np.isclose(x, y))
+        
+    return lambda data, tag=None: compare_data(compare_fct, data, tag)
     
     
 @pytest.fixture
