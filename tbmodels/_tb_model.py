@@ -500,14 +500,14 @@ class Model:
         """
         import kwant
         sublattices = self._get_sublattices()
-        kwant_lattice = self.to_kwant_lattice()
+        kwant_sublattices = self.to_kwant_lattice().sublattices
 
         # handle R = 0 case (on-site)
         on_site_mat = self._array_cast(self.hop[self._zero_vec])
         on_site_mat += on_site_mat.conjugate().transpose()
         # R = 0 terms within a sublattice (on-site)
         for site in kwant_sys.sites():
-            for i, latt in enumerate(kwant_lattice):
+            for i, latt in enumerate(kwant_sublattices):
                 if site.family == latt:
                     indices = sublattices[i].indices
                     kwant_sys[site] = on_site_mat[np.ix_(indices, indices)]
@@ -515,7 +515,7 @@ class Model:
             # site doesn't belong to any sublattice
             else:
                 # TODO: check if there is a legitimate use case which triggers this
-                raise ValueError('Site {} did not match any sublattice.'.format(site)
+                raise ValueError('Site {} did not match any sublattice.'.format(site))
         
         # R = 0 terms between different sublattices
         for i, s1 in enumerate(sublattices):
@@ -526,7 +526,7 @@ class Model:
                 else:
                     kwant_sys[
                         kwant.builder.HoppingKind(
-                            self._zero_vec, kwant_lattice[i], kwant_lattice[j]
+                            self._zero_vec, kwant_sublattices[i], kwant_sublattices[j]
                         )
                     ] = on_site_mat[np.ix_(s1.indices, s2.indices)]
         
@@ -540,16 +540,16 @@ class Model:
                 minus_R = tuple(-np.array(R))
                 for i, s1 in enumerate(sublattices):
                     for j, s2 in enumerate(sublattices):
-                        sub_matrix = hop_m[np.ix_(s1.indices, s2.indices)]
+                        sub_matrix = mat[np.ix_(s1.indices, s2.indices)]
                         # TODO: check "signs"
                         kwant_sys[
                             kwant.builder.HoppingKind(
-                                minusR, kwant_lattice[i], kwant_lattice[j]
+                                minus_R, kwant_sublattices[i], kwant_sublattices[j]
                             )
                         ] = sub_matrix
                         kwant_sys[
                             kwant.builder.HoppingKind(
-                                R, kwant_lattice[i], kwant_lattice[j]
+                                R, kwant_sublattices[i], kwant_sublattices[j]
                             )
                         ] = np.transpose(np.conj(sub_matrix))
         return kwant_sys
