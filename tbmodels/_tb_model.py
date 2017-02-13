@@ -480,10 +480,10 @@ class Model:
         """
         Returns a kwant lattice corresponding to the current model. Orbitals with the same position are grouped into the same Monoatomic sublattice.
         
-        Note: The TBmodels - Kwant interface is experimental.
+        .. note :: The TBmodels - Kwant interface is experimental. Use it with caution.
         """
         import kwant
-        sublattices, _ = self._get_sublattices()
+        sublattices = self._get_sublattices()
         uc = self.uc if self.uc is not None else np.eye(self.dim)
         # get sublattice positions in cartesian coordinates
         pos_abs = np.dot(np.array([sl.pos for sl in sublattices]), uc)
@@ -494,26 +494,43 @@ class Model:
     
     def add_hoppings_kwant(self, kwant_sys):
         """
+        Sets the on-site energies and hopping terms for an existing kwant system to those of the :class:`.Model`.
         
-        
-        Note: The TBmodels - Kwant interface is experimental.
+        .. note :: The TBmodels - Kwant interface is experimental. Use it with caution.
         """
         import kwant
-        sublattices, sublattice_mapping = self._get_sublattices()
+        sublattices = self._get_sublattices()
         kwant_lattice = self.to_kwant_lattice()
 
         # handle R = 0 case (on-site)
         on_site_mat = self._array_cast(self.hop[self._zero_vec])
         on_site_mat += on_site_mat.conjugate().transpose()
+        # R = 0 terms within a sublattice (on-site)
+        for site in kwant_sys.sites():
+            for i, latt in enumerate(kwant_lattice):
+                if site.family == latt:
+                    indices = sublattices[i].indices
+                    kwant_sys[site] = on_site_mat[np.ix_(indices, indices)]
+                    break
+            # site doesn't belong to any sublattice
+            else:
+                # TODO: check if there is a legitimate use case which triggers this
+                raise ValueError('Site {} did not match any sublattice.'.format(site)
+        
+        # R = 0 terms between different sublattices
         for i, s1 in enumerate(sublattices):
             for j, s2 in enumerate(sublattices):
                 if i == j:
-                    raise NotImplementedError
+                    # handled above
+                    continue
                 else:
                     kwant_sys[
-                        kwant.builder.HoppingKind(self._zero_vec, kwant_lattice[i], kwant_lattice[j])
+                        kwant.builder.HoppingKind(
+                            self._zero_vec, kwant_lattice[i], kwant_lattice[j]
+                        )
                     ] = on_site_mat[np.ix_(s1.indices, s2.indices)]
         
+        # R != 0 terms
         for R, mat in self.hop.items():
             mat = self._array_cast(mat)
             # special case R = 0 handled already
@@ -526,10 +543,14 @@ class Model:
                         sub_matrix = hop_m[np.ix_(s1.indices, s2.indices)]
                         # TODO: check "signs"
                         kwant_sys[
-                            kwant.builder.HoppingKind(minusR, kwant_lattice[i], kwant_lattice[j])
+                            kwant.builder.HoppingKind(
+                                minusR, kwant_lattice[i], kwant_lattice[j]
+                            )
                         ] = sub_matrix
                         kwant_sys[
-                            kwant.builder.HoppingKind(R, kwant_lattice[i], kwant_lattice[j])
+                            kwant.builder.HoppingKind(
+                                R, kwant_lattice[i], kwant_lattice[j]
+                            )
                         ] = np.transpose(np.conj(sub_matrix))
         return kwant_sys
                         
@@ -537,19 +558,16 @@ class Model:
     def _get_sublattices(self):
         Sublattice = co.namedtuple('Sublattice', ['pos', 'indices'])
         sublattices = []
-        sublattice_mapping = []
         for i, p_orb in enumerate(self.pos):
             # try to match an existing sublattice
             for j, (sub_pos, sub_indices) in enumerate(sublattices):
                 if np.isclose(p_orb, sub_pos, rtol=0).all():
                     sub_indices.append(i)
-                    sublattice_mapping.append((j, len(sub_indices) - 1))
                     break
             # create new sublattice
             else:
                 sublattices.append(Sublattice(pos=p_orb, indices=[i]))
-                sublattice_mapping.append((len(sublattices) - 1, 0))
-        return sublattices, sublattice_mapping
+        return sublattices
 
     def to_hr(self):
         """
