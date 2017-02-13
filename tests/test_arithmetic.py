@@ -79,7 +79,7 @@ def test_div(t, c, k, get_model, compare_isclose):
 @pytest.mark.parametrize('t', T_VALUES)
 @pytest.mark.parametrize('c', np.linspace(-1, 0.5, 3)) # should be non-zero
 @pytest.mark.parametrize('k', KPT)
-def test_div_consistency(t, c, k, get_model, compare_isclose):
+def test_div_consistency(t, c, k, get_model):
     m = get_model(*t)
     m2 = m / c
     m3 = m * (1. / c)
