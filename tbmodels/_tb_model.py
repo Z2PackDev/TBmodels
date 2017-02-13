@@ -475,6 +475,34 @@ class Model:
             kw_sys.attach_lead(l.reversed())
 
         return kw_sys
+        
+    def to_kwant_lattice(self):
+        import kwant
+        sublattices, _ = self._get_sublattices()
+        uc = self.uc if self.uc is not None else np.eye(self.dim)
+        # get sublattice positions in cartesian coordinates
+        pos_abs = np.dot(np.array([sl.pos for sl in sublattices]), uc)
+        return kwant.lattice.general(
+            prim_vecs=uc,
+            basis=pos_abs
+        )
+    
+    def _get_sublattices(self, *, pos_tol=1e-6):
+        Sublattice = co.namedtuple('Sublattice', ['pos', 'indices'])
+        sublattices = []
+        sublattice_mapping = []
+        for i, p_orb in enumerate(self.pos):
+            # try to match an existing sublattice
+            for j, (sub_pos, sub_indices) in enumerate(sublattices):
+                if np.isclose(p_orb, sub_pos, rtol=0, atol=pos_tol).all():
+                    sub_indices.append(i)
+                    sublattice_mapping.append((j, len(sub_indices) - 1))
+                    break
+            # create new sublattice
+            else:
+                sublattices.append(Sublattice(pos=p_orb, indices=[i]))
+                sublattice_mapping.append((len(sublattices) - 1, 0))
+        return sublattices, sublattice_mapping
 
     def to_hr(self):
         """
