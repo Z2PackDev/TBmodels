@@ -503,7 +503,8 @@ class Model:
         kwant_sublattices = self.to_kwant_lattice().sublattices
 
         # handle R = 0 case (on-site)
-        on_site_mat = self._array_cast(self.hop[self._zero_vec])
+        # copy.deepcopy to avoid chaning the matrix in-place
+        on_site_mat = copy.deepcopy(self._array_cast(self.hop[self._zero_vec]))
         on_site_mat += on_site_mat.conjugate().transpose()
         # R = 0 terms within a sublattice (on-site)
         for site in kwant_sys.sites():
