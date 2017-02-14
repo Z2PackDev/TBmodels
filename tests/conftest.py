@@ -8,6 +8,7 @@
 import json
 import pytest
 import numbers
+import operator
 import itertools
 import contextlib
 from functools import partial
@@ -51,14 +52,11 @@ def compare_data(request, test_name, scope="session"):
 
 @pytest.fixture
 def compare_equal(compare_data):
-    return lambda data, tag=None: compare_data(lambda x, y: x == y, data, tag)
+    return lambda data, tag=None: compare_data(operator.eq, data, tag)
 
 @pytest.fixture
 def compare_isclose(compare_data):
-    def compare_fct(x, y):
-        return np.all(np.isclose(x, y))
-        
-    return lambda data, tag=None: compare_data(compare_fct, data, tag)
+    return lambda data, tag=None: compare_data(np.allclose, data, tag)
     
     
 @pytest.fixture
