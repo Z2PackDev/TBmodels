@@ -11,6 +11,7 @@ import kwant
 import tbmodels
 import wraparound
 import numpy as np
+import scipy.linalg as la
 
 from parameters import T_VALUES, KPT
 
@@ -33,10 +34,11 @@ def test_simple(t, get_model):
     model.add_hoppings_kwant(sys)
     sys = wraparound.wraparound(sys).finalized()
     
+    # the Hamiltonian doesn't match because the sites might be re-ordered -> test eigenval instead
     for k in KPT:
         print(model.hamilton(k).shape)
         k_kwant = tuple(np.array(k) * 2 * np.pi)
-        np.testing.assert_allclose(model.hamilton(k), sys.hamiltonian_submatrix(k_kwant), atol=1e-8)
+        np.testing.assert_allclose(model.eigenval(k), la.eigvalsh(sys.hamiltonian_submatrix(k_kwant)), atol=1e-8)
 
 @pytest.mark.parametrize('hr_file', ['./samples/hr_hamilton.dat', './samples/wannier90_hr.dat', './samples/wannier90_hr_v2.dat'])
 def test_realistic(compare_data, hr_file):
@@ -54,6 +56,8 @@ def test_realistic(compare_data, hr_file):
     sys = wraparound.wraparound(sys).finalized()
     
     # don't split into separate tests because it takes too long
+    # since there is only one 'site' we can also test the Hamiltonian
     for k in KPT:
         k_kwant = tuple(np.array(k) * 2 * np.pi)
+        np.testing.assert_allclose(model.eigenval(k), la.eigvalsh(sys.hamiltonian_submatrix(k_kwant)), atol=1e-8)
         np.testing.assert_allclose(model.hamilton(k), sys.hamiltonian_submatrix(k_kwant), atol=1e-8)
