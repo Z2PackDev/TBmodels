@@ -412,70 +412,7 @@ class Model:
             return json.load(f, object_hook=decode)
 
     #------------------SERIALIZATION TO DIFFERENT FORMATS---------------#
-    
-    def to_kwant(self, shape=None):
-        """
-        Returns the model as a kwant object.
-        TODO: polyatomic lattices
-        TODO: get leads
 
-        :param shape: array of unit cell lengths in each dimension to generate kwant.system.FiniteSystem 
-        """
-        # import kwant here because it's in extras_require
-        import kwant
-
-        #shape = np.ones(self.dims, dtype=np.int_) if not shape else shape
-        assert len(shape) == self.dim, "Please specify the array of distances in each dimension of the model"
-        assert np.all(self.pos == np.zeros((self.size, self.dim))), "Polyatomic lattices are not implemented" 
-
-        # Read or create unit cell
-        uc = self.uc if isinstance(self.uc, np.ndarray) else np.eye(self.dim)
-        # Find the extent of hopping and define lead symmetries
-        all_hopping_dirs = np.array([np.array(list(k)) for k in self.hop.keys()])
-        max_spacing = np.amax(all_hopping_dirs, axis = 0)
-        global_uc = np.einsum("ij,j->ij", uc, max_spacing)
-        # Define lattice symmetries 
-        kw_lat = kwant.lattice.general(uc, name='tbmodels')
-        lead_lattices = [kwant.TranslationalSymmetry(tuple(-x)) for x in global_uc]
-        assert np.all(np.abs(kw_lat.prim_vecs - uc) < 1e-12), "Mismatch between tbmodels and kwant in lattice geometry, {} != {}".format(uc, kw_lat.prim_vecs)
-        # Create finite-size lattice and leads
-        leads = [kwant.Builder(l) for l in lead_lattices]
-        kw_sys = kwant.Builder()
-
-        # Assign on-site values
-        on_site = self._array_cast(self.hop[self._zero_vec])
-        # TODO: check if .conjugate().transpose() needs to be added
-        #~ on_site += on_site.conjugate().transpose()
-        enum_grids = [np.arange(0, x, 1, dtype=np.int_) for x in shape] 
-        for p in itertools.product(*enum_grids):
-            # convert pair of indices to the actual position on the lattice
-            pos = np.einsum('ij,j', uc, p)
-            kw_sys[kw_lat(*pos)] = on_site
-            for l in leads:
-                l[kw_lat(*pos)] = on_site
-            
-        # Assign hoppings    
-        # self.hop is a mapping containing the H[R] Hamiltonian parts
-        # only positive R, and half of the R=0 term are present
-        # to get the full mapping, we need to add H[-R]:=H[R]^\dagger
-        # for every R in self.hop.keys()
-        for hop_d, hop_m in self.hop.items():
-            if hop_d == self._zero_vec:
-                continue
-            R = tuple(np.array(hop_d))
-            minusR = tuple(-np.array(R))
-            kw_sys[kwant.builder.HoppingKind(R, kw_lat, kw_lat)] = hop_m 
-            kw_sys[kwant.builder.HoppingKind(minusR, kw_lat, kw_lat)] = np.transpose(np.conj(hop_m))
-            for l in leads:
-                l[kwant.builder.HoppingKind(R, kw_lat, kw_lat)] = hop_m
-                l[kwant.builder.HoppingKind(minusR, kw_lat, kw_lat)] = np.transpose(np.conj(hop_m))
-
-        for l in leads:
-            kw_sys.attach_lead(l)
-            kw_sys.attach_lead(l.reversed())
-
-        return kw_sys
-        
     def to_kwant_lattice(self):
         """
         Returns a kwant lattice corresponding to the current model. Orbitals with the same position are grouped into the same Monoatomic sublattice.
