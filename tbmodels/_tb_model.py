@@ -682,6 +682,9 @@ class Model:
 
         """
         R = tuple(R)
+        if len(R) != self.dim:
+            raise ValueError('Dimension of R ({}) does not match the model dimension ({})'.format(len(R), self.dim))
+
         mat = np.zeros((self.size, self.size), dtype=complex)
         nonzero_idx = np.nonzero(R)[0]
         if len(nonzero_idx) == 0:

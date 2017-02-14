@@ -17,3 +17,8 @@ def test_simple(t1, get_model, k, compare_data, models_equal, compare_isclose):
     compare_isclose(m.hamilton(k), tag='hamilton')
     compare_isclose(m.eigenval(k), tag='eigenval')
     compare_data(models_equal, m)
+
+@pytest.mark.parametrize('t1', T_VALUES)
+def test_invalid_R(t1, get_model):
+    with pytest.raises(ValueError):
+        m = get_model(*t1, dim=2)
