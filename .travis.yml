@@ -11,7 +11,8 @@ before_install:
     - sudo apt-get install -qq liblapack.so 
 
 install:
-    - pip install .
+    - pip install .[kwant]
+    - pip install git+https://gitlab.kwant-project.org/cwg/wraparound.git
 
 # run tests
 script:

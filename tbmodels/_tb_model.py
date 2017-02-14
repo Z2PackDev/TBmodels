@@ -550,7 +550,7 @@ class Model:
                         ] = sub_matrix
                         kwant_sys[
                             kwant.builder.HoppingKind(
-                                R, kwant_sublattices[i], kwant_sublattices[j]
+                                R, kwant_sublattices[j], kwant_sublattices[i]
                             )
                         ] = np.transpose(np.conj(sub_matrix))
         return kwant_sys
