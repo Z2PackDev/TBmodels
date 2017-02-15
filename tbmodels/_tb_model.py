@@ -396,7 +396,7 @@ class Model:
         # skip comment line
         next(iterator)
         wsvec_mapping = {}
-        HoppingKey = namedtuple('HoppingKey', ['orbital_1', 'orbital_2', 'R'])
+        HoppingKey = co.namedtuple('HoppingKey', ['orbital_1', 'orbital_2', 'R'])
         for first_line in iterator:
             rx, ry, rz, o1, o2 = (int(x) for x in first_line.split())
             # in our convention, orbital indices start at 0.
@@ -434,25 +434,25 @@ class Model:
             if 'pos' in kwargs:
                 raise ValueError("Ambiguous orbital positions: The positions can be given either via the 'pos' or the 'xyz_file' keywords, but not both.")
             with open(xyz_file, 'r') as f:
-                kwargs['pos'], _ = self._read_xyz(f)
+                kwargs['pos'], _ = cls._read_xyz(f)
         
         with open(hr_file, 'r') as f:
-            num_wann, hop_entries = self._read_hr(f)
-        hop_entries = (hop for hop in hop_entries if abs(hop[0]) > h_cutoff)
+            num_wann, hop_entries = cls._read_hr(f)
+            hop_entries = (hop for hop in hop_entries if abs(hop[0]) > h_cutoff)
 
-        if wsvec_file is not None:
-            with open(wsvec_file, 'r') as f:
-                wsvec_mapping = self._read_wsvec(f)
-            # remapping hoppings
-            new_hop_list = []
-            for t, orbital_1, orbital_2, R in hop_entries:
-                T_list = wsvec_mapping[(orbital_1, orbital_2, R)]
-                N = len(T_list)
-                for T in T_list:
-                    new_hop_list.append((t / N, orbital_1, orbital_2, tuple(np.array(R) + T)))
-            hop_entries = new_hop_list
+            if wsvec_file is not None:
+                with open(wsvec_file, 'r') as f:
+                    wsvec_mapping = cls._read_wsvec(f)
+                # remapping hoppings
+                new_hop_list = []
+                for t, orbital_1, orbital_2, R in hop_entries:
+                    T_list = wsvec_mapping[(orbital_1, orbital_2, tuple(R))]
+                    N = len(T_list)
+                    for T in T_list:
+                        new_hop_list.append((t / N, orbital_1, orbital_2, tuple(np.array(R) + T)))
+                hop_entries = new_hop_list
 
-        return cls.from_hop_list(size=num_wann, hop_list=hop_entries, **kwargs)
+            return cls.from_hop_list(size=num_wann, hop_list=hop_entries, **kwargs)
     
     @classmethod
     def from_json(cls, json_string):
