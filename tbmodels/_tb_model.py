@@ -11,6 +11,7 @@ from __future__ import division, print_function
 import copy
 import json
 import time
+import warnings
 import itertools
 import contextlib
 import collections as co
@@ -338,6 +339,7 @@ class Model:
 
     @classmethod
     def _from_hr_iterator(cls, hr_iterator, *, h_cutoff=0., **kwargs):
+        warnings.warn('The from_hr and from_hr_file functions are deprecated. Use from_wannier_files instead.', DeprecationWarning, stacklevel=2)
         num_wann, h_entries = cls._read_hr(hr_iterator)
 
         h_entries = (hop for hop in h_entries if abs(hop[0]) > h_cutoff)
@@ -388,6 +390,23 @@ class Model:
 
         return num_wann, hop_list
 
+
+    @staticmethod
+    def _read_wsvec(iterator):
+        # skip comment line
+        next(iterator)
+        wsvec_mapping = {}
+        HoppingKey = namedtuple('HoppingKey', ['orbital_1', 'orbital_2', 'R'])
+        for first_line in iterator:
+            rx, ry, rz, o1, o2 = (int(x) for x in first_line.split())
+            # in our convention, orbital indices start at 0.
+            key = HoppingKey(orbital_1=o1 - 1, orbital_2=o2 - 1, R=(rx, ry, rz))
+            N = int(next(iterator))
+            val = []
+            for _ in range(N):
+                val.append(tuple(int(x) for x in next(iterator).split()))
+            wsvec_mapping[key] = val
+        return wsvec_mapping
     
     @staticmethod
     def _read_xyz(iterator):
@@ -408,6 +427,32 @@ class Model:
                 atom_positions.append(AtomPosition(kind=kind, pos=pos))
         assert len(wannier_centres) + len(atom_positions) == N
         return wannier_centres, atom_positions
+        
+    @classmethod
+    def from_wannier_files(cls, *, hr_file, wsvec_file=None, xyz_file=None, h_cutoff=0., **kwargs):
+        if xyz_file is not None:
+            if 'pos' in kwargs:
+                raise ValueError("Ambiguous orbital positions: The positions can be given either via the 'pos' or the 'xyz_file' keywords, but not both.")
+            with open(xyz_file, 'r') as f:
+                kwargs['pos'], _ = self._read_xyz(f)
+        
+        with open(hr_file, 'r') as f:
+            num_wann, hop_entries = self._read_hr(f)
+        hop_entries = (hop for hop in hop_list if abs(hop[0]) > h_cutoff)
+
+        if wsvec_file is not None:
+            with open(wsvec_file, 'r') as f:
+                wsvec_mapping = self._read_wsvec(f)
+            # remapping hoppings
+            new_hop_list = []
+            for t, orbital_1, orbital_2, R in hop_list:
+                T_list = wsvec_mapping[(orbital_1, orbital_2, R)]
+                N = len(T_list)
+                for T in T_list:
+                    new_hop_list.append((t / N, orbital_1, orbital_2, tuple(np.array(R) + T)))
+            hop_list = new_hop_list
+
+        return cls.from_hop_list(size=num_wann, hop_list=h_entries, **kwargs)
     
     @classmethod
     def from_json(cls, json_string):
