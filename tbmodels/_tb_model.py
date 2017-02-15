@@ -438,21 +438,21 @@ class Model:
         
         with open(hr_file, 'r') as f:
             num_wann, hop_entries = self._read_hr(f)
-        hop_entries = (hop for hop in hop_list if abs(hop[0]) > h_cutoff)
+        hop_entries = (hop for hop in hop_entries if abs(hop[0]) > h_cutoff)
 
         if wsvec_file is not None:
             with open(wsvec_file, 'r') as f:
                 wsvec_mapping = self._read_wsvec(f)
             # remapping hoppings
             new_hop_list = []
-            for t, orbital_1, orbital_2, R in hop_list:
+            for t, orbital_1, orbital_2, R in hop_entries:
                 T_list = wsvec_mapping[(orbital_1, orbital_2, R)]
                 N = len(T_list)
                 for T in T_list:
                     new_hop_list.append((t / N, orbital_1, orbital_2, tuple(np.array(R) + T)))
-            hop_list = new_hop_list
+            hop_entries = new_hop_list
 
-        return cls.from_hop_list(size=num_wann, hop_list=h_entries, **kwargs)
+        return cls.from_hop_list(size=num_wann, hop_list=hop_entries, **kwargs)
     
     @classmethod
     def from_json(cls, json_string):
