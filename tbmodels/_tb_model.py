@@ -442,15 +442,18 @@ class Model:
 
             if wsvec_file is not None:
                 with open(wsvec_file, 'r') as f:
+                    # wsvec_mapping is not a generator because it doesn't have
+                    # the same order as the hoppings in _hr.dat
+                    # This could still be done, but would be more complicated.
                     wsvec_mapping = cls._read_wsvec(f)
-                # remapping hoppings
-                new_hop_list = []
-                for t, orbital_1, orbital_2, R in hop_entries:
-                    T_list = wsvec_mapping[(orbital_1, orbital_2, tuple(R))]
-                    N = len(T_list)
-                    for T in T_list:
-                        new_hop_list.append((t / N, orbital_1, orbital_2, tuple(np.array(R) + T)))
-                hop_entries = new_hop_list
+
+                def remap_hoppings(hop_entries):
+                    for t, orbital_1, orbital_2, R in hop_entries:
+                        T_list = wsvec_mapping[(orbital_1, orbital_2, tuple(R))]
+                        N = len(T_list)
+                        for T in T_list:
+                            yield (t / N, orbital_1, orbital_2, tuple(np.array(R) + T))
+                hop_entries = remap_hoppings(hop_entries)
 
             return cls.from_hop_list(size=num_wann, hop_list=hop_entries, **kwargs)
     
