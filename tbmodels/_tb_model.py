@@ -12,7 +12,6 @@ import copy
 import json
 import time
 import warnings
-import itertools
 import contextlib
 import collections as co
 
@@ -407,7 +406,7 @@ class Model:
                 val.append(tuple(int(x) for x in next(iterator).split()))
             wsvec_mapping[key] = val
         return wsvec_mapping
-    
+
     @staticmethod
     def _read_xyz(iterator):
         """Reads the content of a .xyz file"""
@@ -427,7 +426,7 @@ class Model:
                 atom_positions.append(AtomPosition(kind=kind, pos=pos))
         assert len(wannier_centres) + len(atom_positions) == N
         return wannier_centres, atom_positions
-        
+
     @classmethod
     def from_wannier_files(cls, *, hr_file, wsvec_file=None, xyz_file=None, h_cutoff=0., **kwargs):
         if xyz_file is not None:
@@ -435,7 +434,7 @@ class Model:
                 raise ValueError("Ambiguous orbital positions: The positions can be given either via the 'pos' or the 'xyz_file' keywords, but not both.")
             with open(xyz_file, 'r') as f:
                 kwargs['pos'], _ = cls._read_xyz(f)
-        
+
         with open(hr_file, 'r') as f:
             num_wann, hop_entries = cls._read_hr(f)
             hop_entries = (hop for hop in hop_entries if abs(hop[0]) > h_cutoff)
@@ -456,7 +455,7 @@ class Model:
                 hop_entries = remap_hoppings(hop_entries)
 
             return cls.from_hop_list(size=num_wann, hop_list=hop_entries, **kwargs)
-    
+
     @classmethod
     def from_json(cls, json_string):
         """
@@ -485,7 +484,7 @@ class Model:
     def to_kwant_lattice(self):
         """
         Returns a kwant lattice corresponding to the current model. Orbitals with the same position are grouped into the same Monoatomic sublattice.
-        
+
         .. note :: The TBmodels - Kwant interface is experimental. Use it with caution.
         """
         import kwant
@@ -497,11 +496,11 @@ class Model:
             prim_vecs=uc,
             basis=pos_abs
         )
-    
+
     def add_hoppings_kwant(self, kwant_sys):
         """
         Sets the on-site energies and hopping terms for an existing kwant system to those of the :class:`.Model`.
-        
+
         .. note :: The TBmodels - Kwant interface is experimental. Use it with caution.
         """
         import kwant
@@ -523,7 +522,7 @@ class Model:
             else:
                 # TODO: check if there is a legitimate use case which triggers this
                 raise ValueError('Site {} did not match any sublattice.'.format(site))
-        
+
         # R = 0 terms between different sublattices
         for i, s1 in enumerate(sublattices):
             for j, s2 in enumerate(sublattices):
@@ -536,7 +535,7 @@ class Model:
                             self._zero_vec, kwant_sublattices[i], kwant_sublattices[j]
                         )
                     ] = on_site_mat[np.ix_(s1.indices, s2.indices)]
-        
+
         # R != 0 terms
         for R, mat in self.hop.items():
             mat = self._array_cast(mat)
@@ -560,14 +559,14 @@ class Model:
                             )
                         ] = np.transpose(np.conj(sub_matrix))
         return kwant_sys
-                        
-    
+
+
     def _get_sublattices(self):
         Sublattice = co.namedtuple('Sublattice', ['pos', 'indices'])
         sublattices = []
         for i, p_orb in enumerate(self.pos):
             # try to match an existing sublattice
-            for j, (sub_pos, sub_indices) in enumerate(sublattices):
+            for sub_pos, sub_indices in sublattices:
                 if np.isclose(p_orb, sub_pos, rtol=0).all():
                     sub_indices.append(i)
                     break
