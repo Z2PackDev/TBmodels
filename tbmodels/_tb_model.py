@@ -471,7 +471,8 @@ class Model:
                             T_list = wsvec_generator.send((orbital_1, orbital_2, tuple(R)))
                             N = len(T_list)
                             for T in T_list:
-                                yield (t / N, orbital_1, orbital_2, tuple(np.array(R) + T))
+                                # not using numpy here increases performance
+                                yield (t / N, orbital_1, orbital_2, (r + t for r, t in zip(R, T)))
                     hop_entries = remap_hoppings(hop_entries)
                     return cls.from_hop_list(size=num_wann, hop_list=hop_entries, **kwargs)
 
