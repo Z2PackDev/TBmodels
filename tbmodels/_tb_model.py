@@ -392,6 +392,7 @@ class Model:
     @staticmethod
     def _async_parse(iterator, chunksize=1):
         mapping = dict()
+        stopped = False
         while True:
             # get the desired key
             key = yield
@@ -400,29 +401,29 @@ class Model:
                     # key found
                     yield mapping.pop(key)
                     break
-                except KeyError:
+                except KeyError as e:
+                    if stopped:
+                        # avoid infinte loop in true KeyError
+                        raise e
                     for _ in range(chunksize):
                         try:
                             # parse new data
                             newkey, newval = next(iterator)
                             mapping[newkey] = newval
                         except StopIteration:
+                            stopped = True
                             break
     
     @staticmethod
     def _read_wsvec(iterator):
         # skip comment line
         next(iterator)
-        #~ HoppingKey = co.namedtuple('HoppingKey', ['orbital_1', 'orbital_2', 'R'])
         for first_line in iterator:
             rx, ry, rz, o1, o2 = (int(x) for x in first_line.split())
             # in our convention, orbital indices start at 0.
-            #~ key = HoppingKey(orbital_1=o1 - 1, orbital_2=o2 - 1, R=(rx, ry, rz))
-            key = (o1 - 1, o2 - 1, rx, ry, rz)
+            key = (o1 - 1, o2 - 1, (rx, ry, rz))
             N = int(next(iterator))
-            val = []
-            for _ in range(N):
-                val.append(tuple(int(x) for x in next(iterator).split()))
+            val = [tuple(int(x) for x in next(iterator).split()) for _ in range(N)]
             yield key, val
 
     @staticmethod
@@ -467,7 +468,7 @@ class Model:
                     def remap_hoppings(hop_entries):
                         for t, orbital_1, orbital_2, R in hop_entries:
                             next(wsvec_generator)
-                            T_list = wsvec_generator.send((orbital_1, orbital_2, *R))
+                            T_list = wsvec_generator.send((orbital_1, orbital_2, tuple(R)))
                             N = len(T_list)
                             for T in T_list:
                                 yield (t / N, orbital_1, orbital_2, tuple(np.array(R) + T))
