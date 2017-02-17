@@ -390,7 +390,7 @@ class Model:
         return num_wann, hop_list
 
     @staticmethod
-    def _async_parse(iterator):
+    def _async_parse(iterator, chunksize=1):
         mapping = dict()
         while True:
             # get the desired key
@@ -401,19 +401,24 @@ class Model:
                     yield mapping.pop(key)
                     break
                 except KeyError:
-                    # parse new data
-                    newkey, newval = next(iterator)
-                    mapping[newkey] = newval
+                    for _ in range(chunksize):
+                        try:
+                            # parse new data
+                            newkey, newval = next(iterator)
+                            mapping[newkey] = newval
+                        except StopIteration:
+                            break
     
     @staticmethod
     def _read_wsvec(iterator):
         # skip comment line
         next(iterator)
-        HoppingKey = co.namedtuple('HoppingKey', ['orbital_1', 'orbital_2', 'R'])
+        #~ HoppingKey = co.namedtuple('HoppingKey', ['orbital_1', 'orbital_2', 'R'])
         for first_line in iterator:
             rx, ry, rz, o1, o2 = (int(x) for x in first_line.split())
             # in our convention, orbital indices start at 0.
-            key = HoppingKey(orbital_1=o1 - 1, orbital_2=o2 - 1, R=(rx, ry, rz))
+            #~ key = HoppingKey(orbital_1=o1 - 1, orbital_2=o2 - 1, R=(rx, ry, rz))
+            key = (o1 - 1, o2 - 1, rx, ry, rz)
             N = int(next(iterator))
             val = []
             for _ in range(N):
@@ -457,12 +462,12 @@ class Model:
                     # wsvec_mapping is not a generator because it doesn't have
                     # the same order as the hoppings in _hr.dat
                     # This could still be done, but would be more complicated.
-                    wsvec_generator = cls._async_parse(cls._read_wsvec(f))
+                    wsvec_generator = cls._async_parse(cls._read_wsvec(f), chunksize=num_wann)
 
                     def remap_hoppings(hop_entries):
                         for t, orbital_1, orbital_2, R in hop_entries:
                             next(wsvec_generator)
-                            T_list = wsvec_generator.send((orbital_1, orbital_2, tuple(R)))
+                            T_list = wsvec_generator.send((orbital_1, orbital_2, *R))
                             N = len(T_list)
                             for T in T_list:
                                 yield (t / N, orbital_1, orbital_2, tuple(np.array(R) + T))
