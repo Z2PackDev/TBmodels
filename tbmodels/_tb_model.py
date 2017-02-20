@@ -370,7 +370,7 @@ class Model:
             orbital_a = int(entry[3]) - 1
             orbital_b = int(entry[4]) - 1
             # test consistency of orbital numbers
-            if not sorted([orbital_a, orbital_b]) == sorted([i % num_wann, (i % num_wann_square) // num_wann]):
+            if not (orbital_a == i % num_wann) and (orbital_b == (i % num_wann_square) // num_wann):
                 raise ValueError(
                     "Inconsistent orbital numbers in line '{}'".format(line)
                 )
@@ -417,9 +417,9 @@ class Model:
         # skip comment line
         next(iterator)
         for first_line in iterator:
-            rx, ry, rz, o1, o2 = (int(x) for x in first_line.split())
+            *R, o1, o2 = (int(x) for x in first_line.split())
             # in our convention, orbital indices start at 0.
-            key = (o1 - 1, o2 - 1, (rx, ry, rz))
+            key = (o1 - 1, o2 - 1, tuple(R))
             N = int(next(iterator))
             val = [tuple(int(x) for x in next(iterator).split()) for _ in range(N)]
             yield key, val
