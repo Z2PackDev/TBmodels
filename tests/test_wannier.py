@@ -27,7 +27,36 @@ def test_wannier_hr_wsvec(compare_data, hr_file, wsvec_file):
     H_list = np.array([model.hamilton(k) for k in kpt])
 
     compare_data(lambda x, y: np.isclose(x, y).all(), H_list)
-        
+    
+@pytest.mark.parametrize('hr_file, wsvec_file, xyz_file', [
+    ('./samples/silicon_hr.dat', './samples/silicon_wsvec.dat', './samples/silicon_centres.xyz')
+])
+def test_wannier_hr_wsvec_xyz(compare_data, hr_file, wsvec_file, xyz_file):
+    model = tbmodels.Model.from_wannier_files(
+        hr_file=hr_file, 
+        wsvec_file=wsvec_file, 
+        xyz_file=xyz_file
+    )
+    model2 = tbmodels.Model.from_wannier_files(
+        hr_file=hr_file, 
+        wsvec_file=wsvec_file
+    )
+    H_list = np.array([model.hamilton(k) for k in kpt])
+    H_list2 = np.array([model.hamilton(k) for k in kpt])
+
+    compare_data(lambda x, y: np.isclose(x, y).all(), H_list)
+    assert np.isclose(H_list, H_list2).all()
+    
+    assert np.isclose(model.pos, np.array([
+        (-0.46075440, -0.46071138, -0.46076716),
+        (-0.46074283,  0.46072157,  0.46071793),
+        ( 0.46070307, -0.46076048,  0.46068558),
+        ( 0.46070418,  0.46072373, -0.46076362),
+        ( 1.81012778,  1.81011207,  1.81011265),
+        ( 1.81009687,  0.88866222,  0.88861715),
+        ( 0.88863982,  1.81013970,  0.88865990),
+        ( 0.88864252,  0.88865189,  1.81009014)
+    ]) % 1).all()
 
 @pytest.mark.parametrize('hr_file', ['./samples/hr_hamilton.dat', './samples/wannier90_hr.dat', './samples/wannier90_hr_v2.dat'])
 def test_wannier_hr_equal(models_equal, hr_file):
