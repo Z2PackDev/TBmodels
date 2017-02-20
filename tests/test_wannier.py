@@ -12,9 +12,18 @@ import numpy as np
 
 kpt = [(0.1, 0.2, 0.7), (-0.3, 0.5, 0.2), (0., 0., 0.), (0.1, -0.9, -0.7)]
 
-@pytest.mark.parametrize('hr_file', ['./samples/hr_hamilton.dat', './samples/wannier90_hr.dat', './samples/wannier90_hr_v2.dat'])
+@pytest.mark.parametrize('hr_file', ['./samples/hr_hamilton.dat', './samples/wannier90_hr.dat', './samples/wannier90_hr_v2.dat', './samples/silicon_hr.dat'])
 def test_wannier_hr_only(compare_data, hr_file):
     model = tbmodels.Model.from_wannier_files(hr_file=hr_file, occ=28)
+    H_list = np.array([model.hamilton(k) for k in kpt])
+
+    compare_data(lambda x, y: np.isclose(x, y).all(), H_list)
+    
+@pytest.mark.parametrize('hr_file, wsvec_file', [
+    ('./samples/silicon_hr.dat', './samples/silicon_wsvec.dat')
+])
+def test_wannier_hr_wsvec(compare_data, hr_file, wsvec_file):
+    model = tbmodels.Model.from_wannier_files(hr_file=hr_file, wsvec_file=wsvec_file)
     H_list = np.array([model.hamilton(k) for k in kpt])
 
     compare_data(lambda x, y: np.isclose(x, y).all(), H_list)
