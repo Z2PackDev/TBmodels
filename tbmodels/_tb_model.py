@@ -352,29 +352,27 @@ class Model:
         read the number of wannier functions and the hopping entries
         from *hr.dat and converts them into the right format
         """
-        iterator = enumerate(iterator)
         next(iterator) # skip first line
-        num_wann = int(next(iterator)[1])
-        nrpts = int(next(iterator)[1])
+        num_wann = int(next(iterator))
+        nrpts = int(next(iterator))
 
         # get degeneracy points
         deg_pts = []
         # order in zip important because else the next data element is consumed
-        for _, (_, line) in zip(range(int(np.ceil(nrpts / 15))), iterator):
+        for _, line in zip(range(int(np.ceil(nrpts / 15))), iterator):
             deg_pts.extend(int(x) for x in line.split())
         assert len(deg_pts) == nrpts
 
         num_wann_square = num_wann**2
         def to_entry(line, i):
             """Turns a line (string) into a hop_list entry"""
-            line_no, line = line
             entry = line.split()
             orbital_a = int(entry[3]) - 1
             orbital_b = int(entry[4]) - 1
             # test consistency of orbital numbers
             if not sorted([orbital_a, orbital_b]) == sorted([i % num_wann, (i % num_wann_square) // num_wann]):
                 raise ValueError(
-                    'Inconsistent orbital numbers in line number {}'.format(line_no + 1)
+                    "Inconsistent orbital numbers in line '{}'".format(line)
                 )
             return [
                 (float(entry[5]) + 1j * float(entry[6])) / (deg_pts[i // num_wann_square]),
@@ -384,7 +382,7 @@ class Model:
             ]
 
         # skip random empty lines
-        lines_nonempty = (l for l in iterator if l[1].strip())
+        lines_nonempty = (l for l in iterator if l.strip())
         hop_list = (to_entry(line, i) for i, line in enumerate(lines_nonempty))
 
         return num_wann, hop_list
