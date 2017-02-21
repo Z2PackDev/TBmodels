@@ -5,6 +5,8 @@
 # Date:    05.05.2015 13:59:00 CEST
 # File:    hr_hamilton.py
 
+from os.path import join
+
 import pytest
 import itertools
 
@@ -14,11 +16,7 @@ import wraparound
 import numpy as np
 import scipy.linalg as la
 
-from parameters import T_VALUES, KPT
-
-#~ kpt = [(0.1, 0.2, 0.7), (-0.3, 0.5, 0.2), (0., 0., 0.), (0.1, -0.9, -0.7)]
-#~ kpt_kwant = [tuple(2 * np.pi * np.array(k)) for k in kpt]
-
+from parameters import T_VALUES, KPT, SAMPLES_DIR
 
 @pytest.mark.parametrize('t', T_VALUES)
 def test_simple(t, get_model):
@@ -40,8 +38,9 @@ def test_simple(t, get_model):
         k_kwant = tuple(np.array(k) * 2 * np.pi)
         np.testing.assert_allclose(model.eigenval(k), la.eigvalsh(sys.hamiltonian_submatrix(k_kwant)), atol=1e-8)
 
-@pytest.mark.parametrize('hr_file', ['./samples/hr_hamilton.dat', './samples/wannier90_hr.dat', './samples/wannier90_hr_v2.dat'])
-def test_realistic(compare_data, hr_file):
+@pytest.mark.parametrize('hr_name', ['hr_hamilton.dat', 'wannier90_hr.dat', 'wannier90_hr_v2.dat'])
+def test_realistic(compare_data, hr_name):
+    hr_file = join(SAMPLES_DIR, hr_name)
     model = tbmodels.Model.from_hr_file(hr_file, occ=28)
     
     latt = model.to_kwant_lattice()
