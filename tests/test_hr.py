@@ -5,16 +5,16 @@
 # Date:    05.05.2015 13:59:00 CEST
 # File:    hr_hamilton.py
 
-from os.path import abspath, dirname, join
+from os.path import join
 
 import pytest
 
 import tbmodels
 import numpy as np
+from parameters import SAMPLE_DIR
 
 kpt = [(0.1, 0.2, 0.7), (-0.3, 0.5, 0.2), (0., 0., 0.), (0.1, -0.9, -0.7)]
 
-SAMPLE_DIR = join(dirname(abspath(__file__)), 'samples')
 
 @pytest.mark.parametrize('hr_name', ['hr_hamilton.dat', 'wannier90_hr.dat', 'wannier90_hr_v2.dat'])
 def test_hr(compare_data, hr_name):
