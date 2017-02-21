@@ -411,7 +411,7 @@ class Model:
                         except StopIteration:
                             stopped = True
                             break
-    
+
     @staticmethod
     def _read_wsvec(iterator):
         # skip comment line
@@ -444,13 +444,62 @@ class Model:
         assert len(wannier_centres) + len(atom_positions) == N
         return wannier_centres, atom_positions
 
+    @staticmethod
+    def _read_win(iterator):
+        lines = (l.split('!')[0] for l in iterator)
+        lines = (l.strip() for l in lines)
+        lines = (l for l in lines if l)
+        lines = (l.lower() for l in lines)
+
+        text = ' '.join(lines)
+        tokens = iter(re.compile('[ :=]+').split(text))
+
+        mapping = {}
+        for t in tokens:
+            if t.startswith('begin'):
+                if t == 'begin':
+                    key = next(tokens)
+                # if there is no space:
+                else:
+                    key = t[5:]
+                val = []
+                while True:
+                    t = next(tokens)
+                    if t.startswith('end'):
+                        if t == 'end':
+                            print(key)
+                            assert next(tokens) == key
+                        else:
+                            assert t[3:] == key
+                        break
+                    else:
+                        val.append(t)
+                mapping[key] = val
+            else:
+                key = t
+                val = next(tokens)
+                mapping[key] = val
+
+        # here we can continue parsing the individual keys as needed
+        if 'unit_cell_cart' in mapping:
+            val = [float(x) for x in mapping['unit_cell_cart']]
+            mapping['unit_cell_cart'] = np.array(val).reshape(3, 3)
+
+        return mapping
+
     @classmethod
-    def from_wannier_files(cls, *, hr_file, wsvec_file=None, xyz_file=None, h_cutoff=0., **kwargs):
+    def from_wannier_files(cls, *, hr_file, wsvec_file=None, xyz_file=None, win_file=None, h_cutoff=0., **kwargs):
         if xyz_file is not None:
             if 'pos' in kwargs:
                 raise ValueError("Ambiguous orbital positions: The positions can be given either via the 'pos' or the 'xyz_file' keywords, but not both.")
             with open(xyz_file, 'r') as f:
                 kwargs['pos'], _ = cls._read_xyz(f)
+
+        if win_file is not None:
+            if 'uc' in kwargs:
+                raise ValueError("Ambiguous unit cell: It can be given either via 'uc' or the 'win_file' keywords, but not both.")
+            with open(win_file, 'r') as f:
+                kwargs['uc'] = cls._read_win(f)['unit_cell_cart']
 
         with open(hr_file, 'r') as f:
             num_wann, hop_entries = cls._read_hr(f)
