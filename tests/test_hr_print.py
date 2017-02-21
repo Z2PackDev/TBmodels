@@ -13,7 +13,7 @@ import pytest
 import tbmodels
 import numpy as np
 
-from parameters import T_VALUES, KPT, SAMPLE_DIR
+from parameters import T_VALUES, KPT, SAMPLES_DIR
 
 @pytest.mark.parametrize('t', T_VALUES)
 def test_hr_print(t, get_model, compare_equal):
@@ -22,7 +22,7 @@ def test_hr_print(t, get_model, compare_equal):
 
 @pytest.mark.parametrize('hr_name', ['hr_hamilton.dat'])
 def test_consistency(hr_name):
-    hr_file = join(SAMPLE_DIR, hr_name)
+    hr_file = join(SAMPLES_DIR, hr_name)
     model = tbmodels.Model.from_hr_file(hr_file, occ=28, sparse=True)
     lines_new = model.to_hr().split('\n')
     with open(hr_file, 'r') as f:
@@ -31,7 +31,7 @@ def test_consistency(hr_name):
     
 @pytest.mark.parametrize('hr_name', ['hr_hamilton.dat'])
 def test_consistency_file(hr_name, models_equal, sparse):
-    hr_file = join(SAMPLE_DIR, hr_name)
+    hr_file = join(SAMPLES_DIR, hr_name)
     model1 = tbmodels.Model.from_hr_file(hr_file, sparse=sparse)
     with tempfile.NamedTemporaryFile() as tmpf:
         model1.to_hr_file(tmpf.name)
@@ -40,14 +40,14 @@ def test_consistency_file(hr_name, models_equal, sparse):
     
 @pytest.mark.parametrize('hr_name', ['hr_hamilton.dat'])
 def test_consistency_str(hr_name, models_equal, sparse):
-    hr_file = join(SAMPLE_DIR, hr_name)
+    hr_file = join(SAMPLES_DIR, hr_name)
     model1 = tbmodels.Model.from_hr_file(hr_file, sparse=sparse)
     model2 = tbmodels.Model.from_hr(model1.to_hr(), sparse=sparse)
     models_equal(model1, model2)
 
 @pytest.mark.parametrize('hr_name', ['hr_hamilton.dat', 'hr_hamilton_full.dat'])
 def test_consistency_no_hcutoff(hr_name):
-    hr_file = join(SAMPLE_DIR, hr_name)
+    hr_file = join(SAMPLES_DIR, hr_name)
     model = tbmodels.Model.from_hr_file(hr_file, occ=28, h_cutoff=-1, sparse=True)
     lines_new = model.to_hr().split('\n')
     with open(hr_file, 'r') as f:
