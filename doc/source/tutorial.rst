@@ -64,12 +64,12 @@ Once created, a :class:`.Model` instance can be evaluated at different k-points 
 Saving the model to a file
 --------------------------
 
-There are different ways of saving the model to a file. To save the model for later use, I recommend using the :meth:`.to_json_file` method. This will preserve the model exactly as it is.
+There are different ways of saving the model to a file. To save the model for later use, I recommend using the :meth:`.to_hdf5_file` method. This will preserve the model exactly as it is.
 
 .. code:: python
 
-    model.to_json_file('model.json')
-    model2 = tbmodels.Model.from_json_file('model.json') # model2 is an exact copy of model
+    model.to_hdf5_file('model.hdf5')
+    model2 = tbmodels.Model.from_hdf5_file('model.hdf5') # model2 is an exact copy of model
 
 
 If compatibility with other codes operating on Wannier90's ``*hr.dat`` format is needed, the :meth:`.to_hr_file` method can be used. However, this preserves only the hopping terms, not the positions of the atoms or shape of the unit cell. Also, the precision of the hopping terms is truncated.
