@@ -769,20 +769,22 @@ class Model:
         file_kwargs = {}
         file_kwargs['hop'] = {}
         with h5py.File(hdf5_file, 'r') as f:
-            for key in ['uc', 'occ', 'size', 'dim', 'pos', 'sparse']
+            for key in ['uc', 'occ', 'size', 'dim', 'pos', 'sparse']:
                 if key in f:
-                    file_kwargs[key] = f[key]
+                    file_kwargs[key] = f[key].value
 
-                for group in f['hop'].items():
+            if 'hop' not in kwargs:
+                for group in f['hop'].values():
                     R = tuple(group['R'])
+                    print(list(group.keys()))
                     if file_kwargs['sparse']:
                         file_kwargs['hop'][R] = sp.csr(
-                            (group['data'], group['indices', group['indptr']),
+                            (group['data'], group['indices'], group['indptr']),
                             shape=group['shape']
                         )
                     else:
                         file_kwargs['hop'][R] = np.array(group['mat'])
-
+                file_kwargs['contains_cc'] = False    
         return cls(**co.ChainMap(kwargs, file_kwargs))
 
     def to_json(self):
