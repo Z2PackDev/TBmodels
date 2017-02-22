@@ -15,8 +15,7 @@ import sys
 if sys.version_info < (3, 4):
     raise 'must use Python version 3.4 or higher'
 
-readme = r"""TBModels is a tool for reading, creating and modifying tight-binding models.
-"""
+readme = """TBModels is a tool for reading, creating and modifying tight-binding models."""
 
 with open('./tbmodels/_version.py', 'r') as f:
     match_expr = "__version__[^'" + '"]+([' + "'" + r'"])([^\1]+)\1'
