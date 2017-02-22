@@ -15,8 +15,7 @@ import sys
 if sys.version_info < (3, 4):
     raise 'must use Python version 3.4 or higher'
 
-readme = r"""TBModels is a tool for reading, creating and modifying tight-binding models.
-"""
+readme = """TBModels is a tool for reading, creating and modifying tight-binding models."""
 
 with open('./tbmodels/_version.py', 'r') as f:
     match_expr = "__version__[^'" + '"]+([' + "'" + r'"])([^\1]+)\1'
@@ -25,11 +24,12 @@ with open('./tbmodels/_version.py', 'r') as f:
 setup(
     name='tbmodels',
     version=version,
-    url='http://tbmodels.ethz.ch',
+    url='http://z2pack.ethz.ch/tbmodels',
     author='Dominik Gresch',
     author_email='greschd@gmx.ch',
     description='Reading, creating and modifying tight-binding models.',
-    install_requires=['numpy', 'scipy', 'fsc.export'],
+    install_requires=['numpy', 'scipy', 'h5py', 'fsc.export'],
+    extras_require={'kwant': ['kwant']},
     long_description=readme,
     classifiers=[
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
@@ -38,6 +38,7 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
         'Intended Audience :: Science/Research',
         'Topic :: Scientific/Engineering :: Physics'
     ],

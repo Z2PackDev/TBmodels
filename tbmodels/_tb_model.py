@@ -5,15 +5,15 @@
 # Date:    02.06.2015 17:50:33 CEST
 # File:    _tb_model.py
 
-
-from __future__ import division, print_function
-
+import re
 import copy
 import json
 import time
+import warnings
 import contextlib
 import collections as co
 
+import h5py
 import numpy as np
 import scipy.linalg as la
 from fsc.export import export
@@ -53,17 +53,17 @@ class Model:
     :type sparse:       bool
     """
     def __init__(
-        self,
-        *,
-        on_site=None,
-        hop=None,
-        size=None,
-        dim=None,
-        occ=None,
-        pos=None,
-        uc=None,
-        contains_cc=True,
-        sparse=False
+            self,
+            *,
+            on_site=None,
+            hop=None,
+            size=None,
+            dim=None,
+            occ=None,
+            pos=None,
+            uc=None,
+            contains_cc=True,
+            sparse=False
     ):
         if hop is None:
             hop = dict()
@@ -78,6 +78,7 @@ class Model:
 
         # ---- UNIT CELL ----
         self.uc = None if uc is None else np.array(uc) # implicit copy
+
 
         # ---- HOPPING TERMS AND POSITIONS ----
         self._init_hop_pos(
@@ -195,8 +196,8 @@ class Model:
         # Consistency checks
         for R, mat in hop.items():
             if la.norm(
-                mat -
-                hop.get(tuple(-x for x in R), np.zeros(mat.shape)).T.conjugate()
+                    mat -
+                    hop.get(tuple(-x for x in R), np.zeros(mat.shape)).T.conjugate()
             ) > 1e-12:
                 raise ValueError('The provided hoppings do not correspond to a hermitian Hamiltonian. hoppings[-R] = hoppings[R].H is not fulfilled.')
 
@@ -316,6 +317,7 @@ class Model:
         :param kwargs:      :class:`.Model` keyword arguments.
 
         .. warning :: When loading a :class:`.Model` from the ``hr.dat`` format, parameters such as the positions of the orbitals, unit cell shape and occupation number must be set explicitly.
+        .. note :: This interface is deprecated in favor of the :meth:`.from_wannier_files` interface.
         """
         return cls._from_hr_iterator(
             iter(hr_string.splitlines()),
@@ -331,12 +333,15 @@ class Model:
 
         :param hr_file:     Path of the input file.
         :type hr_file:      str
+
+        .. note :: This function is deprecated in favor of the :meth:`.from_wannier_files` interface.
         """
         with open(hr_file, 'r') as file_handle:
             return cls._from_hr_iterator(file_handle, h_cutoff=h_cutoff, **kwargs)
 
     @classmethod
     def _from_hr_iterator(cls, hr_iterator, *, h_cutoff=0., **kwargs):
+        warnings.warn('The from_hr and from_hr_file functions are deprecated. Use from_wannier_files instead.', DeprecationWarning, stacklevel=2)
         num_wann, h_entries = cls._read_hr(hr_iterator)
 
         h_entries = (hop for hop in h_entries if abs(hop[0]) > h_cutoff)
@@ -350,29 +355,27 @@ class Model:
         read the number of wannier functions and the hopping entries
         from *hr.dat and converts them into the right format
         """
-        iterator = enumerate(iterator)
         next(iterator) # skip first line
-        num_wann = int(next(iterator)[1])
-        nrpts = int(next(iterator)[1])
+        num_wann = int(next(iterator))
+        nrpts = int(next(iterator))
 
         # get degeneracy points
         deg_pts = []
         # order in zip important because else the next data element is consumed
-        for _, (_, line) in zip(range(int(np.ceil(nrpts / 15))), iterator):
+        for _, line in zip(range(int(np.ceil(nrpts / 15))), iterator):
             deg_pts.extend(int(x) for x in line.split())
         assert len(deg_pts) == nrpts
 
         num_wann_square = num_wann**2
         def to_entry(line, i):
             """Turns a line (string) into a hop_list entry"""
-            line_no, line = line
             entry = line.split()
             orbital_a = int(entry[3]) - 1
             orbital_b = int(entry[4]) - 1
             # test consistency of orbital numbers
-            if not sorted([orbital_a, orbital_b]) == sorted([i % num_wann, (i % num_wann_square) // num_wann]):
+            if not (orbital_a == i % num_wann) and (orbital_b == (i % num_wann_square) // num_wann):
                 raise ValueError(
-                    'Inconsistent orbital numbers in line number {}'.format(line_no + 1)
+                    "Inconsistent orbital numbers in line '{}'".format(line)
                 )
             return [
                 (float(entry[5]) + 1j * float(entry[6])) / (deg_pts[i // num_wann_square]),
@@ -382,10 +385,167 @@ class Model:
             ]
 
         # skip random empty lines
-        lines_nonempty = (l for l in iterator if l[1].strip())
+        lines_nonempty = (l for l in iterator if l.strip())
         hop_list = (to_entry(line, i) for i, line in enumerate(lines_nonempty))
 
         return num_wann, hop_list
+
+    @staticmethod
+    def _async_parse(iterator, chunksize=1):
+        mapping = dict()
+        stopped = False
+        while True:
+            # get the desired key
+            key = yield
+            while True:
+                try:
+                    # key found
+                    yield mapping.pop(key)
+                    break
+                except KeyError as e:
+                    if stopped:
+                        # avoid infinte loop in true KeyError
+                        raise e
+                    for _ in range(chunksize):
+                        try:
+                            # parse new data
+                            newkey, newval = next(iterator)
+                            mapping[newkey] = newval
+                        except StopIteration:
+                            stopped = True
+                            break
+
+    @staticmethod
+    def _read_wsvec(iterator):
+        # skip comment line
+        next(iterator)
+        for first_line in iterator:
+            *R, o1, o2 = (int(x) for x in first_line.split())
+            # in our convention, orbital indices start at 0.
+            key = (o1 - 1, o2 - 1, tuple(R))
+            N = int(next(iterator))
+            val = [tuple(int(x) for x in next(iterator).split()) for _ in range(N)]
+            yield key, val
+
+    @staticmethod
+    def _read_xyz(iterator):
+        """Reads the content of a .xyz file"""
+        # This functionality exists within pymatgen, so it might make sense
+        # to use that if we anyway want pymatgen as a dependency.
+        N = int(next(iterator))
+        next(iterator) # skip comment line
+        wannier_centres = []
+        atom_positions = []
+        AtomPosition = co.namedtuple('AtomPosition', ['kind', 'pos'])
+        for l in iterator:
+            kind, *pos = l.split()
+            pos = tuple(float(x) for x in pos)
+            if kind == 'X':
+                wannier_centres.append(pos)
+            else:
+                atom_positions.append(AtomPosition(kind=kind, pos=pos))
+        assert len(wannier_centres) + len(atom_positions) == N
+        return wannier_centres, atom_positions
+
+    @staticmethod
+    def _read_win(iterator):
+        lines = (l.split('!')[0] for l in iterator)
+        lines = (l.strip() for l in lines)
+        lines = (l for l in lines if l)
+        lines = (l.lower() for l in lines)
+
+        text = ' '.join(lines)
+        tokens = iter(re.compile('[ :=]+').split(text))
+
+        mapping = {}
+        for t in tokens:
+            if t.startswith('begin'):
+                if t == 'begin':
+                    key = next(tokens)
+                # if there is no space:
+                else:
+                    key = t[5:]
+                val = []
+                while True:
+                    t = next(tokens)
+                    if t.startswith('end'):
+                        if t == 'end':
+                            assert next(tokens) == key
+                        else:
+                            assert t[3:] == key
+                        break
+                    else:
+                        val.append(t)
+                mapping[key] = val
+            else:
+                key = t
+                val = next(tokens)
+                mapping[key] = val
+
+        # here we can continue parsing the individual keys as needed
+        if 'unit_cell_cart' in mapping:
+            val = [float(x) for x in mapping['unit_cell_cart']]
+            mapping['unit_cell_cart'] = np.array(val).reshape(3, 3)
+
+        return mapping
+
+    @classmethod
+    def from_wannier_files(cls, *, hr_file, wsvec_file=None, xyz_file=None, win_file=None, h_cutoff=0., **kwargs):
+        """
+        Create a :class:`.Model` instance from Wannier90 output files.
+
+        :param hr_file:     Path of the ``*_hr.dat`` file. Together with the ``*_wsvec.dat`` file, this determines the hopping terms.
+        :type hr_file:      str
+
+        :param wsvec_file: Path of the ``*_wsvec.dat`` file. This file determines the remapping of hopping terms when ``use_ws_distance`` is used in the Wannier90 calculation.
+        :type wsvec_file: str
+
+        :param xyz_file: Path of the ``*_centres.xyz`` file. This file is used to determine the positions of the orbitals, from the Wannier centers given by Wannier90.
+        :type xyz_file: str
+
+        :param win_file: Path of the ``*.win`` file. This file is used to determine the unit cell.
+        :type win_file: str
+
+        :param h_cutoff:    Cutoff value for the hopping strength. Hoppings with a smaller absolute value are ignored.
+        :type h_cutoff:     float
+
+        :param kwargs:  :class:`.Model` keyword arguments.
+        """
+        if xyz_file is not None:
+            if 'pos' in kwargs:
+                raise ValueError("Ambiguous orbital positions: The positions can be given either via the 'pos' or the 'xyz_file' keywords, but not both.")
+            with open(xyz_file, 'r') as f:
+                kwargs['pos'], _ = cls._read_xyz(f)
+
+        if win_file is not None:
+            if 'uc' in kwargs:
+                raise ValueError("Ambiguous unit cell: It can be given either via 'uc' or the 'win_file' keywords, but not both.")
+            with open(win_file, 'r') as f:
+                kwargs['uc'] = cls._read_win(f)['unit_cell_cart']
+
+        with open(hr_file, 'r') as f:
+            num_wann, hop_entries = cls._read_hr(f)
+            hop_entries = (hop for hop in hop_entries if abs(hop[0]) > h_cutoff)
+
+            if wsvec_file is not None:
+                with open(wsvec_file, 'r') as f:
+                    # wsvec_mapping is not a generator because it doesn't have
+                    # the same order as the hoppings in _hr.dat
+                    # This could still be done, but would be more complicated.
+                    wsvec_generator = cls._async_parse(cls._read_wsvec(f), chunksize=num_wann)
+
+                    def remap_hoppings(hop_entries):
+                        for t, orbital_1, orbital_2, R in hop_entries:
+                            next(wsvec_generator)
+                            T_list = wsvec_generator.send((orbital_1, orbital_2, tuple(R)))
+                            N = len(T_list)
+                            for T in T_list:
+                                # not using numpy here increases performance
+                                yield (t / N, orbital_1, orbital_2, (r + t for r, t in zip(R, T)))
+                    hop_entries = remap_hoppings(hop_entries)
+                    return cls.from_hop_list(size=num_wann, hop_list=hop_entries, **kwargs)
+
+            return cls.from_hop_list(size=num_wann, hop_list=hop_entries, **kwargs)
 
     @classmethod
     def from_json(cls, json_string):
@@ -411,6 +571,100 @@ class Model:
             return json.load(f, object_hook=decode)
 
     #------------------SERIALIZATION TO DIFFERENT FORMATS---------------#
+
+    def to_kwant_lattice(self):
+        """
+        Returns a kwant lattice corresponding to the current model. Orbitals with the same position are grouped into the same Monoatomic sublattice.
+
+        .. note :: The TBmodels - Kwant interface is experimental. Use it with caution.
+        """
+        import kwant
+        sublattices = self._get_sublattices()
+        uc = self.uc if self.uc is not None else np.eye(self.dim)
+        # get sublattice positions in cartesian coordinates
+        pos_abs = np.dot(np.array([sl.pos for sl in sublattices]), uc)
+        return kwant.lattice.general(
+            prim_vecs=uc,
+            basis=pos_abs
+        )
+
+    def add_hoppings_kwant(self, kwant_sys):
+        """
+        Sets the on-site energies and hopping terms for an existing kwant system to those of the :class:`.Model`.
+
+        .. note :: The TBmodels - Kwant interface is experimental. Use it with caution.
+        """
+        import kwant
+        sublattices = self._get_sublattices()
+        kwant_sublattices = self.to_kwant_lattice().sublattices
+
+        # handle R = 0 case (on-site)
+        # copy.deepcopy to avoid chaning the matrix in-place
+        on_site_mat = copy.deepcopy(self._array_cast(self.hop[self._zero_vec]))
+        on_site_mat += on_site_mat.conjugate().transpose()
+        # R = 0 terms within a sublattice (on-site)
+        for site in kwant_sys.sites():
+            for i, latt in enumerate(kwant_sublattices):
+                if site.family == latt:
+                    indices = sublattices[i].indices
+                    kwant_sys[site] = on_site_mat[np.ix_(indices, indices)]
+                    break
+            # site doesn't belong to any sublattice
+            else:
+                # TODO: check if there is a legitimate use case which triggers this
+                raise ValueError('Site {} did not match any sublattice.'.format(site))
+
+        # R = 0 terms between different sublattices
+        for i, s1 in enumerate(sublattices):
+            for j, s2 in enumerate(sublattices):
+                if i == j:
+                    # handled above
+                    continue
+                else:
+                    kwant_sys[
+                        kwant.builder.HoppingKind(
+                            self._zero_vec, kwant_sublattices[i], kwant_sublattices[j]
+                        )
+                    ] = on_site_mat[np.ix_(s1.indices, s2.indices)]
+
+        # R != 0 terms
+        for R, mat in self.hop.items():
+            mat = self._array_cast(mat)
+            # special case R = 0 handled already
+            if R == self._zero_vec:
+                continue
+            else:
+                minus_R = tuple(-np.array(R))
+                for i, s1 in enumerate(sublattices):
+                    for j, s2 in enumerate(sublattices):
+                        sub_matrix = mat[np.ix_(s1.indices, s2.indices)]
+                        # TODO: check "signs"
+                        kwant_sys[
+                            kwant.builder.HoppingKind(
+                                minus_R, kwant_sublattices[i], kwant_sublattices[j]
+                            )
+                        ] = sub_matrix
+                        kwant_sys[
+                            kwant.builder.HoppingKind(
+                                R, kwant_sublattices[j], kwant_sublattices[i]
+                            )
+                        ] = np.transpose(np.conj(sub_matrix))
+        return kwant_sys
+
+
+    def _get_sublattices(self):
+        Sublattice = co.namedtuple('Sublattice', ['pos', 'indices'])
+        sublattices = []
+        for i, p_orb in enumerate(self.pos):
+            # try to match an existing sublattice
+            for sub_pos, sub_indices in sublattices:
+                if np.isclose(p_orb, sub_pos, rtol=0).all():
+                    sub_indices.append(i)
+                    break
+            # create new sublattice
+            else:
+                sublattices.append(Sublattice(pos=p_orb, indices=[i]))
+        return sublattices
 
     def to_hr(self):
         """
@@ -474,12 +728,73 @@ class Model:
         with open(hr_file, 'w') as f:
             f.write(self.to_hr())
 
+    def to_hdf5_file(self, hdf5_file):
+        """
+        Serializes the model instance to a file in HDF5 format.
+
+        :param hdf5_file: Path of the output file.
+        :type hdf5_file: str
+        """
+        with h5py.File(hdf5_file, 'w') as f:
+            if self.uc is not None:
+                f['uc'] = self.uc
+            if self.occ is not None:
+                f['occ'] = self.occ
+            f['size'] = self.size
+            f['dim'] = self.dim
+            f['pos'] = self.pos
+            f['sparse'] = self._sparse
+            hop = f.create_group('hop')
+            for i, (R, mat) in enumerate(self.hop.items()):
+                group = hop.create_group(str(i))
+                group['R'] = R
+                if self._sparse:
+                    group['data'] = mat.data
+                    group['indices'] = mat.indices
+                    group['indptr'] = mat.indptr
+                    group['shape'] = mat.shape
+                else:
+                    group['mat'] = mat
+
+    @classmethod
+    def from_hdf5_file(cls, hdf5_file, **kwargs):
+        """
+        Returns a :class:`.Model` instance read from a file in HDF5 format.
+
+        :param hdf5_file: Path of the input file.
+        :type hdf5_file: str
+
+        :param kwargs: :class:`.Model` keyword arguments. Explicitly specified keywords take precedence over those given in the HDF5 file.
+        """
+        file_kwargs = {}
+        file_kwargs['hop'] = {}
+        with h5py.File(hdf5_file, 'r') as f:
+            for key in ['uc', 'occ', 'size', 'dim', 'pos', 'sparse']:
+                if key in f:
+                    file_kwargs[key] = f[key].value
+
+            if 'hop' not in kwargs:
+                for group in f['hop'].values():
+                    R = tuple(group['R'])
+                    if file_kwargs['sparse']:
+                        file_kwargs['hop'][R] = sp.csr(
+                            (group['data'], group['indices'], group['indptr']),
+                            shape=group['shape']
+                        )
+                    else:
+                        file_kwargs['hop'][R] = np.array(group['mat'])
+                file_kwargs['contains_cc'] = False
+        return cls(**co.ChainMap(kwargs, file_kwargs))
+
     def to_json(self):
         """
         Serializes the model instance to a string in JSON format.
 
         :returns:   str
+
+        .. note :: This interface is deprecated in favor of the :meth:`.to_hdf5_file` interface.
         """
+        warnings.warn('The to_json and to_json_file functions are deprecated in favor of the more efficient to_hdf5_file', DeprecationWarning, stacklevel=1)
         from .helpers import encode
         return json.dumps(self, default=encode)
 
@@ -489,7 +804,10 @@ class Model:
 
         :param json_file:   Path to the output file.
         :type json_file:    str
+
+        .. note :: This interface is deprecated in favor of the :meth:`.to_hdf5_file` interface.
         """
+        warnings.warn('The to_json and to_json_file functions are deprecated in favour of the more efficient to_hdf5_file', DeprecationWarning, stacklevel=1)
         from .helpers import encode
         with open(json_file, 'w') as f:
             json.dump(self, f, default=encode)
@@ -513,6 +831,11 @@ class Model:
         return ' '.join('tbmodels.Model(hop={1}, pos={0.pos!r}, uc={0.uc!r}, occ={0.occ}, contains_cc=False)'.format(self, dict(self.hop)).replace('\n', ' ').replace('array', 'np.array').split())
 
     #---------------- BASIC FUNCTIONALITY ----------------------------------#
+    @property
+    def reciprocal_lattice(self):
+        """An array containing the reciprocal lattice vectors as rows."""
+        return None if self.uc is None else 2 * np.pi * la.inv(self.uc).T
+
     def hamilton(self, k):
         """
         Creates the Hamilton matrix for a given k-point, using Convention II (see explanation in `the PythTB documentation  <http://www.physics.rutgers.edu/pythtb/_downloads/pythtb-formalism.pdf>`_ )
@@ -550,7 +873,7 @@ class Model:
             This means that adding a hopping of overlap :math:`\epsilon` between an orbital and itself in the home unit cell increases the orbitals on-site energy by :math:`2 \epsilon`.
 
         :param overlap:    Strength of the hopping term (in energy units).
-        :type overlap:     complex
+        :type overlap:     numbers.Complex
 
         :param orbital_1:   Index of the first orbital.
         :type orbital_1:    int
@@ -559,13 +882,16 @@ class Model:
         :type orbital_2:    int
 
         :param R:           Lattice vector pointing to the unit cell where ``orbital_2`` lies.
-        :type R:            list(int)
+        :type R:            :py:class:`list` (:py:class:`numbers.Integral`)
 
         .. warning::
-            The positions given in the constructor of :class:`Model` are automatically mapped into the home unit cell. This has to be taken into account when determining ``R``.
+            The positions given in the constructor of :class:`.Model` are automatically mapped into the home unit cell. This has to be taken into account when determining ``R``.
 
         """
         R = tuple(R)
+        if len(R) != self.dim:
+            raise ValueError('Dimension of R ({}) does not match the model dimension ({})'.format(len(R), self.dim))
+
         mat = np.zeros((self.size, self.size), dtype=complex)
         nonzero_idx = np.nonzero(R)[0]
         if len(nonzero_idx) == 0:
@@ -583,10 +909,15 @@ class Model:
         Adds on-site energy to the orbitals. This adds to the existing on-site energy, and does not erase it.
 
         :param on_site:     On-site energies. This must be a sequence of real numbers, of the same length as the number of orbitals
-        :type on_site:      collections.abc.Sequence(numbers.Real)
+        :type on_site:      :py:class:`collections.abc.Sequence` (:py:class:`numbers.Real`)
         """
         if self.size != len(on_site):
-            raise ValueError('The number of on-site energy terms should be {}, but is {}.'.format(self.size, len(on_site)))
+            raise ValueError(
+                'The number of on-site energy terms should be {}, but is {}.'.format(
+                    self.size,
+                    len(on_site)
+                )
+            )
         for orbital, energy in enumerate(on_site):
             self.add_hop(energy / 2., orbital, orbital, self._zero_vec)
 

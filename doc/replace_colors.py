@@ -26,6 +26,7 @@ if __name__ == "__main__":
     color_replacements = [
         ['#2980B9', '#CC2D2D'],
         ['#E7F2FA', '#FAE7E7'],
+        ['#3091D1', '#EE5555'], # hover
         ['#6AB0DE', '#DE6A6A'],
         ['#DBFAF4', '#FADBE4'],
         ['#1ABC9C', '#BC1A45'],

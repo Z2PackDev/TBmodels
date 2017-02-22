@@ -35,7 +35,7 @@ def matrix_to_hop(mat, orbitals=None, R=(0, 0, 0), multiplier=1.):
     :type R:    list
 
     :param multiplier:  Multiplicative constant for the hopping strength.
-    :type multiplier: float / complex
+    :type multiplier: numbers.Complex
     """
     if orbitals is None:
         orbitals = list(range(len(mat)))
