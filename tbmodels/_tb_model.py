@@ -736,7 +736,25 @@ class Model:
         :type hdf5_file: str
         """
         with h5py.File(hdf5_file, 'w') as f:
-
+            if self.uc is not None:
+                f['uc'] = self.uc
+            if self.occ is not None:
+                f['occ'] = self.occ
+            f['size'] = self.size
+            f['dim'] = self.dim
+            f['pos'] = self.pos
+            f['sparse'] = self._sparse
+            hop = f.create_group('hop')
+            for i, (R, mat) in enumerate(self.hop.items()):
+                group = hop.create_group(str(i))
+                group['R'] = R
+                if self._sparse:
+                    group['data'] = mat.data
+                    group['indices'] = mat.indices
+                    group['indptr'] = mat.indptr
+                    group['shape'] = mat.shape
+                else:
+                    group['mat'] = mat
 
     def to_json(self):
         """
