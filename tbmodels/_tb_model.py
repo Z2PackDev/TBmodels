@@ -5,8 +5,6 @@
 # Date:    02.06.2015 17:50:33 CEST
 # File:    _tb_model.py
 
-from __future__ import division, print_function
-
 import re
 import copy
 import json
@@ -79,6 +77,7 @@ class Model:
 
         # ---- UNIT CELL ----
         self.uc = None if uc is None else np.array(uc) # implicit copy
+
 
         # ---- HOPPING TERMS AND POSITIONS ----
         self._init_hop_pos(
@@ -767,6 +766,11 @@ class Model:
         return ' '.join('tbmodels.Model(hop={1}, pos={0.pos!r}, uc={0.uc!r}, occ={0.occ}, contains_cc=False)'.format(self, dict(self.hop)).replace('\n', ' ').replace('array', 'np.array').split())
 
     #---------------- BASIC FUNCTIONALITY ----------------------------------#
+    @property
+    def reciprocal_lattice(self):
+        """An array containing the reciprocal lattice vectors as rows."""
+        return None if self.uc is None else 2 * np.pi * la.inv(self.uc).T
+
     def hamilton(self, k):
         """
         Creates the Hamilton matrix for a given k-point, using Convention II (see explanation in `the PythTB documentation  <http://www.physics.rutgers.edu/pythtb/_downloads/pythtb-formalism.pdf>`_ )

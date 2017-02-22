@@ -111,6 +111,13 @@ def test_wannier_all(compare_data, hr_name, wsvec_name, xyz_name, win_name):
         [-2.6988, 2.6988, 0.0000]
     ])).all()
 
+    # check reciprocal lattice
+    assert np.isclose(model.reciprocal_lattice, np.array([
+        [-1.164070, -1.164070,  1.164070],
+        [1.164070 ,  1.164070 ,  1.164070],
+        [-1.164070,  1.164070, -1.164070],
+    ])).all()
+
 @pytest.mark.parametrize('hr_name', ['hr_hamilton.dat', 'wannier90_hr.dat', 'wannier90_hr_v2.dat'])
 def test_wannier_hr_equal(models_equal, hr_name):
     hr_file = join(SAMPLES_DIR, hr_name)
