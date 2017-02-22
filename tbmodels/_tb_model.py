@@ -13,6 +13,7 @@ import warnings
 import contextlib
 import collections as co
 
+import h5py
 import numpy as np
 import scipy.linalg as la
 from fsc.export import export
@@ -727,12 +728,25 @@ class Model:
         with open(hr_file, 'w') as f:
             f.write(self.to_hr())
 
+    def to_hdf5_file(self, hdf5_file):
+        """
+        Serializes the model instance to a file in HDF5 format.
+
+        :param hdf5_file: Path of the output file.
+        :type hdf5_file: str
+        """
+        with h5py.File(hdf5_file, 'w') as f:
+
+
     def to_json(self):
         """
         Serializes the model instance to a string in JSON format.
 
         :returns:   str
+
+        .. note :: This interface is deprecated in favor of the :meth:`.to_hdf5_file` interface.
         """
+        warnings.warn('The to_json and to_json_file functions are deprecated in favor of the more efficient to_hdf5_file', DeprecationWarning, stacklevel=1)
         from .helpers import encode
         return json.dumps(self, default=encode)
 
@@ -742,7 +756,10 @@ class Model:
 
         :param json_file:   Path to the output file.
         :type json_file:    str
+
+        .. note :: This interface is deprecated in favor of the :meth:`.to_hdf5_file` interface.
         """
+        warnings.warn('The to_json and to_json_file functions are deprecated in favour of the more efficient to_hdf5_file', DeprecationWarning, stacklevel=1)
         from .helpers import encode
         with open(json_file, 'w') as f:
             json.dump(self, f, default=encode)
