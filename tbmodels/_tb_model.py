@@ -54,17 +54,17 @@ class Model:
     :type sparse:       bool
     """
     def __init__(
-        self,
-        *,
-        on_site=None,
-        hop=None,
-        size=None,
-        dim=None,
-        occ=None,
-        pos=None,
-        uc=None,
-        contains_cc=True,
-        sparse=False
+            self,
+            *,
+            on_site=None,
+            hop=None,
+            size=None,
+            dim=None,
+            occ=None,
+            pos=None,
+            uc=None,
+            contains_cc=True,
+            sparse=False
     ):
         if hop is None:
             hop = dict()
@@ -196,8 +196,8 @@ class Model:
         # Consistency checks
         for R, mat in hop.items():
             if la.norm(
-                mat -
-                hop.get(tuple(-x for x in R), np.zeros(mat.shape)).T.conjugate()
+                    mat -
+                    hop.get(tuple(-x for x in R), np.zeros(mat.shape)).T.conjugate()
             ) > 1e-12:
                 raise ValueError('The provided hoppings do not correspond to a hermitian Hamiltonian. hoppings[-R] = hoppings[R].H is not fulfilled.')
 
@@ -317,6 +317,7 @@ class Model:
         :param kwargs:      :class:`.Model` keyword arguments.
 
         .. warning :: When loading a :class:`.Model` from the ``hr.dat`` format, parameters such as the positions of the orbitals, unit cell shape and occupation number must be set explicitly.
+        .. note :: This interface is deprecated in favor of the :meth:`.from_wannier_files` interface.
         """
         return cls._from_hr_iterator(
             iter(hr_string.splitlines()),
@@ -332,6 +333,8 @@ class Model:
 
         :param hr_file:     Path of the input file.
         :type hr_file:      str
+
+        .. note :: This function is deprecated in favor of the :meth:`.from_wannier_files` interface.
         """
         with open(hr_file, 'r') as file_handle:
             return cls._from_hr_iterator(file_handle, h_cutoff=h_cutoff, **kwargs)
@@ -488,6 +491,26 @@ class Model:
 
     @classmethod
     def from_wannier_files(cls, *, hr_file, wsvec_file=None, xyz_file=None, win_file=None, h_cutoff=0., **kwargs):
+        """
+        Create a :class:`.Model` instance from Wannier90 output files.
+
+        :param hr_file:     Path of the ``*_hr.dat`` file. Together with the ``*_wsvec.dat`` file, this determines the hopping terms.
+        :type hr_file:      str
+
+        :param wsvec_file: Path of the ``*_wsvec.dat`` file. This file determines the remapping of hopping terms when ``use_ws_distance`` is used in the Wannier90 calculation.
+        :type wsvec_file: str
+
+        :param xyz_file: Path of the ``*_centres.xyz`` file. This file is used to determine the positions of the orbitals, from the Wannier centers given by Wannier90.
+        :type xyz_file: str
+
+        :param win_file: Path of the ``*.win`` file. This file is used to determine the unit cell.
+        :type win_file: str
+
+        :param h_cutoff:    Cutoff value for the hopping strength. Hoppings with a smaller absolute value are ignored.
+        :type h_cutoff:     float
+
+        :param kwargs:  :class:`.Model` keyword arguments.
+        """
         if xyz_file is not None:
             if 'pos' in kwargs:
                 raise ValueError("Ambiguous orbital positions: The positions can be given either via the 'pos' or the 'xyz_file' keywords, but not both.")
@@ -820,7 +843,12 @@ class Model:
         :type on_site:      :py:class:`collections.abc.Sequence` (:py:class:`numbers.Real`)
         """
         if self.size != len(on_site):
-            raise ValueError('The number of on-site energy terms should be {}, but is {}.'.format(self.size, len(on_site)))
+            raise ValueError(
+                'The number of on-site energy terms should be {}, but is {}.'.format(
+                    self.size,
+                    len(on_site)
+                )
+            )
         for orbital, energy in enumerate(on_site):
             self.add_hop(energy / 2., orbital, orbital, self._zero_vec)
 
