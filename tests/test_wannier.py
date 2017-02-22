@@ -107,14 +107,14 @@ def test_wannier_all(compare_data, hr_name, wsvec_name, xyz_name, win_name):
     # check unit cell
     assert np.isclose(model.uc, np.array([
         [-2.6988, 0.0000, 2.6988],
-        [0.0000, 2.6988, 2.6988],
+        [0.0000,  2.6988, 2.6988],
         [-2.6988, 2.6988, 0.0000]
     ])).all()
 
     # check reciprocal lattice
     assert np.isclose(model.reciprocal_lattice, np.array([
         [-1.164070, -1.164070,  1.164070],
-        [1.164070 ,  1.164070 ,  1.164070],
+        [1.164070,   1.164070,  1.164070],
         [-1.164070,  1.164070, -1.164070],
     ])).all()
 
