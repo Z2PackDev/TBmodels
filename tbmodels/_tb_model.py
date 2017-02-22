@@ -776,7 +776,6 @@ class Model:
             if 'hop' not in kwargs:
                 for group in f['hop'].values():
                     R = tuple(group['R'])
-                    print(list(group.keys()))
                     if file_kwargs['sparse']:
                         file_kwargs['hop'][R] = sp.csr(
                             (group['data'], group['indices'], group['indptr']),
@@ -784,7 +783,7 @@ class Model:
                         )
                     else:
                         file_kwargs['hop'][R] = np.array(group['mat'])
-                file_kwargs['contains_cc'] = False    
+                file_kwargs['contains_cc'] = False
         return cls(**co.ChainMap(kwargs, file_kwargs))
 
     def to_json(self):
