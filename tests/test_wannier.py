@@ -3,7 +3,6 @@
 #
 # Author:  Dominik Gresch <greschd@gmx.ch>
 # Date:    05.05.2015 13:59:00 CEST
-# File:    hr_hamilton.py
 
 from os.path import join
 
