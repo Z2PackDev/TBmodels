@@ -1,16 +1,17 @@
 # examples are provided via GitHub
 prune examples
 
-# tests are used for development only
+# tests etc. -- for development only
 prune tests
 prune speed_test
+prune futures
+prune playground
 
 # Documentation is provided online
 prune doc
 
 # selectively include ptools
 prune tbmodels/_ptools
-prune futures
 include tbmodels/_ptools/__init__.py
 # include tbmodels/_ptools/parse_dict.py
 # include tbmodels/_ptools/string_tools.py
@@ -19,9 +20,6 @@ include tbmodels/_ptools/sparse_matrix.py
 
 # installation related
 exclude MANIFEST.in
-
-# local setup (Cluster)
-exclude decorator.py
 
 # License & README
 include README.md
