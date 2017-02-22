@@ -8,6 +8,7 @@
 
 from __future__ import division, print_function
 
+import re
 import copy
 import json
 import time
@@ -467,7 +468,6 @@ class Model:
                     t = next(tokens)
                     if t.startswith('end'):
                         if t == 'end':
-                            print(key)
                             assert next(tokens) == key
                         else:
                             assert t[3:] == key

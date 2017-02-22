@@ -23,19 +23,19 @@ def test_wannier_hr_only(compare_data, hr_name):
     H_list = np.array([model.hamilton(k) for k in kpt])
 
     compare_data(lambda x, y: np.isclose(x, y).all(), H_list)
-    
+
 @pytest.mark.parametrize('hr_name, wsvec_name', [
     ('silicon_hr.dat', 'silicon_wsvec.dat')
 ])
 def test_wannier_hr_wsvec(compare_data, hr_name, wsvec_name):
     model = tbmodels.Model.from_wannier_files(
-        hr_file=join(SAMPLES_DIR, hr_name), 
+        hr_file=join(SAMPLES_DIR, hr_name),
         wsvec_file=join(SAMPLES_DIR, wsvec_name)
     )
     H_list = np.array([model.hamilton(k) for k in kpt])
 
     compare_data(lambda x, y: np.isclose(x, y).all(), H_list)
-    
+
 @pytest.mark.parametrize('hr_name, wsvec_name, xyz_name', [
     ('silicon_hr.dat', 'silicon_wsvec.dat', 'silicon_centres.xyz')
 ])
@@ -44,12 +44,12 @@ def test_wannier_hr_wsvec_xyz(compare_data, hr_name, wsvec_name, xyz_name):
     wsvec_file = join(SAMPLES_DIR, wsvec_name)
     xyz_file = join(SAMPLES_DIR, xyz_name)
     model = tbmodels.Model.from_wannier_files(
-        hr_file=hr_file, 
-        wsvec_file=wsvec_file, 
+        hr_file=hr_file,
+        wsvec_file=wsvec_file,
         xyz_file=xyz_file
     )
     model2 = tbmodels.Model.from_wannier_files(
-        hr_file=hr_file, 
+        hr_file=hr_file,
         wsvec_file=wsvec_file
     )
     H_list = np.array([model.hamilton(k) for k in kpt])
@@ -57,7 +57,7 @@ def test_wannier_hr_wsvec_xyz(compare_data, hr_name, wsvec_name, xyz_name):
 
     compare_data(lambda x, y: np.isclose(x, y).all(), H_list)
     assert np.isclose(H_list, H_list2).all()
-    
+
     assert np.isclose(model.pos, np.array([
         (-0.46075440, -0.46071138, -0.46076716),
         (-0.46074283,  0.46072157,  0.46071793),
@@ -68,6 +68,49 @@ def test_wannier_hr_wsvec_xyz(compare_data, hr_name, wsvec_name, xyz_name):
         ( 0.88863982,  1.81013970,  0.88865990),
         ( 0.88864252,  0.88865189,  1.81009014)
     ]) % 1).all()
+@pytest.mark.parametrize('hr_name, wsvec_name, xyz_name, win_name', [
+    ('silicon_hr.dat', 'silicon_wsvec.dat', 'silicon_centres.xyz', 'silicon.win')
+])
+def test_wannier_all(compare_data, hr_name, wsvec_name, xyz_name, win_name):
+    hr_file = join(SAMPLES_DIR, hr_name)
+    wsvec_file = join(SAMPLES_DIR, wsvec_name)
+    xyz_file = join(SAMPLES_DIR, xyz_name)
+    win_file = join(SAMPLES_DIR, win_name)
+    model = tbmodels.Model.from_wannier_files(
+        hr_file=hr_file,
+        wsvec_file=wsvec_file,
+        xyz_file=xyz_file,
+        win_file=win_file
+    )
+    model2 = tbmodels.Model.from_wannier_files(
+        hr_file=hr_file,
+        wsvec_file=wsvec_file,
+        win_file=win_file
+    )
+    H_list = np.array([model.hamilton(k) for k in kpt])
+    H_list2 = np.array([model.hamilton(k) for k in kpt])
+
+    compare_data(lambda x, y: np.isclose(x, y).all(), H_list)
+    assert np.isclose(H_list, H_list2).all()
+
+    # check positions
+    assert np.isclose(model.pos, np.array([
+        (-0.46075440, -0.46071138, -0.46076716),
+        (-0.46074283,  0.46072157,  0.46071793),
+        ( 0.46070307, -0.46076048,  0.46068558),
+        ( 0.46070418,  0.46072373, -0.46076362),
+        ( 1.81012778,  1.81011207,  1.81011265),
+        ( 1.81009687,  0.88866222,  0.88861715),
+        ( 0.88863982,  1.81013970,  0.88865990),
+        ( 0.88864252,  0.88865189,  1.81009014)
+    ]) % 1).all()
+
+    # check unit cell
+    assert np.isclose(model.uc, np.array([
+        [-2.6988, 0.0000, 2.6988],
+        [0.0000, 2.6988, 2.6988],
+        [-2.6988, 2.6988, 0.0000]
+    ])).all()
 
 @pytest.mark.parametrize('hr_name', ['hr_hamilton.dat', 'wannier90_hr.dat', 'wannier90_hr_v2.dat'])
 def test_wannier_hr_equal(models_equal, hr_name):
