@@ -756,6 +756,35 @@ class Model:
                 else:
                     group['mat'] = mat
 
+    @classmethod
+    def from_hdf5_file(cls, hdf5_file, **kwargs):
+        """
+        Returns a :class:`.Model` instance read from a file in HDF5 format.
+
+        :param hdf5_file: Path of the input file.
+        :type hdf5_file: str
+
+        :param kwargs: :class:`.Model` keyword arguments. Explicitly specified keywords take precedence over those given in the HDF5 file.
+        """
+        file_kwargs = {}
+        file_kwargs['hop'] = {}
+        with h5py.File(hdf5_file, 'r') as f:
+            for key in ['uc', 'occ', 'size', 'dim', 'pos', 'sparse']
+                if key in f:
+                    file_kwargs[key] = f[key]
+
+                for group in f['hop'].items():
+                    R = tuple(group['R'])
+                    if file_kwargs['sparse']:
+                        file_kwargs['hop'][R] = sp.csr(
+                            (group['data'], group['indices', group['indptr']),
+                            shape=group['shape']
+                        )
+                    else:
+                        file_kwargs['hop'][R] = np.array(group['mat'])
+
+        return cls(**co.ChainMap(kwargs, file_kwargs))
+
     def to_json(self):
         """
         Serializes the model instance to a string in JSON format.
