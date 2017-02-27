@@ -972,7 +972,7 @@ class Model:
             sparse=self._sparse
         )
 
-    def slice(self, slice_idx):
+    def slice_orbitals(self, slice_idx):
         """
         Returns a new model with only the orbitals as given in the ``slice_idx``. This can also be used to re-order the orbitals.
 
