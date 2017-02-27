@@ -1,0 +1,25 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Author:  Dominik Gresch <greschd@gmx.ch>
+# Date:    05.10.2015 16:54:52 CEST
+# File:    arithmetics.py
+
+import pytest
+import numpy as np
+
+from parameters import T_VALUES, KPT
+
+@pytest.mark.parametrize('slice_idx', [
+    (0, 1),
+    [1, 0],
+    (0,),
+    (1,)
+])
+@pytest.mark.parametrize('t', T_VALUES)
+def test_slice(t, get_model, slice_idx):
+    m1 = get_model(*t)
+    m2 = m1.slice(slice_idx)
+    for k in KPT:
+        assert np.isclose(m1.hamilton(k)[np.ix_(slice_idx, slice_idx)], m2.hamilton(k)).all()
+    # assert np.isclose(m3.hamilton(k), m6.hamilton(k)).all()

@@ -979,8 +979,9 @@ class Model:
         :param slice_idx: Orbital indices that will be in the resulting model.
         :type slice_idx: list(int)
         """
-        new_hop = {key: val[np.ix_(slice_idx, slice_idx)] for key, val in self.hop.items()}
-        return Model(**co.ChainMap(dict(hop=new_hop), self._input_kwargs))
+        new_pos = self.pos[tuple(slice_idx), :]
+        new_hop = {key: np.array(val)[np.ix_(slice_idx, slice_idx)] for key, val in self.hop.items()}
+        return Model(**co.ChainMap(dict(hop=new_hop, pos=new_pos), self._input_kwargs))
 
     def __add__(self, model):
         """
