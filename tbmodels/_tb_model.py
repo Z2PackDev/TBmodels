@@ -961,6 +961,20 @@ class Model:
 
     #-------------------CREATING DERIVED MODELS-------------------------#
     #---- arithmetic operations ----#
+    @property
+    def _input_kwargs(self):
+        return dict(
+            hop=self.hop,
+            pos=self.pos,
+            occ=self.occ,
+            uc=self.uc,
+            contains_cc=False,
+            sparse=self._sparse
+        )
+
+    def slice(self, slice_idx):
+        return Model(**co.ChainMap(dict(hop=new_hop), self._input_kwargs))
+
     def __add__(self, model):
         """
         Adds two models together by adding their hopping terms.
@@ -1013,12 +1027,7 @@ class Model:
             new_hop[R] += hop_mat
         # -------------------
         return Model(
-            hop=new_hop,
-            pos=self.pos,
-            occ=self.occ,
-            uc=self.uc,
-            contains_cc=False,
-            sparse=self._sparse
+            **co.ChainMap(dict(hop=new_hop), self._input_kwargs)
         )
 
     def __sub__(self, model):
@@ -1043,12 +1052,7 @@ class Model:
             new_hop[R] = x * hop_mat
 
         return Model(
-            hop=new_hop,
-            pos=self.pos,
-            occ=self.occ,
-            uc=self.uc,
-            contains_cc=False,
-            sparse=self._sparse
+            **co.ChainMap(dict(hop=new_hop), self._input_kwargs)
         )
 
     def __rmul__(self, x):
