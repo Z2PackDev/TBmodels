@@ -973,6 +973,13 @@ class Model:
         )
 
     def slice(self, slice_idx):
+        """
+        Returns a new model with only the orbitals as given in the ``slice_idx``. This can also be used to re-order the orbitals.
+
+        :param slice_idx: Orbital indices that will be in the resulting model.
+        :type slice_idx: list(int)
+        """
+        new_hop = {key: val[np.ix_(slice_idx, slice_idx)] for key, val in self.hop.items()}
         return Model(**co.ChainMap(dict(hop=new_hop), self._input_kwargs))
 
     def __add__(self, model):
