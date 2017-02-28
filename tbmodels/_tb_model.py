@@ -981,8 +981,15 @@ class Model:
     def _apply_operation(self, symmetry_operation):
         # apply symmetry operation on sublattice positions
         sublattices = self._get_sublattices()
+
+        has_cc = symmetry_operation.repr.complex_conjugate
+        r_matrix = np.transpose(symmetry_operation.kmatrix)
+        # This takes care of the complex conjugation in e^{ik.R}
+        if has_cc:
+            r_matrix *= -1
+
         new_sublattice_pos = [
-            np.dot(np.transpose(symmetry_operation.kmatrix), latt.pos)
+            np.dot(r_matrix, latt.pos)
             for latt in sublattices
         ]
 
@@ -1016,16 +1023,14 @@ class Model:
         # create hoppings with shifted R (by uc_shift[j] - uc_shift[i])
         new_hop = co.defaultdict(self._empty_matrix)
         for R, mat in self.hop.items():
-            R_transformed = np.dot(np.transpose(symmetry_operation.kmatrix), R)
+            R_transformed = np.dot(r_matrix, R)
             for shift, (idx1, idx2) in hop_shifts_idx.items():
                 new_R = tuple(np.array(R_transformed) + np.array(shift))
                 new_hop[new_R][idx1, idx2] += mat[idx1, idx2]
-        # new_hop = copy.deepcopy(self.hop)
 
         # apply D(g) ... D(g)^-1 (since D(g) is unitary: D(g)^-1 == D(g)^H)
         for R in new_hop.keys():
             sym_op = symmetry_operation.repr.matrix
-            has_cc = symmetry_operation.repr.complex_conjugate
             if has_cc:
                 new_hop[R] = np.conj(new_hop[R])
             new_hop[R] = np.dot(
