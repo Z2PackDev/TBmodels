@@ -996,14 +996,16 @@ class Model:
         # match to a known sublattice position to determine the shift vector
         uc_shift = []
         for new_pos in new_sublattice_pos:
+            nearest_R = np.array(np.round(new_pos), dtype=int)
             # the new position must be in a neighbouring UC
             valid_shifts = []
             for T in itertools.product(range(-1, 2), repeat=self.dim):
+                shift = nearest_R + T
                 if any(
-                    np.isclose(new_pos - T, latt.pos).all()
+                    np.isclose(new_pos - shift, latt.pos).all()
                     for latt in sublattices
                 ):
-                    valid_shifts.append(T)
+                    valid_shifts.append(tuple(shift))
             if len(valid_shifts) == 0:
                 raise ValueError('New position {} does not match any known sublattice'.format(new_pos))
             if len(valid_shifts) > 1:
@@ -1014,6 +1016,9 @@ class Model:
         hop_shifts_idx = co.defaultdict(lambda: ([], []))
         for (i, Ti), (j, Tj) in itertools.product(enumerate(uc_shift), repeat=2):
             shift = tuple(np.array(Tj) - np.array(Ti))
+            # print(shift)
+            # import numbers
+            # assert all(isinstance(x, numbers.Integral) for x in shift)
             for idx1, idx2 in itertools.product(
                 sublattices[i].indices, sublattices[j].indices
             ):
@@ -1023,10 +1028,12 @@ class Model:
         # create hoppings with shifted R (by uc_shift[j] - uc_shift[i])
         new_hop = co.defaultdict(self._empty_matrix)
         for R, mat in self.hop.items():
-            R_transformed = np.dot(r_matrix, R)
+            R_transformed = np.array(np.round(np.dot(r_matrix, R)), dtype=int)
+            # print(R_transformed)
             for shift, (idx1, idx2) in hop_shifts_idx.items():
                 new_R = tuple(np.array(R_transformed) + np.array(shift))
                 new_hop[new_R][idx1, idx2] += mat[idx1, idx2]
+        # new_hop = copy.deepcopy(self.hop)
 
         # apply D(g) ... D(g)^-1 (since D(g) is unitary: D(g)^-1 == D(g)^H)
         for R in new_hop.keys():
