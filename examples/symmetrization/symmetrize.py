@@ -3,6 +3,8 @@
 #
 # Author:  Dominik Gresch <greschd@gmx.ch>
 
+import random
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -12,17 +14,16 @@ from tbmodels.helpers import SymmetryOperation, Representation
 if __name__ == '__main__':
     HDF5_FILE = 'data/model_nosym.hdf5'
     try:
-        model = tb.Model.from_hdf5_file(HDF5_FILE)
+        model_nosym = tb.Model.from_hdf5_file(HDF5_FILE)
     except OSError:
-        model = tb.Model.from_wannier_files(
+        model_nosym = tb.Model.from_wannier_files(
             hr_file='data/wannier90_hr.dat',
             pos=[(0, 0, 0)] * 8 + [(0.5, 0.5, 0.5)] * 6,
             occ=6
         )
-        model.to_hdf5_file(HDF5_FILE)
+        model_nosym.to_hdf5_file(HDF5_FILE)
 
-    # model = model.slice_orbitals([0, 2, 3, 1, 5, 6, 4, 7, 9, 10, 8, 12, 13, 11])
-    model = model.slice_orbitals([0, 2, 3, 1, 5, 6, 4, 7, 9, 10, 8, 12, 13, 11])
+    model_nosym = model_nosym.slice_orbitals([0, 2, 3, 1, 5, 6, 4, 7, 9, 10, 8, 12, 13, 11])
 
     # set up symmetry operations
     time_reversal = SymmetryOperation(
@@ -33,9 +34,11 @@ if __name__ == '__main__':
         )
     )
 
-    print(model.eigenval((0, 0, 0.1)))
-    model = model.symmetrize([time_reversal])
-    print(model.eigenval((0, 0, 0.1)))
+    k = tuple(random.uniform(0, 1) for _ in range(3))
+
+    model = model_nosym.symmetrize([time_reversal])
+
+    assert np.isclose(model_nosym.eigenval(k), model.eigenval(k), atol=1e-4).all()
 
     # efermi = la.eigh(tbm.H([0, 0, 0]))[0][tbm.nocc]
     # nsteps = 50
