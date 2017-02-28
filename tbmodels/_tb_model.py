@@ -972,18 +972,19 @@ class Model:
             sparse=self._sparse
         )
 
-    def symmetrize(self, symmetry_group):
-        return 1 / len(symmetry_group) * sum(
-            self._apply_operation(sym) for sym in symmetry_group
-        )
+    def symmetrize(self, symmetry_group_generators):
+        new_model = self
+        for sym in symmetry_group_generators:
+            new_model = 1 / 2 * (new_model + new_model._apply_operation(sym))
+        return new_model
 
     def _apply_operation(self, symmetry_operation):
         # apply symmetry operation on sublattice positions
         sublattices = self._get_sublattices()
-        new_sublattice_pos = [np.dot(
-            np.transpose(symmetry_operation.kmatrix), latt.pos
+        new_sublattice_pos = [
+            np.dot(np.transpose(symmetry_operation.kmatrix), latt.pos)
             for latt in sublattices
-        )]
+        ]
 
         # match to a known sublattice position to determine the shift vector
         uc_shift = []
@@ -998,24 +999,28 @@ class Model:
                     valid_shifts.append(T)
             if len(valid_shifts) == 0:
                 raise ValueError('New position {} does not match any known sublattice'.format(new_pos))
-            if len(valid_shifts) > 0:
+            if len(valid_shifts) > 1:
                 raise ValueError('Ambiguity error: New position {} matches more than one known sublattice'.format(new_pos))
             uc_shift.append(valid_shifts[0])
 
         # setting up the indices to slice the hopping matrices
-        hop_shift_idx = co.defaultdict(lambda: ([], [])
+        hop_shifts_idx = co.defaultdict(lambda: ([], []))
         for (i, Ti), (j, Tj) in itertools.product(enumerate(uc_shift), repeat=2):
-            shift = tuple(np.array(Ti) + np.array(Tj))
-            hop_shifts_idx[shift][0].append(i)
-            hop_shifts_idx[shift][1].append(j)
+            shift = tuple(np.array(Tj) - np.array(Ti))
+            for idx1, idx2 in itertools.product(
+                sublattices[i].indices, sublattices[j].indices
+            ):
+                hop_shifts_idx[shift][0].append(idx1)
+                hop_shifts_idx[shift][1].append(idx2)
 
         # create hoppings with shifted R (by uc_shift[j] - uc_shift[i])
         new_hop = co.defaultdict(self._empty_matrix)
-        for R, mat in self.hop:
+        for R, mat in self.hop.items():
             R_transformed = np.dot(np.transpose(symmetry_operation.kmatrix), R)
-            for shift, (idx1, idx2) in hop_shift_idx.items():
+            for shift, (idx1, idx2) in hop_shifts_idx.items():
                 new_R = tuple(np.array(R_transformed) + np.array(shift))
-                new_hop[new_R][idx1, idx2] += self.hop[R][idx1, idx2]
+                new_hop[new_R][idx1, idx2] += mat[idx1, idx2]
+        # new_hop = copy.deepcopy(self.hop)
 
         # apply D(g) ... D(g)^-1 (since D(g) is unitary: D(g)^-1 == D(g)^H)
         for R in new_hop.keys():
@@ -1031,7 +1036,7 @@ class Model:
                 )
             )
 
-        return Model(**co.ChainMap(dict(hop=new_hop), self._input_kwargs()))
+        return Model(**co.ChainMap(dict(hop=new_hop), self._input_kwargs))
 
     def slice_orbitals(self, slice_idx):
         """

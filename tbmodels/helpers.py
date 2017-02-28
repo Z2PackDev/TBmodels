@@ -11,6 +11,7 @@ This module contains a helper function to create a list of hoppings from a given
 
 import numbers
 import contextlib
+from collections import namedtuple
 from functools import singledispatch
 from collections.abc import Iterable
 
