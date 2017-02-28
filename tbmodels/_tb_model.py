@@ -1003,17 +1003,35 @@ class Model:
             uc_shift.append(valid_shifts[0])
 
         # setting up the indices to slice the hopping matrices
-        hop_shift_idx_1 = co.defaultdict(lambda: [])
-        hop_shift_idx_2 = co.defaultdict(lambda: [])
+        hop_shift_idx = co.defaultdict(lambda: ([], [])
         for (i, Ti), (j, Tj) in itertools.product(enumerate(uc_shift), repeat=2):
             shift = tuple(np.array(Ti) + np.array(Tj))
-            hop_shifts_idx_1[shift].append(i)
-            hop_shifts_idx_2[shift].append(j)
+            hop_shifts_idx[shift][0].append(i)
+            hop_shifts_idx[shift][1].append(j)
 
         # create hoppings with shifted R (by uc_shift[j] - uc_shift[i])
-        new_hop = co.defaultdict()
+        new_hop = co.defaultdict(self._empty_matrix)
+        for R, mat in self.hop:
+            R_transformed = np.dot(np.transpose(symmetry_operation.kmatrix), R)
+            for shift, (idx1, idx2) in hop_shift_idx.items():
+                new_R = tuple(np.array(R_transformed) + np.array(shift))
+                new_hop[new_R][idx1, idx2] += self.hop[R][idx1, idx2]
 
-        return Model(**co.ChainMap(dict(hop=new_hop)
+        # apply D(g) ... D(g)^-1 (since D(g) is unitary: D(g)^-1 == D(g)^H)
+        for R in new_hop.keys():
+            sym_op = symmetry_operation.repr.matrix
+            has_cc = symmetry_operation.repr.complex_conjugate
+            if has_cc:
+                new_hop[R] = np.conj(new_hop[R])
+            new_hop[R] = np.dot(
+                sym_op,
+                np.dot(
+                    new_hop[R],
+                    np.conj(np.transpose(sym_op))
+                )
+            )
+
+        return Model(**co.ChainMap(dict(hop=new_hop), self._input_kwargs()))
 
     def slice_orbitals(self, slice_idx):
         """
