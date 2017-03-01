@@ -14,6 +14,7 @@ import tbmodels as tb
 from tbmodels.helpers import SymmetryOperation, Representation
 
 import pymatgen as mg
+from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
 def getpath(P, n, b=None):
     """ Calculates path in k-space given symmetry points P, length of
@@ -101,6 +102,7 @@ if __name__ == '__main__':
     except OSError:
         model_nosym = tb.Model.from_wannier_files(
             hr_file='data/wannier90_hr.dat',
+            win_file='data/wannier90.win',
             pos=([(0, 0, 0)] * 4 + [(0.25, 0.25, 0.25)] * 3) * 2,
             occ=6
         )
@@ -117,10 +119,14 @@ if __name__ == '__main__':
         )
     )
 
-    structure = mg.Structure.from_file('data/POSCAR')
+    structure = mg.Structure(
+        lattice=model_nosym.uc,
+        species=['In', 'As'],
+        coords=np.array([[0, 0, 0], [0.25, 0.25, 0.25]])
+    )
 
     # get real-space representations
-    analyzer = mg.symmetry.analyzer.SpacegroupAnalyzer(structure)
+    analyzer = SpacegroupAnalyzer(structure)
     symops = analyzer.get_symmetry_operations(cartesian=False)
     symops_cart = analyzer.get_symmetry_operations(cartesian=True)
     rots = [x.rotation_matrix for x in symops]
@@ -147,7 +153,7 @@ if __name__ == '__main__':
         for rot, repr_mat in zip(rots, reps)
     ]
 
-    model = model_nosym.symmetrize([time_reversal] + symmetries)
+    model = model_nosym.symmetrize([time_reversal] + symmetries, full_group=True)
 
     # band structure
     G = np.array([0., 0., 0.])

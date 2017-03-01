@@ -972,12 +972,27 @@ class Model:
             sparse=self._sparse
         )
 
-    def symmetrize(self, symmetry_group_generators):
-        new_model = self
-        new_model = 1 / len(symmetry_group_generators) * sum((self._apply_operation(s) for s in symmetry_group_generators[1:]), self)
-        # for sym in symmetry_group_generators:
-        #     new_model = 1 / 2 * (new_model + new_model._apply_operation(sym))
-        return new_model
+    def symmetrize(self, symmetries, full_group=False):
+        """
+        Returns a model which is symmetrized w.r.t. the given symmetries. This is done by performing a group average over the symmetry group.
+
+        :param symmetries: Symmetries which the symmetrized model should respect.
+        :type symmetries: list(:class:`.SymmetryOperation`)
+
+        :param full_group: Specifies whether the given symmetries represent the full symmetry group, or only a subset from which the full symmetry group is generated.
+        :type full_group: bool
+        """
+        if full_group:
+            new_model = self._apply_operation(symmetries[0])
+            return 1 / len(symmetries) * sum(
+                (self._apply_operation(s) for s in symmetries[1:]),
+                new_model
+            )
+        else:
+            new_model = self
+            for sym in symmetries:
+                new_model = 1 / 2 * (new_model + new_model._apply_operation(sym))
+            return new_model
 
     def _apply_operation(self, symmetry_operation):
         # apply symmetry operation on sublattice positions
@@ -1051,7 +1066,7 @@ class Model:
         Returns a new model with only the orbitals as given in the ``slice_idx``. This can also be used to re-order the orbitals.
 
         :param slice_idx: Orbital indices that will be in the resulting model.
-        :type slice_idx: list(int)
+        :type slice_idx: :py:class:`list` ( :py:class:`int` )
         """
         new_pos = self.pos[tuple(slice_idx), :]
         new_hop = {key: np.array(val)[np.ix_(slice_idx, slice_idx)] for key, val in self.hop.items()}
