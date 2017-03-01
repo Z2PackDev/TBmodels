@@ -6,7 +6,7 @@ SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 PAPER         =
 BUILDDIR      = build
-HTMLBUILDDIR  = ../../Z2Pack_website/web/tbmodels/doc/1.1
+HTMLBUILDDIR  = ../../Z2Pack_website/web/tbmodels/doc/1.2
 
 # User-friendly check for sphinx-build
 ifeq ($(shell which $(SPHINXBUILD) >/dev/null 2>&1; echo $$?), 1)
@@ -35,6 +35,6 @@ html:
 	python replace_colors.py $(HTMLBUILDDIR)
 	@echo
 	@echo "Build finished. The HTML pages are in $(HTMLBUILDDIR)."
-	
+
 view:
 	xdg-open $(HTMLBUILDDIR)/index.html

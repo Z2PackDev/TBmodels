@@ -865,9 +865,9 @@ class Model:
     #-------------------MODIFYING THE MODEL ----------------------------#
     def add_hop(self, overlap, orbital_1, orbital_2, R):
         r"""
-        Adds a hopping term of a given overlap between an orbital in the home unit cell (``orbital_1``) and another orbital (``orbital_2``) located in the unit cell pointed to by ``R``.
+        Adds a hopping term with a given overlap (hopping strength) from ``orbital_2`` (:math:`o_2`), which lies in the unit cell pointed to by ``R``, to ``orbital_1`` (:math:`o_1`) which is in the home unit cell. In other words, ``overlap`` is the matrix element :math:`\mathcal{H}_{o_1,o_2}(\mathbf{R}) = \langle o_1, \mathbf{0} | \mathcal{H} | o_2, \mathbf{R} \rangle`.
 
-        The complex conjugate of the hopping is added automatically. That is, the hopping from ``orbital_2`` to ``orbital_1`` with conjugated ``overlap`` and inverse ``R`` does not have to be added manually.
+        The complex conjugate of the hopping is added automatically. That is, the matrix element :math:`\langle o_2, \mathbf{R} | \mathcal{H} | o_1, \mathbf{0} \rangle` does not have to be added manually.
 
         .. note::
             This means that adding a hopping of overlap :math:`\epsilon` between an orbital and itself in the home unit cell increases the orbitals on-site energy by :math:`2 \epsilon`.
@@ -974,8 +974,9 @@ class Model:
 
     def symmetrize(self, symmetry_group_generators):
         new_model = self
-        for sym in symmetry_group_generators:
-            new_model = 1 / 2 * (new_model + new_model._apply_operation(sym))
+        new_model = 1 / len(symmetry_group_generators) * sum((self._apply_operation(s) for s in symmetry_group_generators[1:]), self)
+        # for sym in symmetry_group_generators:
+        #     new_model = 1 / 2 * (new_model + new_model._apply_operation(sym))
         return new_model
 
     def _apply_operation(self, symmetry_operation):
@@ -996,7 +997,7 @@ class Model:
         # match to a known sublattice position to determine the shift vector
         uc_shift = []
         for new_pos in new_sublattice_pos:
-            nearest_R = np.array(np.round(new_pos), dtype=int)
+            nearest_R = np.array(np.rint(new_pos), dtype=int)
             # the new position must be in a neighbouring UC
             valid_shifts = []
             for T in itertools.product(range(-1, 2), repeat=self.dim):
@@ -1025,10 +1026,12 @@ class Model:
                 hop_shifts_idx[shift][0].append(idx1)
                 hop_shifts_idx[shift][1].append(idx2)
 
+        # print(hop_shifts_idx)
+
         # create hoppings with shifted R (by uc_shift[j] - uc_shift[i])
         new_hop = co.defaultdict(self._empty_matrix)
         for R, mat in self.hop.items():
-            R_transformed = np.array(np.round(np.dot(r_matrix, R)), dtype=int)
+            R_transformed = np.array(np.rint(np.dot(r_matrix, R)), dtype=int)
             # print(R_transformed)
             for shift, (idx1, idx2) in hop_shifts_idx.items():
                 new_R = tuple(np.array(R_transformed) + np.array(shift))
