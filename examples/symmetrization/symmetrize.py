@@ -42,45 +42,6 @@ def getdist(path, b=None):
             dist[i] = dist[i - 1] + la.norm(dot(path[i] - path[i - 1], b))
     return dist
 
-
-def calcEpath(path, model, verbose=False, give_states=False, nsparse=None, modelargs={}, solverargs={}):
-    """ Calculates energy eigenvalues along path """
-    E = []
-    V = []
-    # if hasattr(model, 'hamilton'):
-    H = model.hamilton
-    # elif hasattr(model, '__call__'):
-    #     H = model
-    # if nsparse is None:
-    #     solver = lambda k: la.eigh(H(k, **modelargs), **solverargs)
-    # else:
-    #     solver = lambda k: sp.linalg.eigsh(
-    #         H(k, **modelargs), k=nsparse, **solverargs)
-    solver = lambda k: la.eigh(model.hamilton(k))
-    if not verbose:
-        for k in path:
-            Ei, Vi = solver(k)
-            E.append(Ei)
-            if give_states:
-                V.append(Vi)
-    else:
-        l = len(path)
-        print('')
-        for i, k in enumerate(path):
-            sys.stdout.write('\r')
-            sys.stdout.write(str(i) + '/' + str(l))
-            sys.stdout.flush()
-            Ei, Vi = solver(k)
-            E.append(Ei)
-            if give_states:
-                V.append(Vi)
-        print('')
-    if give_states:
-        return np.array(E), np.array(V)
-    else:
-        return np.array(E)
-
-
 def spin_reps(prep):
     """
     Calculates the spin rotation matrices. The formulas to determine the rotation axes and angles
@@ -156,8 +117,6 @@ if __name__ == '__main__':
         )
     )
 
-
-
     structure = mg.Structure.from_file('data/POSCAR')
 
     # get real-space representations
@@ -190,11 +149,6 @@ if __name__ == '__main__':
 
     model = model_nosym.symmetrize([time_reversal] + symmetries)
 
-    # print(model.eigenval(k))
-    # print(model_nosym.eigenval(k))
-    k = (0.12351251235, 0.63246213, 0.125165)
-    assert np.isclose(model_nosym.eigenval(k), model.eigenval(k), atol=3e-2).all()
-
     # band structure
     G = np.array([0., 0., 0.])
     L = np.array([0.5, 0.5, 0.5])
@@ -203,17 +157,17 @@ if __name__ == '__main__':
     U = np.array([0.25, 0.625, 0.625])
 
     efermi = model.eigenval([0, 0, 0])[model.occ]
-    nsteps = 50
+    nsteps = 100
     path = getpath(np.array([L, G, X, L, W, G, U]), nsteps, model.reciprocal_lattice)
     dist = getdist(path)
-    E = calcEpath(path, model_nosym, verbose=True)
-    E1 = calcEpath(path, model, verbose=True)
+    E = [model_nosym.eigenval(k) for k in path]
+    E1 = [model.eigenval(k) for k in path]
 
     plt.figure()
-    plt.plot(dist, E - efermi, 'k')
-    plt.plot(dist, E1 - efermi, 'r--')
     for x in dist[::nsteps]:
         plt.axvline(x, color='b')
+    plt.plot(dist, E - efermi, 'k')
+    plt.plot(dist, E1 - efermi, 'r--')
     plt.xticks(dist[::nsteps], ['L', 'G', 'X', 'L', 'W', 'G', 'U'])
     plt.xlim([dist[0], dist[-1]])
     plt.ylim([-6, 6])
