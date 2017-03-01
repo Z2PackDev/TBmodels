@@ -14,34 +14,8 @@ import tbmodels as tb
 from tbmodels.helpers import SymmetryOperation, Representation
 
 import pymatgen as mg
-from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
-
-def getpath(P, n, b=None):
-    """ Calculates path in k-space given symmetry points P, length of
-    a segment n and reciprocal lattice vectors b """
-    P = np.array(P)
-    if b is None:
-        b = np.eye(P.shape[1])
-    l = len(P)
-    path = np.zeros(((l - 1) * n + 1, P.shape[1]))
-    for i in range(0, l - 1):
-        for j in range(0, n):
-            p = P[i, :] + (P[i + 1, :] - P[i, :]) * float(j) / (n)
-            path[i * n + j, :] = np.dot(p, b)
-    path[-1, :] = np.dot(P[-1], b)
-    return path
-
-
-def getdist(path, b=None):
-    """ Calculates distance from a k-path """
-    dist = np.zeros(len(path))
-    if b is None:
-        for i in range(1, len(path)):
-            dist[i] = dist[i - 1] + la.norm(path[i] - path[i - 1])
-    else:
-        for i in range(1, len(path)):
-            dist[i] = dist[i - 1] + la.norm(dot(path[i] - path[i - 1], b))
-    return dist
+import pymatgen.symmetry.analyzer
+import pymatgen.symmetry.bandstructure
 
 def spin_reps(prep):
     """
@@ -96,7 +70,7 @@ def spin_reps(prep):
     return np.array(spin)
 
 if __name__ == '__main__':
-    HDF5_FILE = 'data/model_nosym.hdf5'
+    HDF5_FILE = 'results/model_nosym.hdf5'
     try:
         model_nosym = tb.Model.from_hdf5_file(HDF5_FILE)
     except OSError:
@@ -126,7 +100,7 @@ if __name__ == '__main__':
     )
 
     # get real-space representations
-    analyzer = SpacegroupAnalyzer(structure)
+    analyzer = mg.symmetry.analyzer.SpacegroupAnalyzer(structure)
     symops = analyzer.get_symmetry_operations(cartesian=False)
     symops_cart = analyzer.get_symmetry_operations(cartesian=True)
     rots = [x.rotation_matrix for x in symops]
@@ -142,8 +116,10 @@ if __name__ == '__main__':
         R = np.kron(spinrep, la.block_diag(1., prep, prep))
         reps.append(R)
 
+    # set up the space group symmetries
     symmetries = [
         SymmetryOperation(
+            # r-space and k-space matrices are related by transposing
             kmatrix=rot.transpose(),
             repr=Representation(
                 complex_conjugate=False,
@@ -154,27 +130,35 @@ if __name__ == '__main__':
     ]
 
     model = model_nosym.symmetrize([time_reversal] + symmetries, full_group=True)
+    model.to_hdf5_file('results/model.hdf5')
 
-    # band structure
-    G = np.array([0., 0., 0.])
-    L = np.array([0.5, 0.5, 0.5])
-    X = np.array([.5, 0., 0.5])
-    W = np.array([0.5, 0.25, 0.75])
-    U = np.array([0.25, 0.625, 0.625])
+
+    # compare the band structure
+    path = mg.symmetry.bandstructure.HighSymmKpath(structure)
+    kpts, labels = path.get_kpoints(line_density=50)
+    # de-duplicate / merge labels
+    for i in range(len(labels) - 1):
+        if labels[i] and labels[i + 1]:
+            if labels[i] != labels[i + 1]:
+                labels[i] = labels[i] + ' | ' + labels[i + 1]
+            labels[i + 1] = ''
 
     efermi = model.eigenval([0, 0, 0])[model.occ]
-    nsteps = 100
-    path = getpath(np.array([L, G, X, L, W, G, U]), nsteps)
-    dist = getdist(path)
-    E = [model_nosym.eigenval(k) for k in path]
-    E1 = [model.eigenval(k) for k in path]
+    E = [model_nosym.eigenval(k) for k in kpts]
+    E_sym = [model.eigenval(k) for k in kpts]
 
     plt.figure()
-    for x in dist[::nsteps]:
-        plt.axvline(x, color='b')
-    plt.plot(dist, E - efermi, 'k')
-    plt.plot(dist, E1 - efermi, 'r--')
-    plt.xticks(dist[::nsteps], ['L', 'G', 'X', 'L', 'W', 'G', 'U'])
-    plt.xlim([dist[0], dist[-1]])
+    labels_clean = []
+    labels_idx = []
+    for i, l in enumerate(labels):
+        if l:
+            labels_idx.append(i)
+            labels_clean.append('$' + l + '$')
+    for i in labels_idx[1:-1]:
+        plt.axvline(i, color='b')
+    plt.plot(range(len(kpts)), E - efermi, 'k')
+    plt.plot(range(len(kpts)), E_sym - efermi, 'r--')
+    plt.xticks(labels_idx, labels_clean)
+    plt.xlim([0, len(kpts) - 1])
     plt.ylim([-6, 6])
     plt.savefig('plots/compare_bands.pdf')
