@@ -89,7 +89,7 @@ if __name__ == '__main__':
                 spin = D12(0, 0, 0, 0)
         return np.array(spin)
 
-    structure = mg.Structure.from_file('POSCAR')
+    structure = mg.Structure.from_file('data/POSCAR')
 
     # get real-space representations
     analyzer = mg.symmetry.analyzer.SpacegroupAnalyzer(structure)
@@ -122,35 +122,7 @@ if __name__ == '__main__':
         for rot, repr_mat in zip(rots, reps)
     ]
 
-    # for r in rots:
-    #     print(r)
-
-    sym = symmetries[5]
-    k = (0, 0, 0)
-    # for s in symmetries:
-        # print(s.kmatrix)
-        # model = model_nosym.symmetrize([s])
-    model = model_nosym._apply_operation(sym)
-    print(max(abs(model.eigenval(k) - model_nosym.eigenval(k))))
-    # print('-' * 50)
-    k = (0.123412341, 0.63456325132, 0.213412515)
-    # for s in symmetries:
-        # print(s.kmatrix)
-        # model = model_nosym.symmetrize([s])
-    model = model_nosym._apply_operation(sym)._apply_operation(sym)
-    print(np.max(np.abs(model.hamilton(k) - model_nosym.hamilton(k))))
-    model = model_nosym._apply_operation(sym)
-    print(np.max(np.abs(model.hamilton(k) - model_nosym.hamilton(k))))
-    # model = model_nosym.symmetrize([sym])
-    model = model_nosym.symmetrize(symmetries)
-    print(np.max(np.abs(model.hamilton(k) - model_nosym.hamilton(k))))
-    k = (1, -1, 2)
-    # for s in symmetries:
-        # print(s.kmatrix)
-        # model = model_nosym.symmetrize([s])
-    model = model_nosym._apply_operation(sym)
-    print(max(abs(model.eigenval(k) - model_nosym.eigenval(k))))
-    print(sym.kmatrix)
+    model = model_nosym.symmetrize([time_reversal] + symmetries)
 
     # for R in reps:
     #     assert np.isclose(R.conjugate().transpose(), la.inv(R)).all()
