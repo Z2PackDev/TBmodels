@@ -1017,26 +1017,19 @@ class Model:
         hop_shifts_idx = co.defaultdict(lambda: ([], []))
         for (i, Ti), (j, Tj) in itertools.product(enumerate(uc_shift), repeat=2):
             shift = tuple(np.array(Tj) - np.array(Ti))
-            # print(shift)
-            # import numbers
-            # assert all(isinstance(x, numbers.Integral) for x in shift)
             for idx1, idx2 in itertools.product(
                 sublattices[i].indices, sublattices[j].indices
             ):
                 hop_shifts_idx[shift][0].append(idx1)
                 hop_shifts_idx[shift][1].append(idx2)
 
-        # print(hop_shifts_idx)
-
         # create hoppings with shifted R (by uc_shift[j] - uc_shift[i])
         new_hop = co.defaultdict(self._empty_matrix)
         for R, mat in self.hop.items():
             R_transformed = np.array(np.rint(np.dot(r_matrix, R)), dtype=int)
-            # print(R_transformed)
             for shift, (idx1, idx2) in hop_shifts_idx.items():
                 new_R = tuple(np.array(R_transformed) + np.array(shift))
                 new_hop[new_R][idx1, idx2] += mat[idx1, idx2]
-        # new_hop = copy.deepcopy(self.hop)
 
         # apply D(g) ... D(g)^-1 (since D(g) is unitary: D(g)^-1 == D(g)^H)
         for R in new_hop.keys():
