@@ -164,7 +164,7 @@ if __name__ == '__main__':
 
     efermi = model.eigenval([0, 0, 0])[model.occ]
     nsteps = 100
-    path = getpath(np.array([L, G, X, L, W, G, U]), nsteps, model.reciprocal_lattice)
+    path = getpath(np.array([L, G, X, L, W, G, U]), nsteps)
     dist = getdist(path)
     E = [model_nosym.eigenval(k) for k in path]
     E1 = [model.eigenval(k) for k in path]
