@@ -72,7 +72,7 @@ def spin_reps(prep):
 
 def compare_bands_plot(model1, model2, structure):
     path = mg.symmetry.bandstructure.HighSymmKpath(structure)
-    kpts, labels = path.get_kpoints(line_density=50)
+    kpts, labels = path.get_kpoints(line_density=200)
     # de-duplicate / merge labels
     for i in range(len(labels) - 1):
         if labels[i] and labels[i + 1]:
@@ -95,11 +95,11 @@ def compare_bands_plot(model1, model2, structure):
     for i in labels_idx[1:-1]:
         plt.axvline(i, color='b')
     plt.plot(range(len(kpts)), E1 - efermi, 'k')
-    plt.plot(range(len(kpts)), E2 - efermi, 'r--')
+    plt.plot(range(len(kpts)), E2 - efermi, 'r', lw=0.5)
     plt.xticks(labels_idx, labels_clean)
     plt.xlim([0, len(kpts) - 1])
     plt.ylim([-6, 6])
-    plt.savefig('results/compare_bands.pdf')
+    plt.savefig('results/compare_bands.pdf', bbox_inches='tight')
 
 if __name__ == '__main__':
     HDF5_FILE = 'results/model_nosym.hdf5'
@@ -169,29 +169,32 @@ if __name__ == '__main__':
             kmatrix=rot.transpose(),
             repr=Representation(
                 complex_conjugate=False,
-                matrix=repr_mat
+                matrix=repr_mat.transpose()
             )
         )
         for rot, repr_mat in zip(rots, reps)
     ]
 
     os.makedirs('results', exist_ok=True)
-    # model = model_nosym.symmetrize([time_reversal] + symmetries, full_group=True)
     model_tr = model_nosym.symmetrize([time_reversal])
-    # model = model_tr
     model = model_tr.symmetrize(symmetries, full_group=True)
     model.to_hdf5_file('results/model.hdf5')
 
     compare_bands_plot(model, model_nosym, structure)
 
-    for R in set(model.hop.keys()) | set(reference_model.hop.keys()):
-        assert np.isclose(model.hop[R], reference_model.hop[R]).all()
+    # for R in set(model.hop.keys()) | set(reference_model.hop.keys()):
+    #     assert np.isclose(model.hop[R], reference_model.hop[R]).all()
 
     for k in [(0., 0., 0.), (0.12312351, 0.73475412, 0.2451235)]:
-        print()
-        A = model.hamilton(la.inv(time_reversal.kmatrix) @ k, convention=1)
-        B = time_reversal.repr.matrix @ model.hamilton(k, convention=1).conjugate() @ la.inv(time_reversal.repr.matrix)
-        print(np.isclose(A, B).all(), np.max(np.abs(A - B)))
+        assert np.isclose(
+            model.hamilton(k, convention=1),
+            time_reversal.repr.matrix.conjugate().transpose() @
+            model.hamilton(time_reversal.kmatrix @ k, convention=1).conjugate() @
+            time_reversal.repr.matrix
+        ).all()
+        # A = model.hamilton(la.inv(time_reversal.kmatrix) @ k, convention=1)
+        # B = time_reversal.repr.matrix @ model.hamilton(k, convention=1).conjugate() @ la.inv(time_reversal.repr.matrix)
+        # print(np.isclose(A, B).all(), np.max(np.abs(A - B)))
         # print(np.isclose(model.hamilton(k, convention=1), model_nosym.hamilton(k, convention=1)).all(), np.max(np.abs(model.hamilton(k, convention=1) - model_nosym.hamilton(k, convention=1))))
             # print(np.isclose(model.hamilton(k, convention=c), reference_model.hamilton(k, convention=c)).all())
 
@@ -202,5 +205,7 @@ if __name__ == '__main__':
     for sym in symmetries:
         assert np.isclose(
             model.hamilton(k, convention=1),
-            sym.repr.matrix.conjugate().transpose() @ model.hamilton(la.inv(sym.kmatrix) @ k, convention=1) @ sym.repr.matrix
+            sym.repr.matrix @
+            model.hamilton(la.inv(sym.kmatrix) @ k, convention=1) @
+            sym.repr.matrix.conjugate().transpose()
         ).all()

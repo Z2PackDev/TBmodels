@@ -1016,10 +1016,12 @@ class Model:
         sublattices = self._get_sublattices()
 
         has_cc = symmetry_operation.repr.complex_conjugate
-        r_matrix = np.transpose(symmetry_operation.kmatrix)
+        # Creating the matrix which needs to be applied to the real-space positions
+        r_matrix = la.inv(np.transpose(symmetry_operation.kmatrix))
         # This takes care of the complex conjugation in e^{ik.R}
         if has_cc:
-            r_matrix *= -1
+            # Do not use *= since this modifies the original kmatrix!
+            r_matrix = r_matrix * -1
 
         new_sublattice_pos = [
             np.dot(r_matrix, latt.pos)
