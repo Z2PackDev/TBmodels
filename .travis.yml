@@ -13,8 +13,9 @@ before_install:
 install:
     - pip install .[kwant]
     - pip install git+https://gitlab.kwant-project.org/cwg/wraparound.git
+    - pip install pythtb
 
 # run tests
 script:
-    - cd tests 
+    - cd tests
     - py.test

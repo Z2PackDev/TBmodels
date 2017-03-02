@@ -169,8 +169,8 @@ if __name__ == '__main__':
     compare_bands_plot(model, model_nosym, structure)
 
     for k in [(0., 0., 0.), (0.12312351, 0.73475412, 0.2451235)]:
-        for sym in symmetries:
-            print(np.isclose(
-                model.hamilton(k, convention=1),
-                sym.repr.matrix @ model.hamilton(la.inv(sym.kmatrix) @ k, convention=1) @ sym.repr.matrix.conjugate().transpose()
-            ).all())
+        # for sym in symmetries:
+        #     print(np.isclose(
+        #         model.hamilton(k, convention=1),
+        #         sym.repr.matrix.conjugate().transpose() @ model.hamilton(la.inv(sym.kmatrix) @ k, convention=1) @ sym.repr.matrix
+        #     ).all())
