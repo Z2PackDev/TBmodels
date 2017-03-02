@@ -1018,10 +1018,11 @@ class Model:
         has_cc = symmetry_operation.repr.complex_conjugate
         # Creating the matrix which needs to be applied to the real-space positions
         r_matrix = la.inv(np.transpose(symmetry_operation.kmatrix))
+        # r_matrix = la.inv(np.transpose(symmetry_operation.kmatrix))
         # This takes care of the complex conjugation in e^{ik.R}
         if has_cc:
             # Do not use *= since this modifies the original kmatrix!
-            r_matrix = r_matrix * -1
+            r_matrix = -1 * r_matrix
 
         new_sublattice_pos = [
             np.dot(r_matrix, latt.pos)

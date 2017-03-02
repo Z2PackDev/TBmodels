@@ -165,11 +165,11 @@ if __name__ == '__main__':
     # set up the space group symmetries
     symmetries = [
         SymmetryOperation(
-            # r-space and k-space matrices are related by transposing
-            kmatrix=rot.transpose(),
+            # r-space and k-space matrices are related by transposing and inverting
+            kmatrix=la.inv(rot.transpose()),
             repr=Representation(
                 complex_conjugate=False,
-                matrix=repr_mat.transpose()
+                matrix=repr_mat
             )
         )
         for rot, repr_mat in zip(rots, reps)
@@ -184,23 +184,18 @@ if __name__ == '__main__':
 
     # for R in set(model.hop.keys()) | set(reference_model.hop.keys()):
     #     assert np.isclose(model.hop[R], reference_model.hop[R]).all()
+    for sym in symmetries:
+        assert np.isclose(sym.repr.matrix.conjugate().transpose(), la.inv(sym.repr.matrix)).all()
 
     for k in [(0., 0., 0.), (0.12312351, 0.73475412, 0.2451235)]:
         assert np.isclose(
             model.hamilton(k, convention=1),
-            time_reversal.repr.matrix.conjugate().transpose() @
+            time_reversal.repr.matrix @
             model.hamilton(time_reversal.kmatrix @ k, convention=1).conjugate() @
-            time_reversal.repr.matrix
+            time_reversal.repr.matrix.conjugate().transpose()
         ).all()
-        # A = model.hamilton(la.inv(time_reversal.kmatrix) @ k, convention=1)
-        # B = time_reversal.repr.matrix @ model.hamilton(k, convention=1).conjugate() @ la.inv(time_reversal.repr.matrix)
-        # print(np.isclose(A, B).all(), np.max(np.abs(A - B)))
-        # print(np.isclose(model.hamilton(k, convention=1), model_nosym.hamilton(k, convention=1)).all(), np.max(np.abs(model.hamilton(k, convention=1) - model_nosym.hamilton(k, convention=1))))
-            # print(np.isclose(model.hamilton(k, convention=c), reference_model.hamilton(k, convention=c)).all())
 
     model.to_hr_file('results/model_hr.dat')
-        # print(model.hamilton(k))
-        # print(time_reversal.repr.matrix @ model.hamilton(time_reversal.kmatrix @ k).conjugate() @ time_reversal.repr.matrix.conjugate().transpose())
     k = (0.12312351, 0.73475412, 0.2451235)
     for sym in symmetries:
         assert np.isclose(
