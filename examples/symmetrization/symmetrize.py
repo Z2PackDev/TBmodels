@@ -3,6 +3,7 @@
 #
 # Author:  Georg Winkler, Dominik Gresch <greschd@gmx.ch>
 
+import os
 import sys
 import random
 
@@ -129,6 +130,7 @@ if __name__ == '__main__':
         for rot, repr_mat in zip(rots, reps)
     ]
 
+    os.makedirs('results', exist_ok=True)
     model = model_nosym.symmetrize([time_reversal] + symmetries, full_group=True)
     model.to_hdf5_file('results/model.hdf5')
 
