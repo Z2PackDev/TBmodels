@@ -70,6 +70,36 @@ def spin_reps(prep):
             spin = D12(0, 0, 0, 0)
     return np.array(spin)
 
+def compare_bands_plot(model1, model2, structure):
+    path = mg.symmetry.bandstructure.HighSymmKpath(structure)
+    kpts, labels = path.get_kpoints(line_density=50)
+    # de-duplicate / merge labels
+    for i in range(len(labels) - 1):
+        if labels[i] and labels[i + 1]:
+            if labels[i] != labels[i + 1]:
+                labels[i] = labels[i] + ' | ' + labels[i + 1]
+            labels[i + 1] = ''
+
+    efermi = model1.eigenval([0, 0, 0])[model1.occ]
+    E = [model2.eigenval(k) for k in kpts]
+    E_sym = [model1.eigenval(k) for k in kpts]
+
+    plt.figure()
+    labels_clean = []
+    labels_idx = []
+    for i, l in enumerate(labels):
+        if l:
+            labels_idx.append(i)
+            labels_clean.append('$' + l + '$')
+    for i in labels_idx[1:-1]:
+        plt.axvline(i, color='b')
+    plt.plot(range(len(kpts)), E - efermi, 'k')
+    plt.plot(range(len(kpts)), E_sym - efermi, 'r--')
+    plt.xticks(labels_idx, labels_clean)
+    plt.xlim([0, len(kpts) - 1])
+    plt.ylim([-6, 6])
+    plt.savefig('results/compare_bands.pdf')
+
 if __name__ == '__main__':
     HDF5_FILE = 'results/model_nosym.hdf5'
     try:
@@ -83,6 +113,8 @@ if __name__ == '__main__':
         )
         model_nosym.to_hdf5_file(HDF5_FILE)
 
+    # change the order of the orbitals from (In: s, py, pz, px; As: py, pz, px) * 2
+    # to (In: s, px, py, pz; As: s, px, py, pz) * 2
     model_nosym = model_nosym.slice_orbitals([0, 2, 3, 1, 5, 6, 4, 7, 9, 10, 8, 12, 13, 11])
 
     # set up symmetry operations
@@ -134,33 +166,4 @@ if __name__ == '__main__':
     model = model_nosym.symmetrize([time_reversal] + symmetries, full_group=True)
     model.to_hdf5_file('results/model.hdf5')
 
-
-    # compare the band structure
-    path = mg.symmetry.bandstructure.HighSymmKpath(structure)
-    kpts, labels = path.get_kpoints(line_density=50)
-    # de-duplicate / merge labels
-    for i in range(len(labels) - 1):
-        if labels[i] and labels[i + 1]:
-            if labels[i] != labels[i + 1]:
-                labels[i] = labels[i] + ' | ' + labels[i + 1]
-            labels[i + 1] = ''
-
-    efermi = model.eigenval([0, 0, 0])[model.occ]
-    E = [model_nosym.eigenval(k) for k in kpts]
-    E_sym = [model.eigenval(k) for k in kpts]
-
-    plt.figure()
-    labels_clean = []
-    labels_idx = []
-    for i, l in enumerate(labels):
-        if l:
-            labels_idx.append(i)
-            labels_clean.append('$' + l + '$')
-    for i in labels_idx[1:-1]:
-        plt.axvline(i, color='b')
-    plt.plot(range(len(kpts)), E - efermi, 'k')
-    plt.plot(range(len(kpts)), E_sym - efermi, 'r--')
-    plt.xticks(labels_idx, labels_clean)
-    plt.xlim([0, len(kpts) - 1])
-    plt.ylim([-6, 6])
-    plt.savefig('plots/compare_bands.pdf')
+    compare_bands_plot(model, model_nosym, structure)
