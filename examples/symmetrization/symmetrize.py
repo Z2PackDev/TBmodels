@@ -102,29 +102,8 @@ def compare_bands_plot(model1, model2, structure):
     plt.savefig('results/compare_bands.pdf', bbox_inches='tight')
 
 if __name__ == '__main__':
-    HDF5_FILE = 'results/model_nosym.hdf5'
-    try:
-        model_nosym = tb.Model.from_hdf5_file(HDF5_FILE)
-    except OSError:
-        model_nosym = tb.Model.from_wannier_files(
-            hr_file='data/wannier90_hr.dat',
-            win_file='data/wannier90.win',
-            pos=([(0, 0, 0)] * 4 + [(0.25, 0.25, 0.25)] * 3) * 2,
-            occ=6
-        )
-        model_nosym.to_hdf5_file(HDF5_FILE)
-
-    try:
-        reference_model = tb.Model.from_hdf5_file('results/reference_model.hdf5')
-    except OSError:
-        reference_model = tb.Model.from_wannier_files(
-            hr_file='data/wannier90_symmetrized_hr.dat',
-            win_file='data/wannier90.win',
-            pos=([(0, 0, 0)] * 4 + [(0.25, 0.25, 0.25)] * 3) * 2,
-            occ=6,
-            ignore_orbital_order=True
-        )
-        reference_model.to_hdf5_file('results/reference_model.hdf5')
+    model_nosym = tb.Model.from_hdf5_file('data/model_nosym.hdf5')
+    reference_model = tb.Model.from_hdf5_file('data/reference_model.hdf5')
 
     # change the order of the orbitals from (In: s, py, pz, px; As: py, pz, px) * 2
     # to (In: s, px, py, pz; As: s, px, py, pz) * 2
@@ -181,20 +160,21 @@ if __name__ == '__main__':
     model.to_hdf5_file('results/model.hdf5')
 
     compare_bands_plot(model_nosym, model, structure)
+    for R in set(model.hop.keys()) | set(reference_model.hop.keys()):
+        assert np.isclose(model.hop[R], reference_model.hop[R]).all()
 
-    for k in [(0., 0., 0.), (0.12312351, 0.73475412, 0.2451235)]:
-        assert np.isclose(
-            model.hamilton(k, convention=1),
-            time_reversal.repr.matrix @
-            # when complex conjugation is present, r-space matrix (R) and k-space matrix (K)
-            # are related by K = -(R.T)^{-1}
-            # -> K^{-1} = -R.T
-            model.hamilton(-time_reversal.rotation_matrix.T @ k, convention=1).conjugate() @
-            time_reversal.repr.matrix.conjugate().T
-        ).all()
-
-    model.to_hr_file('results/model_hr.dat')
+    # Check that the symmetries are fulfilled at some random k
     k = (0.12312351, 0.73475412, 0.2451235)
+    assert np.isclose(
+        model.hamilton(k, convention=1),
+        time_reversal.repr.matrix @
+        # when complex conjugation is present, r-space matrix (R) and k-space matrix (K)
+        # are related by K = -(R.T)^{-1}
+        # -> K^{-1} = -R.T
+        model.hamilton(-time_reversal.rotation_matrix.T @ k, convention=1).conjugate() @
+        time_reversal.repr.matrix.conjugate().T
+    ).all()
+
     for sym in symmetries:
         assert np.isclose(
             model.hamilton(k, convention=1),
