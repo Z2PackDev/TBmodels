@@ -337,15 +337,18 @@ class Model:
         :param hr_file:     Path of the input file.
         :type hr_file:      str
 
+        :param ignore_orbital_order: Do not throw an error when the order of orbitals does not match what is expected from the Wannier90 output.
+        :type ignore_orbital_order: bool
+
         .. note :: This function is deprecated in favor of the :meth:`.from_wannier_files` interface.
         """
         with open(hr_file, 'r') as file_handle:
-            return cls._from_hr_iterator(file_handle, h_cutoff=h_cutoff, **kwargs)
+            return cls._from_hr_iterator(file_handle, h_cutoff=h_cutoff, ignore_orbital_order=ignore_orbital_order, **kwargs)
 
     @classmethod
     def _from_hr_iterator(cls, hr_iterator, *, h_cutoff=0., **kwargs):
         warnings.warn('The from_hr and from_hr_file functions are deprecated. Use from_wannier_files instead.', DeprecationWarning, stacklevel=2)
-        num_wann, h_entries = cls._read_hr(hr_iterator)
+        num_wann, h_entries = cls._read_hr(hr_iterator, ignore_orbital_order=ignore_orbital_order)
 
         h_entries = (hop for hop in h_entries if abs(hop[0]) > h_cutoff)
 
@@ -353,7 +356,7 @@ class Model:
 
 
     @staticmethod
-    def _read_hr(iterator):
+    def _read_hr(iterator, ignore_orbital_order=False):
         r"""
         read the number of wannier functions and the hopping entries
         from *hr.dat and converts them into the right format
@@ -376,10 +379,11 @@ class Model:
             orbital_a = int(entry[3]) - 1
             orbital_b = int(entry[4]) - 1
             # test consistency of orbital numbers
-            if not (orbital_a == i % num_wann) and (orbital_b == (i % num_wann_square) // num_wann):
-                raise ValueError(
-                    "Inconsistent orbital numbers in line '{}'".format(line)
-                )
+            if not ignore_orbital_order:
+                if not (orbital_a == i % num_wann) and (orbital_b == (i % num_wann_square) // num_wann):
+                    raise ValueError(
+                        "Inconsistent orbital numbers in line '{}'".format(line)
+                    )
             return [
                 (float(entry[5]) + 1j * float(entry[6])) / (deg_pts[i // num_wann_square]),
                 orbital_a,
@@ -493,7 +497,7 @@ class Model:
         return mapping
 
     @classmethod
-    def from_wannier_files(cls, *, hr_file, wsvec_file=None, xyz_file=None, win_file=None, h_cutoff=0., **kwargs):
+    def from_wannier_files(cls, *, hr_file, wsvec_file=None, xyz_file=None, win_file=None, h_cutoff=0., ignore_orbital_order=False, **kwargs):
         """
         Create a :class:`.Model` instance from Wannier90 output files.
 
@@ -512,6 +516,9 @@ class Model:
         :param h_cutoff:    Cutoff value for the hopping strength. Hoppings with a smaller absolute value are ignored.
         :type h_cutoff:     float
 
+        :param ignore_orbital_order: Do not throw an error when the order of orbitals does not match what is expected from the Wannier90 output.
+        :type ignore_orbital_order: bool
+
         :param kwargs:  :class:`.Model` keyword arguments.
         """
         if xyz_file is not None:
@@ -527,7 +534,7 @@ class Model:
                 kwargs['uc'] = cls._read_win(f)['unit_cell_cart']
 
         with open(hr_file, 'r') as f:
-            num_wann, hop_entries = cls._read_hr(f)
+            num_wann, hop_entries = cls._read_hr(f, ignore_orbital_order=ignore_orbital_order)
             hop_entries = (hop for hop in hop_entries if abs(hop[0]) > h_cutoff)
 
             if wsvec_file is not None:
@@ -825,7 +832,7 @@ class Model:
         for j, column in enumerate(mat):
             for i, t in enumerate(column):
                 lines.append(
-                    '{0[0]:>5}{0[1]:>5}{0[2]:>5}{1:>5}{2:>5}{3.real:>12.6f}{3.imag:>12.6f}'.format(R, i + 1, j + 1, t)
+                    '{0[0]:>5}{0[1]:>5}{0[2]:>5}{1:>5}{2:>5}{3.real:>22.14f}{3.imag:>22.14f}'.format(R, i + 1, j + 1, t)
                 )
         return lines
 

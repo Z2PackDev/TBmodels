@@ -80,9 +80,10 @@ def compare_bands_plot(model1, model2, structure):
                 labels[i] = labels[i] + ' | ' + labels[i + 1]
             labels[i + 1] = ''
 
+    # E-fermi is just an approximation
     efermi = model1.eigenval([0, 0, 0])[model1.occ]
-    E = [model2.eigenval(k) for k in kpts]
-    E_sym = [model1.eigenval(k) for k in kpts]
+    E1 = [model1.eigenval(k) for k in kpts]
+    E2 = [model2.eigenval(k) for k in kpts]
 
     plt.figure()
     labels_clean = []
@@ -93,8 +94,8 @@ def compare_bands_plot(model1, model2, structure):
             labels_clean.append('$' + l + '$')
     for i in labels_idx[1:-1]:
         plt.axvline(i, color='b')
-    plt.plot(range(len(kpts)), E - efermi, 'k')
-    plt.plot(range(len(kpts)), E_sym - efermi, 'r--')
+    plt.plot(range(len(kpts)), E1 - efermi, 'k')
+    plt.plot(range(len(kpts)), E2 - efermi, 'r--')
     plt.xticks(labels_idx, labels_clean)
     plt.xlim([0, len(kpts) - 1])
     plt.ylim([-6, 6])
@@ -112,6 +113,18 @@ if __name__ == '__main__':
             occ=6
         )
         model_nosym.to_hdf5_file(HDF5_FILE)
+
+    try:
+        reference_model = tb.Model.from_hdf5_file('results/reference_model.hdf5')
+    except OSError:
+        reference_model = tb.Model.from_wannier_files(
+            hr_file='data/wannier90_symmetrized_hr.dat',
+            win_file='data/wannier90.win',
+            pos=([(0, 0, 0)] * 4 + [(0.25, 0.25, 0.25)] * 3) * 2,
+            occ=6,
+            ignore_orbital_order=True
+        )
+        reference_model.to_hdf5_file('results/reference_model.hdf5')
 
     # change the order of the orbitals from (In: s, py, pz, px; As: py, pz, px) * 2
     # to (In: s, px, py, pz; As: s, px, py, pz) * 2
@@ -165,17 +178,25 @@ if __name__ == '__main__':
     os.makedirs('results', exist_ok=True)
     # model = model_nosym.symmetrize([time_reversal] + symmetries, full_group=True)
     model_tr = model_nosym.symmetrize([time_reversal])
-    model = model_tr
-    # model = model_tr.symmetrize(symmetries, full_group=True)
+    # model = model_tr
+    model = model_tr.symmetrize(symmetries, full_group=True)
     model.to_hdf5_file('results/model.hdf5')
 
     compare_bands_plot(model, model_nosym, structure)
 
-    for k in [(0., 0., 0.), (0.12312351, 0.73475412, 0.2451235)]:
-        A = model.hamilton(k, convention=1)
-        B = time_reversal.repr.matrix @ model.hamilton(la.inv(time_reversal.kmatrix) @ k, convention=1).conjugate() @ time_reversal.repr.matrix.conjugate().transpose()
-        print(np.isclose(A, B).all())
-        print(np.max(np.abs(A - B)))
+    for R in set(model.hop.keys()) | set(reference_model.hop.keys()):
+        assert np.isclose(model.hop[R], reference_model.hop[R]).all()
+
+    # for k in [(0., 0., 0.), (0.12312351, 0.73475412, 0.2451235), (0, 0, 0.1)]:
+    #     print()
+    #     for c in [1, 2]:
+    #         print('Convention', 'I' if c == 1 else 'II')
+    #         A = model.hamilton(la.inv(time_reversal.kmatrix) @ k, convention=c)
+    #         B = time_reversal.repr.matrix @ model.hamilton(k, convention=c).conjugate() @ la.inv(time_reversal.repr.matrix)
+    #         print(np.isclose(A, B).all(), np.max(np.abs(A - B)))
+    #         print(np.isclose(model.hamilton(k, convention=c), model_nosym.hamilton(k, convention=c)).all(), np.max(np.abs(model.hamilton(k, convention=c) - model_nosym.hamilton(k, convention=c))))
+
+    model.to_hr_file('results/model_hr.dat')
         # print(model.hamilton(k))
         # print(time_reversal.repr.matrix @ model.hamilton(time_reversal.kmatrix @ k).conjugate() @ time_reversal.repr.matrix.conjugate().transpose())
         # for sym in symmetries:
