@@ -29,7 +29,7 @@ Representation = namedtuple('Representation', ['matrix', 'complex_conjugate'])
 
 try:
     SymmetryOperation.__doc__ = 'Describes a symmetry operation.'
-    SymmetryOperation.kmatrix.__doc__ = r'The :math:`\mathbf{k}`-space matrix corresponding to the symmetry operation.'
+    SymmetryOperation.rotation_matrix.__doc__ = r'The rotation matrix corresponding to the symmetry operation. Note that this matrix (:math:`R`) is related to the :math:`\mathbf{k}`-space matrix (:math:`K`) by :math:`R=\left(K^T\right)^{-1}` if the symmetry has no complex conjugation, and by :math:`R=-\left(K^T\right)^{-1}` otherwise.'
     SymmetryOperation.repr.__doc__ = 'The :class:`.Representation` instance corresponding to the symmetry operation.'
     Representation.__doc__ = 'Describes an (anti-)unitary representation of a symmetry operation.'
     Representation.matrix.__doc__ = 'The unitary matrix corresponding to the representation.'
