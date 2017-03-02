@@ -343,12 +343,12 @@ class Model:
         .. note :: This function is deprecated in favor of the :meth:`.from_wannier_files` interface.
         """
         with open(hr_file, 'r') as file_handle:
-            return cls._from_hr_iterator(file_handle, h_cutoff=h_cutoff, ignore_orbital_order=ignore_orbital_order, **kwargs)
+            return cls._from_hr_iterator(file_handle, h_cutoff=h_cutoff, **kwargs)
 
     @classmethod
     def _from_hr_iterator(cls, hr_iterator, *, h_cutoff=0., **kwargs):
         warnings.warn('The from_hr and from_hr_file functions are deprecated. Use from_wannier_files instead.', DeprecationWarning, stacklevel=2)
-        num_wann, h_entries = cls._read_hr(hr_iterator, ignore_orbital_order=ignore_orbital_order)
+        num_wann, h_entries = cls._read_hr(hr_iterator)
 
         h_entries = (hop for hop in h_entries if abs(hop[0]) > h_cutoff)
 
