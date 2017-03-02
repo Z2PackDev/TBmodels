@@ -1015,17 +1015,8 @@ class Model:
         # apply symmetry operation on sublattice positions
         sublattices = self._get_sublattices()
 
-        has_cc = symmetry_operation.repr.complex_conjugate
-        # Creating the matrix which needs to be applied to the real-space positions
-        r_matrix = la.inv(np.transpose(symmetry_operation.kmatrix))
-        # r_matrix = la.inv(np.transpose(symmetry_operation.kmatrix))
-        # This takes care of the complex conjugation in e^{ik.R}
-        if has_cc:
-            # Do not use *= since this modifies the original kmatrix!
-            r_matrix = -1 * r_matrix
-
         new_sublattice_pos = [
-            np.dot(r_matrix, latt.pos)
+            np.dot(symmetry_operation.rotation_matrix, latt.pos)
             for latt in sublattices
         ]
 
@@ -1061,7 +1052,9 @@ class Model:
         # create hoppings with shifted R (by uc_shift[j] - uc_shift[i])
         new_hop = co.defaultdict(self._empty_matrix)
         for R, mat in self.hop.items():
-            R_transformed = np.array(np.rint(np.dot(r_matrix, R)), dtype=int)
+            R_transformed = np.array(np.rint(
+                np.dot(symmetry_operation.rotation_matrix, R)
+            ), dtype=int)
             for shift, (idx1, idx2) in hop_shifts_idx.items():
                 new_R = tuple(np.array(R_transformed) + np.array(shift))
                 new_hop[new_R][idx1, idx2] += mat[idx1, idx2]
@@ -1069,7 +1062,7 @@ class Model:
         # apply D(g) ... D(g)^-1 (since D(g) is unitary: D(g)^-1 == D(g)^H)
         for R in new_hop.keys():
             sym_op = symmetry_operation.repr.matrix
-            if has_cc:
+            if symmetry_operation.repr.complex_conjugate:
                 new_hop[R] = np.conj(new_hop[R])
             new_hop[R] = np.dot(
                 sym_op,

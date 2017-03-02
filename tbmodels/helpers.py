@@ -24,7 +24,7 @@ from ._tb_model import Model
 
 __all__ = ['SymmetryOperation', 'Representation']
 
-SymmetryOperation = namedtuple('SymmetryOperation', ['kmatrix', 'repr'])
+SymmetryOperation = namedtuple('SymmetryOperation', ['rotation_matrix', 'repr'])
 Representation = namedtuple('Representation', ['matrix', 'complex_conjugate'])
 
 try:

@@ -132,7 +132,7 @@ if __name__ == '__main__':
 
     # set up symmetry operations
     time_reversal = SymmetryOperation(
-        kmatrix = -np.eye(3),
+        rotation_matrix=np.eye(3),
         repr=Representation(
             complex_conjugate=True,
             matrix=np.kron([[0, -1j], [1j, 0]], np.eye(7))
@@ -166,7 +166,7 @@ if __name__ == '__main__':
     symmetries = [
         SymmetryOperation(
             # r-space and k-space matrices are related by transposing and inverting
-            kmatrix=la.inv(rot.transpose()),
+            rotation_matrix=rot,
             repr=Representation(
                 complex_conjugate=False,
                 matrix=repr_mat
@@ -180,19 +180,17 @@ if __name__ == '__main__':
     model = model_tr.symmetrize(symmetries, full_group=True)
     model.to_hdf5_file('results/model.hdf5')
 
-    compare_bands_plot(model, model_nosym, structure)
-
-    # for R in set(model.hop.keys()) | set(reference_model.hop.keys()):
-    #     assert np.isclose(model.hop[R], reference_model.hop[R]).all()
-    for sym in symmetries:
-        assert np.isclose(sym.repr.matrix.conjugate().transpose(), la.inv(sym.repr.matrix)).all()
+    compare_bands_plot(model_nosym, model, structure)
 
     for k in [(0., 0., 0.), (0.12312351, 0.73475412, 0.2451235)]:
         assert np.isclose(
             model.hamilton(k, convention=1),
             time_reversal.repr.matrix @
-            model.hamilton(time_reversal.kmatrix @ k, convention=1).conjugate() @
-            time_reversal.repr.matrix.conjugate().transpose()
+            # when complex conjugation is present, r-space matrix (R) and k-space matrix (K)
+            # are related by K = -(R.T)^{-1}
+            # -> K^{-1} = -R.T
+            model.hamilton(-time_reversal.rotation_matrix.T @ k, convention=1).conjugate() @
+            time_reversal.repr.matrix.conjugate().T
         ).all()
 
     model.to_hr_file('results/model_hr.dat')
@@ -201,6 +199,8 @@ if __name__ == '__main__':
         assert np.isclose(
             model.hamilton(k, convention=1),
             sym.repr.matrix @
-            model.hamilton(la.inv(sym.kmatrix) @ k, convention=1) @
-            sym.repr.matrix.conjugate().transpose()
+            # k-space and r-space matrices are related by transposing and inverting
+            # -> k-matrix^{-1} == r-matrix.T
+            model.hamilton(sym.rotation_matrix.T @ k, convention=1) @
+            sym.repr.matrix.conjugate().T
         ).all()
