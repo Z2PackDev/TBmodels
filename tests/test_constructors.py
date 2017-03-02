@@ -19,17 +19,17 @@ def test_no_size_given(get_model, models_equal):
     model1 = get_model(0.1, 0.2, size=None)
     model2 = get_model(0.1, 0.2)
     models_equal(model1, model2)
-    
+
 def test_size_unknown(get_model):
     with pytest.raises(ValueError):
-        get_model(0.1, 0.2, size=None, on_site=None)
+        get_model(0.1, 0.2, size=None, on_site=None, pos=None)
 
 def test_add_on_site(get_model, models_equal):
     model1 = get_model(0.1, 0.2, on_site=(1, -2))
     model2 = get_model(0.1, 0.2, size=2, on_site=None)
     model2.add_on_site((1, -2))
     models_equal(model1, model2)
-    
+
 def test_invalid_add_on_site(get_model):
     model = get_model(0.1, 0.2)
     with pytest.raises(ValueError):
@@ -63,7 +63,7 @@ def test_from_hop_list(get_model, models_equal, sparse):
     model1 = tbmodels.Model.from_hop_list(hop_list=hoppings, contains_cc=False, on_site=(1, -1), occ=1, pos=((0.,) * 3, (0.5, 0.5, 0.)), sparse=sparse)
     model2 = get_model(t1, t2, sparse=sparse)
     models_equal(model1, model2)
-    
+
 @pytest.mark.parametrize('sparse', [True, False])
 def test_from_hop_list_with_cc(get_model, models_close, sparse):
     t1 = 0.1
@@ -83,7 +83,7 @@ def test_from_hop_list_with_cc(get_model, models_close, sparse):
     model1 = tbmodels.Model.from_hop_list(hop_list=hoppings, contains_cc=True, on_site=(1, -1), occ=1, pos=((0.,) * 3, (0.5, 0.5, 0.)), sparse=sparse)
     model2 = get_model(t1, t2, sparse=sparse)
     models_close(model1, model2)
-    
+
 @pytest.mark.parametrize('sparse', [True, False])
 def test_pos_outside_uc_with_hoppings(get_model, models_equal, sparse):
     t1 = 0.1
@@ -102,7 +102,7 @@ def test_pos_outside_uc_with_hoppings(get_model, models_equal, sparse):
 def test_invalid_hopping_matrix():
     with pytest.raises(ValueError):
         model = tbmodels.Model(size=2, hop={(0, 0, 0): np.eye(4)})
-        
+
 def test_non_hermitian_1():
     with pytest.raises(ValueError):
         model = tbmodels.Model(size=2, hop={(0, 0, 0): np.eye(2), (1, 0, 0): np.eye(2)})
@@ -110,7 +110,7 @@ def test_non_hermitian_1():
 def test_non_hermitian_2():
     with pytest.raises(ValueError):
         model = tbmodels.Model(size=2, hop={(0, 0, 0): np.eye(2), (1, 0, 0): np.eye(2), (-1, 0, 0): 2 * np.eye(2)})
-        
+
 def test_wrong_key_length():
     with pytest.raises(ValueError):
         model = tbmodels.Model(size=2, hop={(0, 0, 0): np.eye(2), (1, 0, 0): np.eye(2), (-1, 0, 0, 0): np.eye(2)}, contains_cc=False)
@@ -126,8 +126,7 @@ def test_wrong_pos_dim():
 def test_wrong_uc_shape():
     with pytest.raises(ValueError):
         model = tbmodels.Model(size=2, hop={(0, 0, 0): np.eye(2), (1, 0, 0): np.eye(2), (-1, 0, 0): np.eye(2)}, contains_cc=False, pos=((0.,) * 3, (0.5,) * 3), uc=np.array([[1, 2], [3, 4], [5, 6]]))
-        
+
 def test_hop_list_no_size():
     with pytest.raises(ValueError):
         tbmodels.Model.from_hop_list(hop_list=(1.2, 0, 1, (1, 2, 3)))
-    

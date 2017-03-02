@@ -163,12 +163,21 @@ if __name__ == '__main__':
     ]
 
     os.makedirs('results', exist_ok=True)
-    model = model_nosym.symmetrize([time_reversal] + symmetries, full_group=True)
+    # model = model_nosym.symmetrize([time_reversal] + symmetries, full_group=True)
+    model_tr = model_nosym.symmetrize([time_reversal])
+    model = model_tr
+    # model = model_tr.symmetrize(symmetries, full_group=True)
     model.to_hdf5_file('results/model.hdf5')
 
     compare_bands_plot(model, model_nosym, structure)
 
     for k in [(0., 0., 0.), (0.12312351, 0.73475412, 0.2451235)]:
+        A = model.hamilton(k, convention=1)
+        B = time_reversal.repr.matrix @ model.hamilton(la.inv(time_reversal.kmatrix) @ k, convention=1).conjugate() @ time_reversal.repr.matrix.conjugate().transpose()
+        print(np.isclose(A, B).all())
+        print(np.max(np.abs(A - B)))
+        # print(model.hamilton(k))
+        # print(time_reversal.repr.matrix @ model.hamilton(time_reversal.kmatrix @ k).conjugate() @ time_reversal.repr.matrix.conjugate().transpose())
         # for sym in symmetries:
         #     print(np.isclose(
         #         model.hamilton(k, convention=1),
