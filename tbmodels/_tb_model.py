@@ -856,14 +856,7 @@ class Model:
         H = sum(self._array_cast(hop) * np.exp(2j * np.pi * np.dot(R, k)) for R, hop in self.hop.items())
         H += H.conjugate().T
         if convention == 1:
-            # print([p for p in self.pos])
-            # print([np.dot(p, k) for p in self.pos])
-            print(self.pos)
-            print(self.pos.shape)
-            print([p.shape for p in self.pos])
-            print(k.shape)
             pos_exponential = np.array([[np.exp(2j * np.pi * np.dot(p, k)) for p in self.pos]])
-            # print(pos_exponential.shape)
             H = pos_exponential.conjugate().transpose() * H * pos_exponential
         return H
 
