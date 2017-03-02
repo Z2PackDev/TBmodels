@@ -72,7 +72,7 @@ class Model:
         self.set_sparse(sparse)
 
         # ---- SIZE ----
-        self._init_size(size=size, on_site=on_site, hop=hop)
+        self._init_size(size=size, on_site=on_site, hop=hop, pos=pos)
 
         # ---- DIMENSION ----
         self._init_dim(dim=dim, hop=hop, pos=pos)
@@ -103,7 +103,7 @@ class Model:
         self.set_sparse(sparse)
 
     #---------------- INIT HELPER FUNCTIONS --------------------------------#
-    def _init_size(self, size, on_site, hop):
+    def _init_size(self, size, on_site, hop, pos):
         """
         Sets the size of the system (number of orbitals).
         """
@@ -111,10 +111,12 @@ class Model:
             self.size = size
         elif on_site is not None:
             self.size = len(on_site)
+        elif pos is not None:
+            self.size = len(pos)
         elif len(hop) != 0:
             self.size = next(iter(hop.values())).shape[0]
         else:
-            raise ValueError('Empty hoppings dictionary supplied and no size given. Cannot determine the size of the system.')
+            raise ValueError('Empty hoppings dictionary supplied and no size, on-site energies or positions given. Cannot determine the size of the system.')
 
     def _init_dim(self, dim, hop, pos):
         r"""
@@ -836,19 +838,34 @@ class Model:
         """An array containing the reciprocal lattice vectors as rows."""
         return None if self.uc is None else 2 * np.pi * la.inv(self.uc).T
 
-    def hamilton(self, k):
+    def hamilton(self, k, convention=2):
         """
-        Creates the Hamilton matrix for a given k-point, using Convention II (see explanation in `the PythTB documentation  <http://www.physics.rutgers.edu/pythtb/_downloads/pythtb-formalism.pdf>`_ )
+        Calculates the Hamilton matrix for a given k-point.
 
         :param k:   k-point
         :type k:    list
 
+        :param convention: Choice of convention to calculate the Hamilton matrix. See explanation in `the PythTB documentation  <http://www.physics.rutgers.edu/pythtb/_downloads/pythtb-formalism.pdf>`_ . Valid choices are 1 or 2.
+        :type convention: int
+
         :returns:   2D numpy array
         """
-        k = np.array(k)
+        if convention not in [1, 2]:
+            raise ValueError("Invalid value '{}' for 'convention': must be either '1' or '2'".format(convention))
+        k = np.array(k, ndmin=1)
         H = sum(self._array_cast(hop) * np.exp(2j * np.pi * np.dot(R, k)) for R, hop in self.hop.items())
         H += H.conjugate().T
-        return np.array(H)
+        if convention == 1:
+            # print([p for p in self.pos])
+            # print([np.dot(p, k) for p in self.pos])
+            print(self.pos)
+            print(self.pos.shape)
+            print([p.shape for p in self.pos])
+            print(k.shape)
+            pos_exponential = np.array([[np.exp(2j * np.pi * np.dot(p, k)) for p in self.pos]])
+            # print(pos_exponential.shape)
+            H = pos_exponential.conjugate().transpose() * H * pos_exponential
+        return H
 
     def eigenval(self, k):
         """
