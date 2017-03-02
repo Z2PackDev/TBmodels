@@ -189,20 +189,18 @@ if __name__ == '__main__':
 
     for k in [(0., 0., 0.), (0.12312351, 0.73475412, 0.2451235)]:
         print()
-        for c in [1, 2]:
-            print('Convention', 'I' if c == 1 else 'II')
-            A = model.hamilton(la.inv(time_reversal.kmatrix) @ k, convention=c)
-            B = time_reversal.repr.matrix @ model.hamilton(k, convention=c).conjugate() @ la.inv(time_reversal.repr.matrix)
-            print(np.isclose(A, B).all(), np.max(np.abs(A + B)))
-            print(np.isclose(model.hamilton(k, convention=c), model_nosym.hamilton(k, convention=c)).all(), np.max(np.abs(model.hamilton(k, convention=c) - model_nosym.hamilton(k, convention=c))))
+        A = model.hamilton(la.inv(time_reversal.kmatrix) @ k, convention=1)
+        B = time_reversal.repr.matrix @ model.hamilton(k, convention=1).conjugate() @ la.inv(time_reversal.repr.matrix)
+        print(np.isclose(A, B).all(), np.max(np.abs(A - B)))
+        # print(np.isclose(model.hamilton(k, convention=1), model_nosym.hamilton(k, convention=1)).all(), np.max(np.abs(model.hamilton(k, convention=1) - model_nosym.hamilton(k, convention=1))))
             # print(np.isclose(model.hamilton(k, convention=c), reference_model.hamilton(k, convention=c)).all())
 
     model.to_hr_file('results/model_hr.dat')
         # print(model.hamilton(k))
         # print(time_reversal.repr.matrix @ model.hamilton(time_reversal.kmatrix @ k).conjugate() @ time_reversal.repr.matrix.conjugate().transpose())
     k = (0.12312351, 0.73475412, 0.2451235)
-    for sym in [time_reversal] + symmetries:
-        print(np.isclose(
+    for sym in symmetries:
+        assert np.isclose(
             model.hamilton(k, convention=1),
             sym.repr.matrix.conjugate().transpose() @ model.hamilton(la.inv(sym.kmatrix) @ k, convention=1) @ sym.repr.matrix
-        ).all())
+        ).all()
