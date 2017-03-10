@@ -42,31 +42,14 @@ def test_wannier_hr_wsvec_xyz(compare_data, hr_name, wsvec_name, xyz_name):
     hr_file = join(SAMPLES_DIR, hr_name)
     wsvec_file = join(SAMPLES_DIR, wsvec_name)
     xyz_file = join(SAMPLES_DIR, xyz_name)
-    model = tbmodels.Model.from_wannier_files(
-        hr_file=hr_file,
-        wsvec_file=wsvec_file,
-        xyz_file=xyz_file
-    )
-    model2 = tbmodels.Model.from_wannier_files(
-        hr_file=hr_file,
-        wsvec_file=wsvec_file
-    )
-    H_list = np.array([model.hamilton(k) for k in kpt])
-    H_list2 = np.array([model.hamilton(k) for k in kpt])
+    # cannot determine reduced pos if uc is not given
+    with pytest.raises(ValueError):
+        model = tbmodels.Model.from_wannier_files(
+            hr_file=hr_file,
+            wsvec_file=wsvec_file,
+            xyz_file=xyz_file
+        )
 
-    compare_data(lambda x, y: np.isclose(x, y).all(), H_list)
-    assert np.isclose(H_list, H_list2).all()
-
-    assert np.isclose(model.pos, np.array([
-        (-0.46075440, -0.46071138, -0.46076716),
-        (-0.46074283,  0.46072157,  0.46071793),
-        ( 0.46070307, -0.46076048,  0.46068558),
-        ( 0.46070418,  0.46072373, -0.46076362),
-        ( 1.81012778,  1.81011207,  1.81011265),
-        ( 1.81009687,  0.88866222,  0.88861715),
-        ( 0.88863982,  1.81013970,  0.88865990),
-        ( 0.88864252,  0.88865189,  1.81009014)
-    ]) % 1).all()
 @pytest.mark.parametrize('hr_name, wsvec_name, xyz_name, win_name', [
     ('silicon_hr.dat', 'silicon_wsvec.dat', 'silicon_centres.xyz', 'silicon.win')
 ])
@@ -94,14 +77,14 @@ def test_wannier_all(compare_data, hr_name, wsvec_name, xyz_name, win_name):
 
     # check positions
     assert np.isclose(model.pos, np.array([
-        (-0.46075440, -0.46071138, -0.46076716),
-        (-0.46074283,  0.46072157,  0.46071793),
-        ( 0.46070307, -0.46076048,  0.46068558),
-        ( 0.46070418,  0.46072373, -0.46076362),
-        ( 1.81012778,  1.81011207,  1.81011265),
-        ( 1.81009687,  0.88866222,  0.88861715),
-        ( 0.88863982,  1.81013970,  0.88865990),
-        ( 0.88864252,  0.88865189,  1.81009014)
+        [ 0.08535249, -0.25608288,  0.08537316],
+        [ 0.08536001,  0.08535213,  0.08536136],
+        [ 0.08536071,  0.08533944, -0.25606735],
+        [-0.25607521,  0.08534613,  0.08536816],
+        [-0.33535779,  1.00606797, -0.335358  ],
+        [-0.33536052,  0.66462432, -0.33534382],
+        [-0.33535638,  0.66463603,  0.00608418],
+        [ 0.00607598,  0.66462586, -0.33534919]
     ]) % 1).all()
 
     # check unit cell
