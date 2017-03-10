@@ -1,3 +1,5 @@
 pytest
 pytest-cov
 pythtb
+kwant
+git+https://gitlab.kwant-project.org/cwg/wraparound.git
