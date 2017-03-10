@@ -521,17 +521,21 @@ class Model:
 
         :param kwargs:  :class:`.Model` keyword arguments.
         """
-        if xyz_file is not None:
-            if 'pos' in kwargs:
-                raise ValueError("Ambiguous orbital positions: The positions can be given either via the 'pos' or the 'xyz_file' keywords, but not both.")
-            with open(xyz_file, 'r') as f:
-                kwargs['pos'], _ = cls._read_xyz(f)
 
         if win_file is not None:
             if 'uc' in kwargs:
                 raise ValueError("Ambiguous unit cell: It can be given either via 'uc' or the 'win_file' keywords, but not both.")
             with open(win_file, 'r') as f:
                 kwargs['uc'] = cls._read_win(f)['unit_cell_cart']
+
+        if xyz_file is not None:
+            if 'pos' in kwargs:
+                raise ValueError("Ambiguous orbital positions: The positions can be given either via the 'pos' or the 'xyz_file' keywords, but not both.")
+            if 'uc' not in kwargs:
+                raise ValueError("Positions cannot be read from .xyz file without unit cell given: Transformation from cartesian to reduced coordinates not possible. Specify the unit cell using one of the keywords 'uc' or 'win_file'.")
+            with open(xyz_file, 'r') as f:
+                pos_cartesian, _ = cls._read_xyz(f)
+                kwargs['pos'] = la.solve(kwargs['uc'].T, np.array(pos_cartesian).T).T
 
         with open(hr_file, 'r') as f:
             num_wann, hop_entries = cls._read_hr(f, ignore_orbital_order=ignore_orbital_order)
