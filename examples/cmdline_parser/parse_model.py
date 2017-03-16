@@ -20,14 +20,14 @@ if __name__ == '__main__':
 
     common_path = sys.argv[1]
     input_files = dict()
-    input_files['hr_file'] = os.path.join(common_path, '_hr.dat')
+    input_files['hr_file'] = common_path + '_hr.dat'
 
     for key, suffix in [
             ('win_file', '.win'),
             ('wsvec_file', '_wsvec.dat'),
             ('xyz_file', '_centres.xyz'),
     ]:
-        filename = os.path.join(common_path, suffix)
+        filename = common_path + suffix
         if os.path.isfile(filename):
             input_files[key] = filename
 

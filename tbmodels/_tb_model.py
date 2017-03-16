@@ -491,8 +491,17 @@ class Model:
 
         # here we can continue parsing the individual keys as needed
         if 'unit_cell_cart' in mapping:
-            val = [float(x) for x in mapping['unit_cell_cart']]
-            mapping['unit_cell_cart'] = np.array(val).reshape(3, 3)
+            uc_input = mapping['unit_cell_cart']
+            # handle the case when the unit is explicitly given
+            if len(uc_input) == 10:
+                unit, *uc_input = uc_input
+            else:
+                unit = 'ang'
+            val = [float(x) for x in uc_input]
+            val = np.array(val).reshape(3, 3)
+            if unit == 'bohr':
+                val *= 0.52917721092
+            mapping['unit_cell_cart'] = val
 
         return mapping
 
