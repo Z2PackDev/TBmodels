@@ -597,7 +597,7 @@ class Model:
             if os.path.isfile(filename):
                 input_files[key] = filename
 
-        return cls.from_wannier_files(ignore_orbital_order=True, **co.ChainMap(kwargs, input_files))
+        return cls.from_wannier_files(**co.ChainMap(kwargs, input_files))
 
     @classmethod
     def from_json(cls, json_string):

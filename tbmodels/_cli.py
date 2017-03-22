@@ -13,7 +13,7 @@ from ._tb_model import Model
 def cli():
     pass
 
-@cli.command(help='Parse Wannier90 output files and create an HDF5 file containing the tight-binding model.')
+@cli.command()
 @click.option(
     '--folder', '-f',
     type=click.Path(exists=True, file_okay=False),
@@ -34,8 +34,11 @@ def cli():
     help='Path of the output file.'
 )
 def parse(folder, prefix, output):
+    """
+    Parse Wannier90 output files and create an HDF5 file containing the tight-binding model.
+    """
     click.echo("Parsing output files '{}*' ...".format(os.path.join(folder, prefix)))
-    model = Model.from_wannier_folder(folder=folder, prefix=prefix)
+    model = Model.from_wannier_folder(folder=folder, prefix=prefix, ignore_orbital_order=True)
     click.echo("Writing model to file '{}' ...".format(output))
     model.to_hdf5_file(output)
     click.echo("Done!")
