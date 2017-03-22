@@ -44,6 +44,23 @@ def parse(folder, prefix, output):
     click.echo("Done!")
 
 @cli.command()
-def symmetrize():
+@click.option(
+    '--input', '-i',
+    type=click.Path(exists=True, dir_okay=False),
+    default='model.hdf5',
+    help='File containing the model that will be symmetrized.'
+)
+@click.option(
+    '--output', '-o',
+    type=click.Path(),
+    default='model_symmetrized.hdf5',
+    help='Output file for the symmetrized model.'
+)
+@click.option(
+    '--symmetries', '-s',
+    type=click.Path(),
+    help='File containing the symmetry operations in JSON form.'
+)
+def symmetrize(input, output, symmetries):
     click.echo('Symmetrize function')
     raise NotImplementedError
