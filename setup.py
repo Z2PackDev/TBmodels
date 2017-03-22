@@ -28,7 +28,7 @@ setup(
     author='Dominik Gresch',
     author_email='greschd@gmx.ch',
     description='Reading, creating and modifying tight-binding models.',
-    install_requires=['numpy', 'scipy', 'h5py', 'fsc.export'],
+    install_requires=['numpy', 'scipy', 'h5py', 'fsc.export', 'click'],
     extras_require={'kwant': ['kwant']},
     long_description=readme,
     classifiers=[
@@ -42,6 +42,10 @@ setup(
         'Intended Audience :: Science/Research',
         'Topic :: Scientific/Engineering :: Physics'
     ],
+    entry_points='''
+        [console_scripts]
+        tbmodels=tbmodels._cli:cli
+    ''',
     license='GPL',
     packages=['tbmodels', 'tbmodels._ptools']
 )
