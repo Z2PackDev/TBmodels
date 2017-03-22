@@ -6,6 +6,7 @@
 # File:    _tb_model.py
 
 import re
+import os
 import copy
 import json
 import time
@@ -569,6 +570,34 @@ class Model:
                     return cls.from_hop_list(size=num_wann, hop_list=hop_entries, **kwargs)
 
             return cls.from_hop_list(size=num_wann, hop_list=hop_entries, **kwargs)
+
+    @classmethod
+    def from_wannier_folder(cls, folder='.', prefix='wannier', **kwargs):
+        """
+        Create a :class:`.Model` instance from Wannier90 output files, given the folder containing the files and file prefix.
+
+        :param folder: Directory containing the Wannier90 output files.
+        :type folder: str
+
+        :param prefix: Prefix of the Wannier90 output files.
+        :type prefix: str
+
+        :param kwargs: Keyword arguments passed to :meth:`.from_wannier_files`. If input files are explicitly given, they take precedence over those found in the ``folder``.
+        """
+        common_path = os.path.join(folder, prefix)
+        input_files = dict()
+        input_files['hr_file'] = common_path + '_hr.dat'
+
+        for key, suffix in [
+                ('win_file', '.win'),
+                ('wsvec_file', '_wsvec.dat'),
+                ('xyz_file', '_centres.xyz'),
+        ]:
+            filename = common_path + suffix
+            if os.path.isfile(filename):
+                input_files[key] = filename
+
+        return cls.from_wannier_files(ignore_orbital_order=True, **co.ChainMap(kwargs, input_files))
 
     @classmethod
     def from_json(cls, json_string):
