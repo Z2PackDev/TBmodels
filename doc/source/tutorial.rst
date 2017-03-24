@@ -80,3 +80,10 @@ If compatibility with other codes operating on Wannier90's ``*hr.dat`` format is
     model3 = tbmodels.Model.from_hr_file('model_hr.dat') # model3 might differ from model
 
 Finally, the :class:`.Model` class is also compatible with Python's built-in :py:mod:`pickle` module. However, data saved with :py:mod:`pickle` may not be readable with different versions of TBmodels since pickle serialization depends on the specific names of classes and their attributes. The use of :py:mod:`pickle` compatibility is to enable :py:mod:`multiprocessing` with TBmodels.
+
+Command-line interface
+----------------------
+
+TBmodels has a built-in command line interface, which is designed to perform common operations, such as converting Wannier90 output into a TBmodels file. It can be accessed via the ``tbmodels`` command, and its documentation can be accessed with the ``--help`` flag. For example, ``tbmodels --help`` gives a list of possible commands, and ``tbmodels parse --help`` gives specific information about the ``parse`` command.
+
+.. note:: The command line commands may change in future releases, because this feature is still in early development.
