@@ -11,7 +11,6 @@ This module contains a helper function to create a list of hoppings from a given
 
 import numbers
 import contextlib
-from collections import namedtuple
 from functools import singledispatch
 from collections.abc import Iterable
 
@@ -19,24 +18,7 @@ import numpy as np
 from fsc.export import export
 
 from ._ptools import sparse_matrix as sp
-
 from ._tb_model import Model
-
-__all__ = ['SymmetryOperation', 'Representation']
-
-SymmetryOperation = namedtuple('SymmetryOperation', ['rotation_matrix', 'repr'])
-Representation = namedtuple('Representation', ['matrix', 'complex_conjugate'])
-
-try:
-    SymmetryOperation.__doc__ = 'Describes a symmetry operation.'
-    SymmetryOperation.rotation_matrix.__doc__ = r'The rotation matrix corresponding to the symmetry operation. Note that this matrix (:math:`R`) is related to the :math:`\mathbf{k}`-space matrix (:math:`K`) by :math:`R=\left(K^T\right)^{-1}` if the symmetry has no complex conjugation, and by :math:`R=-\left(K^T\right)^{-1}` otherwise.'
-    SymmetryOperation.repr.__doc__ = 'The :class:`.Representation` instance corresponding to the symmetry operation.'
-    Representation.__doc__ = 'Describes an (anti-)unitary representation of a symmetry operation.'
-    Representation.matrix.__doc__ = 'The unitary matrix corresponding to the representation.'
-    Representation.complex_conjugate.__doc__ = r'Flag to specify whether the representation is just a unitary matrix :math:`D(g)=U` (``False``) or contains a complex conjugation :math:`D(g)=U\hat{K}` (``True``).'
-# for Python 3.4
-except AttributeError:
-    pass
 
 @export
 def matrix_to_hop(mat, orbitals=None, R=(0, 0, 0), multiplier=1.):

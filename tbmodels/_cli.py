@@ -13,7 +13,7 @@ from ._tb_model import Model
 def cli():
     pass
 
-@cli.command()
+@cli.command(short_help='Parse Wannier90 output files to an HDF5 file.')
 @click.option(
     '--folder', '-f',
     type=click.Path(exists=True, file_okay=False),
@@ -25,7 +25,6 @@ def cli():
     type=str,
     default='wannier',
     help='Common prefix of the Wannier90 output files.'
-
 )
 @click.option(
     '--output', '-o',
@@ -43,6 +42,7 @@ def parse(folder, prefix, output):
     model.to_hdf5_file(output)
     click.echo("Done!")
 
+
 @cli.command()
 @click.option(
     '--input', '-i',
@@ -52,7 +52,7 @@ def parse(folder, prefix, output):
 )
 @click.option(
     '--output', '-o',
-    type=click.Path(),
+    type=click.Path(dir_okay=False),
     default='model_symmetrized.hdf5',
     help='Output file for the symmetrized model.'
 )
@@ -61,6 +61,17 @@ def parse(folder, prefix, output):
     type=click.Path(),
     help='File containing the symmetry operations in JSON form.'
 )
-def symmetrize(input, output, symmetries):
+@click.option(
+    '--full-group', '-f',
+    is_flag=True,
+    default=False,
+    help='The given symmetries represent the full symmetry group, instead of just a generating subset.'
+)
+def symmetrize(input, output, symmetries, full_group):
     click.echo('Symmetrize function')
+    model = Model.from_hdf5_file(input)
+
+
+    model_sym.to_hdf5_file(output)
+    click.echo('Done!')
     raise NotImplementedError
