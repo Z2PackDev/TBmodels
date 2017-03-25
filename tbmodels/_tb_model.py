@@ -1036,7 +1036,7 @@ class Model:
         Returns a model which is symmetrized w.r.t. the given symmetries. This is done by performing a group average over the symmetry group.
 
         :param symmetries: Symmetries which the symmetrized model should respect.
-        :type symmetries: list(:class:`.SymmetryOperation`)
+        :type symmetries: list(:py:class:`symmetry_representation.SymmetryOperation`)
 
         :param full_group: Specifies whether the given symmetries represent the full symmetry group, or only a subset from which the full symmetry group is generated.
         :type full_group: bool
@@ -1104,7 +1104,7 @@ class Model:
         # apply D(g) ... D(g)^-1 (since D(g) is unitary: D(g)^-1 == D(g)^H)
         for R in new_hop.keys():
             sym_op = symmetry_operation.repr.matrix
-            if symmetry_operation.repr.complex_conjugate:
+            if symmetry_operation.repr.has_cc:
                 new_hop[R] = np.conj(new_hop[R])
             new_hop[R] = np.dot(
                 sym_op,

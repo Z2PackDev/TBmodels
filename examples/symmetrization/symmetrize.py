@@ -10,13 +10,12 @@ import random
 import numpy as np
 import scipy.linalg as la
 import matplotlib.pyplot as plt
-
 import tbmodels as tb
-from tbmodels.helpers import SymmetryOperation, Representation
-
 import pymatgen as mg
 import pymatgen.symmetry.analyzer
 import pymatgen.symmetry.bandstructure
+from symmetry_representation import SymmetryOperation
+
 
 def spin_reps(prep):
     """
@@ -112,10 +111,8 @@ if __name__ == '__main__':
     # set up symmetry operations
     time_reversal = SymmetryOperation(
         rotation_matrix=np.eye(3),
-        repr=Representation(
-            complex_conjugate=True,
-            matrix=np.kron([[0, -1j], [1j, 0]], np.eye(7))
-        )
+        repr_matrix=np.kron([[0, -1j], [1j, 0]], np.eye(7)),
+        repr_has_cc=True
     )
 
     structure = mg.Structure(
@@ -146,10 +143,8 @@ if __name__ == '__main__':
         SymmetryOperation(
             # r-space and k-space matrices are related by transposing and inverting
             rotation_matrix=rot,
-            repr=Representation(
-                complex_conjugate=False,
-                matrix=repr_mat
-            )
+            repr_matrix=repr_mat,
+            repr_has_cc=False
         )
         for rot, repr_mat in zip(rots, reps)
     ]
