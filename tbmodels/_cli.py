@@ -6,6 +6,7 @@
 import os
 
 import click
+import symmetry_representation as sr
 
 from ._tb_model import Model
 
@@ -59,19 +60,27 @@ def parse(folder, prefix, output):
 @click.option(
     '--symmetries', '-s',
     type=click.Path(),
-    help='File containing the symmetry operations in JSON form.'
+    help='File containing a single symmetry_representation.SymmetryGroup (in HDF5 form).'
 )
 @click.option(
-    '--full-group', '-f',
-    is_flag=True,
-    default=False,
-    help='The given symmetries represent the full symmetry group, instead of just a generating subset.'
+    '--full-group/--no-full-group', '-f/-nf',
+    default=None,
+    help="""
+    Full group: The full symmetry group is given in the symmetries.
+    No full group: The symmetries only contain a generating subset of the full group. Overrides the option given in the symmetries file (if any).
+    """
 )
 def symmetrize(input, output, symmetries, full_group):
-    click.echo('Symmetrize function')
+    click.echo("Reading initial model from file '{}' ...".format(input))
     model = Model.from_hdf5_file(input)
-
-
+    click.echo("Reading symmetry group from file '{}' ...".format(symmetries))
+    sym_group = sr.io.load(symmetries)
+    symmetries = sym_group.symmetries
+    full_group = full_group if full_group is not None else sym_group.full_group
+    click.echo("Symmetrizing model with {} symmetries, full_group={} ...".format(
+        len(symmetries), full_group)
+    )
+    model_sym = model.symmetrize(symmetries=symmetries, full_group=full_group)
+    click.echo("Writing symmetrized model to file '{}' ...".format(output))
     model_sym.to_hdf5_file(output)
     click.echo('Done!')
-    raise NotImplementedError
