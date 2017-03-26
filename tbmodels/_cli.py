@@ -4,6 +4,8 @@
 # Author:  Dominik Gresch <greschd@gmx.ch>
 
 import os
+from collections.abc import Iterable
+from functools import singledispatch
 
 import click
 import symmetry_representation as sr
@@ -60,7 +62,7 @@ def parse(folder, prefix, output):
 @click.option(
     '--symmetries', '-s',
     type=click.Path(),
-    help='File containing a single symmetry_representation.SymmetryGroup (in HDF5 form).'
+    help='File containing symmetry_representation.SymmetryGroup objects (in HDF5 form).'
 )
 @click.option(
     '--full-group/--no-full-group', '-f/-nf',
@@ -73,14 +75,29 @@ def parse(folder, prefix, output):
 def symmetrize(input, output, symmetries, full_group):
     click.echo("Reading initial model from file '{}' ...".format(input))
     model = Model.from_hdf5_file(input)
-    click.echo("Reading symmetry group from file '{}' ...".format(symmetries))
-    sym_group = sr.io.load(symmetries)
-    symmetries = sym_group.symmetries
-    full_group = full_group if full_group is not None else sym_group.full_group
-    click.echo("Symmetrizing model with {} symmetries, full_group={} ...".format(
-        len(symmetries), full_group)
-    )
-    model_sym = model.symmetrize(symmetries=symmetries, full_group=full_group)
+    click.echo("Reading symmetries from file '{}' ...".format(symmetries))
+    sym = sr.io.load(symmetries)
+    model_sym = _symmetrize(sym, model, full_group)
     click.echo("Writing symmetrized model to file '{}' ...".format(output))
     model_sym.to_hdf5_file(output)
     click.echo('Done!')
+
+@singledispatch
+def _symmetrize(sym, model, full_group):
+    raise ValueError("Invalid type '{}' for _symmetrize".format(type(sym)))
+
+@_symmetrize.register(Iterable)
+def _(sym, model, full_group):
+    for s in sym:
+        model = _symmetrize(model, s, full_group)
+    return model
+
+@_symmetrize.register(sr.SymmetryGroup)
+def _(sym, model, full_group):
+    symmetries = sym.symmetries
+    if full_group is None:
+        full_group = sym.full_group
+    click.echo("Symmetrizing model with {} symmetr{}, full_group={} ...".format(
+        len(symmetries), 'y' if len(symmetries) == 1 else 'ies', full_group
+    )
+    return model.symmetrize(symmetries=symmetries, full_group=full_group)
