@@ -3,10 +3,6 @@
 #
 # Author:  Georg Winkler, Dominik Gresch <greschd@gmx.ch>
 
-import os
-import sys
-import random
-
 import numpy as np
 import scipy.linalg as la
 import tbmodels as tb
@@ -121,34 +117,3 @@ if __name__ == '__main__':
         full_group=True
     )
     sr.io.save([time_reversal, point_group], 'results/symmetries.hdf5')
-
-    # os.makedirs('results', exist_ok=True)
-    # model_tr = model_nosym.symmetrize([time_reversal])
-    # model = model_tr.symmetrize(symmetries, full_group=True)
-    # model.to_hdf5_file('results/model.hdf5')
-
-    # compare_bands_plot(model_nosym, model, structure)
-    # for R in set(model.hop.keys()) | set(reference_model.hop.keys()):
-    #     assert np.isclose(model.hop[R], reference_model.hop[R]).all()
-    #
-    # # Check that the symmetries are fulfilled at some random k
-    # k = (0.12312351, 0.73475412, 0.2451235)
-    # assert np.isclose(
-    #     model.hamilton(k, convention=1),
-    #     time_reversal.repr.matrix @
-    #     # when complex conjugation is present, r-space matrix (R) and k-space matrix (K)
-    #     # are related by K = -(R.T)^{-1}
-    #     # -> K^{-1} = -R.T
-    #     model.hamilton(-time_reversal.rotation_matrix.T @ k, convention=1).conjugate() @
-    #     time_reversal.repr.matrix.conjugate().T
-    # ).all()
-    #
-    # for sym in symmetries:
-    #     assert np.isclose(
-    #         model.hamilton(k, convention=1),
-    #         sym.repr.matrix @
-    #         # k-space and r-space matrices are related by transposing and inverting
-    #         # -> k-matrix^{-1} == r-matrix.T
-    #         model.hamilton(sym.rotation_matrix.T @ k, convention=1) @
-    #         sym.repr.matrix.conjugate().T
-    #     ).all()
