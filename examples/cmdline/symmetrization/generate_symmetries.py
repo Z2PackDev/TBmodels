@@ -63,11 +63,9 @@ def spin_reps(prep):
     return np.array(spin)
 
 if __name__ == '__main__':
+    # For this example we already changed the order of the orbitals (unlike the
+    # other symmetrization example).
     model_nosym = tb.Model.from_hdf5_file('data/model_nosym.hdf5')
-
-    # change the order of the orbitals from (In: s, py, pz, px; As: py, pz, px) * 2
-    # to (In: s, px, py, pz; As: s, px, py, pz) * 2
-    model_nosym = model_nosym.slice_orbitals([0, 2, 3, 1, 5, 6, 4, 7, 9, 10, 8, 12, 13, 11])
 
     # set up symmetry operations
     time_reversal = sr.SymmetryGroup(

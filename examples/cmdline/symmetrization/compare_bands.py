@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pymatgen as mg
 import pymatgen.symmetry.bandstructure
+import symmetry_representation as sr
 
 def compare_bands_plot(model1, model2, structure):
     path = mg.symmetry.bandstructure.HighSymmKpath(structure)
@@ -55,6 +56,9 @@ if __name__ == '__main__':
     for R in set(model_sym.hop.keys()) | set(reference_model.hop.keys()):
         assert np.isclose(model_sym.hop[R], reference_model.hop[R]).all()
 
+    tr_group, point_group = sr.io.load('results/symmetries.hdf5')
+    time_reversal = tr_group.symmetries[0]
+    symmetries = point_group.symmetries
     # Check that the symmetries are fulfilled at some random k
     k = (0.12312351, 0.73475412, 0.2451235)
     assert np.isclose(
