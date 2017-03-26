@@ -9,11 +9,9 @@ import random
 
 import numpy as np
 import scipy.linalg as la
-import matplotlib.pyplot as plt
 import tbmodels as tb
 import pymatgen as mg
 import pymatgen.symmetry.analyzer
-import pymatgen.symmetry.bandstructure
 import symmetry_representation as sr
 
 def spin_reps(prep):
@@ -68,37 +66,6 @@ def spin_reps(prep):
             spin = D12(0, 0, 0, 0)
     return np.array(spin)
 
-def compare_bands_plot(model1, model2, structure):
-    path = mg.symmetry.bandstructure.HighSymmKpath(structure)
-    kpts, labels = path.get_kpoints(line_density=200)
-    # de-duplicate / merge labels
-    for i in range(len(labels) - 1):
-        if labels[i] and labels[i + 1]:
-            if labels[i] != labels[i + 1]:
-                labels[i] = labels[i] + ' | ' + labels[i + 1]
-            labels[i + 1] = ''
-
-    # E-fermi is just an approximation
-    efermi = model1.eigenval([0, 0, 0])[model1.occ]
-    E1 = [model1.eigenval(k) for k in kpts]
-    E2 = [model2.eigenval(k) for k in kpts]
-
-    plt.figure()
-    labels_clean = []
-    labels_idx = []
-    for i, l in enumerate(labels):
-        if l:
-            labels_idx.append(i)
-            labels_clean.append('$' + l + '$')
-    for i in labels_idx[1:-1]:
-        plt.axvline(i, color='b')
-    plt.plot(range(len(kpts)), E1 - efermi, 'k')
-    plt.plot(range(len(kpts)), E2 - efermi, 'r', lw=0.5)
-    plt.xticks(labels_idx, labels_clean)
-    plt.xlim([0, len(kpts) - 1])
-    plt.ylim([-6, 6])
-    plt.savefig('results/compare_bands.pdf', bbox_inches='tight')
-
 if __name__ == '__main__':
     model_nosym = tb.Model.from_hdf5_file('data/model_nosym.hdf5')
 
@@ -107,12 +74,12 @@ if __name__ == '__main__':
     model_nosym = model_nosym.slice_orbitals([0, 2, 3, 1, 5, 6, 4, 7, 9, 10, 8, 12, 13, 11])
 
     # set up symmetry operations
-    time_reversal = SymmetryGroup(
+    time_reversal = sr.SymmetryGroup(
         symmetries=[sr.SymmetryOperation(
             rotation_matrix=np.eye(3),
             repr_matrix=np.kron([[0, -1j], [1j, 0]], np.eye(7)),
             repr_has_cc=True
-        )]
+        )],
         full_group=False
     )
 
@@ -150,10 +117,10 @@ if __name__ == '__main__':
         for rot, repr_mat in zip(rots, reps)
     ]
     point_group = sr.SymmetryGroup(
-        symmetries=symmetries
+        symmetries=symmetries,
         full_group=True
     )
-    sr.io.save([time_reversal, point_group], 'symmetries.hdf5')
+    sr.io.save([time_reversal, point_group], 'results/symmetries.hdf5')
 
     # os.makedirs('results', exist_ok=True)
     # model_tr = model_nosym.symmetrize([time_reversal])

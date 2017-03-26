@@ -89,7 +89,7 @@ def _symmetrize(sym, model, full_group):
 @_symmetrize.register(Iterable)
 def _(sym, model, full_group):
     for s in sym:
-        model = _symmetrize(model, s, full_group)
+        model = _symmetrize(s, model, full_group)
     return model
 
 @_symmetrize.register(sr.SymmetryGroup)
@@ -99,5 +99,5 @@ def _(sym, model, full_group):
         full_group = sym.full_group
     click.echo("Symmetrizing model with {} symmetr{}, full_group={} ...".format(
         len(symmetries), 'y' if len(symmetries) == 1 else 'ies', full_group
-    )
+    ))
     return model.symmetrize(symmetries=symmetries, full_group=full_group)
