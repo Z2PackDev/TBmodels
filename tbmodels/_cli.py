@@ -101,3 +101,11 @@ def _(sym, model, full_group):
         len(symmetries), 'y' if len(symmetries) == 1 else 'ies', full_group
     ))
     return model.symmetrize(symmetries=symmetries, full_group=full_group)
+
+@_symmetrize.register(sr.SymmetryOperation)
+def _(sym, model, full_group):
+    sym_group = sr.SymmetryGroup(
+        symmetries=[sym],
+        full_group=full_group or False # catches 'None', does nothing for 'True' or 'False'
+    )
+    return _symmetrize(sym_group, model, full_group)

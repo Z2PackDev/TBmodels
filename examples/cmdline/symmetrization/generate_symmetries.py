@@ -68,13 +68,10 @@ if __name__ == '__main__':
     model_nosym = tb.Model.from_hdf5_file('data/model_nosym.hdf5')
 
     # set up symmetry operations
-    time_reversal = sr.SymmetryGroup(
-        symmetries=[sr.SymmetryOperation(
-            rotation_matrix=np.eye(3),
-            repr_matrix=np.kron([[0, -1j], [1j, 0]], np.eye(7)),
-            repr_has_cc=True
-        )],
-        full_group=False
+    time_reversal = sr.SymmetryOperation(
+        rotation_matrix=np.eye(3),
+        repr_matrix=np.kron([[0, -1j], [1j, 0]], np.eye(7)),
+        repr_has_cc=True
     )
 
     structure = mg.Structure(
