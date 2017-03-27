@@ -62,6 +62,7 @@ def parse(folder, prefix, output):
 @click.option(
     '--symmetries', '-s',
     type=click.Path(),
+    default='symmetries.hdf5',
     help='File containing symmetry_representation.SymmetryGroup objects (in HDF5 form).'
 )
 @click.option(
