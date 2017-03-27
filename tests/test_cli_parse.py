@@ -16,9 +16,8 @@ from parameters import SAMPLES_DIR
 @pytest.mark.parametrize('prefix', ['silicon', 'bi'])
 def test_cli_parse(models_equal, prefix):
     runner = CliRunner()
-    with tempfile.TemporaryDirectory() as d:
-        out_file = os.path.join(d, 'model_out.hdf5')
-        runner.invoke(cli, ['parse', '-o', out_file, '-f', SAMPLES_DIR, '-p', prefix])
-        model_res = tbmodels.Model.from_hdf5_file(out_file)
+    with tempfile.NamedTemporaryFile() as out_file:
+        runner.invoke(cli, ['parse', '-o', out_file.name, '-f', SAMPLES_DIR, '-p', prefix])
+        model_res = tbmodels.Model.from_hdf5_file(out_file.name)
     model_reference = tbmodels.Model.from_wannier_folder(folder=SAMPLES_DIR, prefix=prefix)
     models_equal(model_res, model_reference)
