@@ -560,10 +560,10 @@ class Model:
                 if pos_kind == 'wannier':
                     kwargs['pos'] = _to_reduced(wannier_pos_cartesian)
                 elif pos_kind == 'atom':
-                    atom_pos = {
-                        kind: _to_reduced(pos)
-                        for kind, pos in atom_pos_cartesian
-                    }
+                    atom_pos = co.defaultdict(list)
+                    for kind, pos_c in atom_pos_cartesian:
+                        atom_pos[kind].append(_to_reduced(pos_c))
+                    atom_pos = dict(atom_pos)
                     print(atom_pos)
                 else:
                     raise ValueError("Invalid value '{}' for 'pos_kind'.".format(pos_kind))
