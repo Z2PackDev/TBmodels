@@ -507,7 +507,7 @@ class Model:
         return mapping
 
     @classmethod
-    def from_wannier_files(cls, *, hr_file, wsvec_file=None, xyz_file=None, win_file=None, h_cutoff=0., ignore_orbital_order=False, **kwargs):
+    def from_wannier_files(cls, *, hr_file, wsvec_file=None, xyz_file=None, win_file=None, h_cutoff=0., ignore_orbital_order=False, pos_kind='wannier', **kwargs):
         """
         Create a :class:`.Model` instance from Wannier90 output files.
 
@@ -529,6 +529,13 @@ class Model:
         :param ignore_orbital_order: Do not throw an error when the order of orbitals does not match what is expected from the Wannier90 output.
         :type ignore_orbital_order: bool
 
+        :param pos_kind: Determines which positions from the ``xyz_file`` are used for the orbital positions. Possible choices:
+
+            * ``'wannier'`` -- The Wannier centers are used for the orbital positions
+            * ``'atom'`` -- The atomic positions are used for the orbital positions. The projections block in the ``win_file`` is used to determine which orbitals belong to which atom.
+
+        :type pos_kind: str
+
         :param kwargs:  :class:`.Model` keyword arguments.
         """
 
@@ -544,8 +551,22 @@ class Model:
             if 'uc' not in kwargs:
                 raise ValueError("Positions cannot be read from .xyz file without unit cell given: Transformation from cartesian to reduced coordinates not possible. Specify the unit cell using one of the keywords 'uc' or 'win_file'.")
             with open(xyz_file, 'r') as f:
-                pos_cartesian, _ = cls._read_xyz(f)
-                kwargs['pos'] = la.solve(kwargs['uc'].T, np.array(pos_cartesian).T).T
+                wannier_pos_cartesian, atom_pos_cartesian = cls._read_xyz(f)
+
+                def _to_reduced(pos_cart):
+                    """Map position from cartesian to reduced coordinates"""
+                    return la.solve(kwargs['uc'].T, np.array(pos_cart).T).T
+
+                if pos_kind == 'wannier':
+                    kwargs['pos'] = _to_reduced(wannier_pos_cartesian)
+                elif pos_kind == 'atom':
+                    atom_pos = {
+                        kind: _to_reduced(pos)
+                        for kind, pos in atom_pos_cartesian
+                    }
+                    print(atom_pos)
+                else:
+                    raise ValueError("Invalid value '{}' for 'pos_kind'.".format(pos_kind))
 
         with open(hr_file, 'r') as f:
             num_wann, hop_entries = cls._read_hr(f, ignore_orbital_order=ignore_orbital_order)
@@ -569,6 +590,7 @@ class Model:
                     hop_entries = remap_hoppings(hop_entries)
                     return cls.from_hop_list(size=num_wann, hop_list=hop_entries, **kwargs)
 
+            print(kwargs['pos'])
             return cls.from_hop_list(size=num_wann, hop_list=hop_entries, **kwargs)
 
     @classmethod
