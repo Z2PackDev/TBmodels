@@ -565,6 +565,7 @@ class Model:
                         atom_pos[kind].append(_to_reduced(pos_c))
                     atom_pos = dict(atom_pos)
                     print(atom_pos)
+                    print(kwargs['pos']) # Triggers KeyError in NotImplemented case
                 else:
                     raise ValueError("Invalid value '{}' for 'pos_kind'.".format(pos_kind))
 
@@ -590,7 +591,6 @@ class Model:
                     hop_entries = remap_hoppings(hop_entries)
                     return cls.from_hop_list(size=num_wann, hop_list=hop_entries, **kwargs)
 
-            print(kwargs['pos'])
             return cls.from_hop_list(size=num_wann, hop_list=hop_entries, **kwargs)
 
     @classmethod
