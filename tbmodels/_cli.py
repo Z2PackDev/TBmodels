@@ -138,8 +138,7 @@ def slice(input, output, slice_idx):
     """
     Create a model containing only the orbitals given in the SLICE_IDX.
     """
-    click.echo("Reading initial model from file '{}' ...".format(input))
-    model = Model.from_hdf5_file(input)
+    model = _read_input(input)
     click.echo("Slicing model with indices {} ...".format(slice_idx))
     model_slice = model.slice_orbitals(slice_idx=slice_idx)
     _write_output(model_slice, output)
