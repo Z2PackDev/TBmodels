@@ -49,7 +49,6 @@ def test_cli_slice_invalid(models_equal, slice_idx):
                     'slice',
                     '-o', out_file.name,
                     '-i', input_file,
-                    *(str(x) for x in slice_idx)
-                ],
+                ] + [str(x) for x in slice_idx],
                 catch_exceptions=False
             )
