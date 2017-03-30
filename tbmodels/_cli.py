@@ -16,6 +16,29 @@ from ._tb_model import Model
 def cli():
     pass
 
+def _output_option(**kwargs):
+    return click.option(
+        '--output', '-o',
+        type=click.Path(dir_okay=False),
+        **kwargs
+    )
+
+_input_option = click.option(
+    '--input', '-i',
+    type=click.Path(exists=True, dir_okay=False),
+    default='model.hdf5',
+    help='File containing the input model (in HDF5 format).'
+)
+
+def _read_input(input):
+    click.echo("Reading initial model from file '{}' ...".format(input))
+    return Model.from_hdf5_file(input)
+
+def _write_output(model, output):
+    click.echo("Writing output model to file '{}' ...".format(output))
+    model.to_hdf5_file(output)
+    click.echo("Done!")
+
 @cli.command(short_help='Parse Wannier90 output files to an HDF5 file.')
 @click.option(
     '--folder', '-f',
@@ -29,9 +52,7 @@ def cli():
     default='wannier',
     help='Common prefix of the Wannier90 output files.'
 )
-@click.option(
-    '--output', '-o',
-    type=click.Path(),
+@_output_option(
     default='model.hdf5',
     help='Path of the output file.'
 )
@@ -41,21 +62,12 @@ def parse(folder, prefix, output):
     """
     click.echo("Parsing output files '{}*' ...".format(os.path.join(folder, prefix)))
     model = Model.from_wannier_folder(folder=folder, prefix=prefix, ignore_orbital_order=True)
-    click.echo("Writing model to file '{}' ...".format(output))
-    model.to_hdf5_file(output)
-    click.echo("Done!")
+    _write_output(model, output)
 
 
-@cli.command()
-@click.option(
-    '--input', '-i',
-    type=click.Path(exists=True, dir_okay=False),
-    default='model.hdf5',
-    help='File containing the model that will be symmetrized.'
-)
-@click.option(
-    '--output', '-o',
-    type=click.Path(dir_okay=False),
+@cli.command(short_help='Create symmetrized tight-binding model.')
+@_input_option
+@_output_option(
     default='model_symmetrized.hdf5',
     help='Output file for the symmetrized model.'
 )
@@ -66,7 +78,7 @@ def parse(folder, prefix, output):
     help='File containing symmetry_representation.SymmetryGroup objects (in HDF5 form).'
 )
 @click.option(
-    '--full-group/--no-full-group', '-f/-nf',
+    '--full-group/--no-full-group', '-f',
     default=None,
     help="""
     Full group: The full symmetry group is given in the symmetries.
@@ -74,14 +86,14 @@ def parse(folder, prefix, output):
     """
 )
 def symmetrize(input, output, symmetries, full_group):
-    click.echo("Reading initial model from file '{}' ...".format(input))
-    model = Model.from_hdf5_file(input)
+    """
+    Symmetrize tight-binding model with given symmetry group(s).
+    """
+    model = _read_input(input)
     click.echo("Reading symmetries from file '{}' ...".format(symmetries))
     sym = sr.io.load(symmetries)
     model_sym = _symmetrize(sym, model, full_group)
-    click.echo("Writing symmetrized model to file '{}' ...".format(output))
-    model_sym.to_hdf5_file(output)
-    click.echo('Done!')
+    _write_output(model_sym, output)
 
 @singledispatch
 def _symmetrize(sym, model, full_group):
@@ -110,3 +122,23 @@ def _(sym, model, full_group):
         full_group=full_group or False # catches 'None', does nothing for 'True' or 'False'
     )
     return _symmetrize(sym_group, model, full_group)
+
+@cli.command(short_help="Slice specific orbitals from model.")
+@_input_option
+@_output_option(
+    default='model_sliced.hdf5',
+    help='Output file for the sliced model.'
+)
+@click.argument(
+    'slice-idx',
+    nargs=-1,
+)
+def slice(input, output, slice_idx):
+    """
+    Create a model containing only the orbitals given in the SLICE_IDX.
+    """
+    click.echo("Reading initial model from file '{}' ...".format(input))
+    model = Model.from_hdf5_file(input)
+    click.echo("Slicing model with indices {} ...".format(slice_idx))
+    model_slice = model.slice_orbitals(slice_idx=slice_idx)
+    _write_output(model_slice, output)
