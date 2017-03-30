@@ -462,47 +462,43 @@ class Model:
         lines = (l for l in lines if l)
         lines = (l.lower() for l in lines)
 
-        text = ' '.join(lines)
-        tokens = iter(re.compile('[ :=]+').split(text))
+        split_token = re.compile('[ :=]+')
 
         mapping = {}
-        for t in tokens:
-            if t.startswith('begin'):
-                if t == 'begin':
-                    key = next(tokens)
-                # if there is no space:
-                else:
-                    key = t[5:]
+        for l in lines:
+            if l.startswith('begin'):
+                key = split_token.split(l[5:].strip(' :='), 1)[0]
                 val = []
                 while True:
-                    t = next(tokens)
-                    if t.startswith('end'):
-                        if t == 'end':
-                            assert next(tokens) == key
-                        else:
-                            assert t[3:] == key
+                    l = next(lines)
+                    if l.startswith('end'):
+                        end_key = split_token.split(l[3:].strip(' :='), 1)[0]
+                        assert end_key == key
                         break
                     else:
-                        val.append(t)
+                        val.append(l)
                 mapping[key] = val
             else:
-                key = t
-                val = next(tokens)
+                key, val = split_token.split(l, 1)
                 mapping[key] = val
 
         # here we can continue parsing the individual keys as needed
         if 'unit_cell_cart' in mapping:
             uc_input = mapping['unit_cell_cart']
             # handle the case when the unit is explicitly given
-            if len(uc_input) == 10:
+            if len(uc_input) == 4:
                 unit, *uc_input = uc_input
+                # unit = unit[0]
             else:
                 unit = 'ang'
-            val = [float(x) for x in uc_input]
+            val = [[float(x) for x in split_token.split(line)] for line in uc_input]
             val = np.array(val).reshape(3, 3)
             if unit == 'bohr':
                 val *= 0.52917721092
             mapping['unit_cell_cart'] = val
+
+        if 'projections' in mapping:
+            print(mapping['projections'])
 
         return mapping
 
