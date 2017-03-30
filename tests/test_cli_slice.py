@@ -27,8 +27,8 @@ def test_cli_slice(models_equal, slice_idx):
                 'slice',
                 '-o', out_file.name,
                 '-i', input_file,
-                *(str(x) for x in slice_idx)
-            ],
+            ] + [str(x) for x in slice_idx]
+            ,
             catch_exceptions=False
         )
         model_res = tbmodels.Model.from_hdf5_file(out_file.name)
