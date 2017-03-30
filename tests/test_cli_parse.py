@@ -17,7 +17,7 @@ from parameters import SAMPLES_DIR
 def test_cli_parse(models_equal, prefix):
     runner = CliRunner()
     with tempfile.NamedTemporaryFile() as out_file:
-        runner.invoke(cli, ['parse', '-o', out_file.name, '-f', SAMPLES_DIR, '-p', prefix])
+        runner.invoke(cli, ['parse', '-o', out_file.name, '-f', SAMPLES_DIR, '-p', prefix], catch_exceptions=False)
         model_res = tbmodels.Model.from_hdf5_file(out_file.name)
     model_reference = tbmodels.Model.from_wannier_folder(folder=SAMPLES_DIR, prefix=prefix)
     models_equal(model_res, model_reference)

@@ -131,6 +131,7 @@ def _(sym, model, full_group):
 )
 @click.argument(
     'slice-idx',
+    type=int,
     nargs=-1,
 )
 def slice(input, output, slice_idx):
