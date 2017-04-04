@@ -8,6 +8,7 @@ from collections.abc import Iterable
 from functools import singledispatch
 
 import click
+import h5py
 import symmetry_representation as sr
 
 from ._tb_model import Model
@@ -142,3 +143,30 @@ def slice(input, output, slice_idx):
     click.echo("Slicing model with indices {} ...".format(slice_idx))
     model_slice = model.slice_orbitals(slice_idx=slice_idx)
     _write_output(model_slice, output)
+
+@cli.command(short_help="Calculate energy bands.")
+@_input_option
+@click.option(
+    '-k', '--kpoints',
+    default='kpoints.hdf5',
+    help='File containing the k-points for which the bands are evaluated.'
+)
+@_output_option(
+    default='bands.hdf5',
+    help='Output file for the energy bands.'
+)
+def bands(input, kpoints, output):
+    """
+    Calculate the energy bands for a given set of k-points (in reduced coordinates). The input and output is given in an hdf5 file.
+    """
+    model = _read_input(input)
+    with h5py.File(kpoints, 'r') as f:
+        kpoints = f['kpoints']
+
+    eigenvalues = np.array(
+        [model.eigenval(k) for k in kpoints]
+    )
+
+    with h5py.File(output, 'w') as f:
+        f['kpoints'] = kpoints
+        f['eigenvals'] = eigenvalues
