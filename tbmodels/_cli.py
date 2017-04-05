@@ -10,6 +10,7 @@ from functools import singledispatch
 import h5py
 import click
 import numpy as np
+import bandstructure_utils as bs
 import symmetry_representation as sr
 
 from ._tb_model import Model
@@ -163,16 +164,14 @@ def bands(input, kpoints, output):
     """
     model = _read_input(input)
     click.echo("Reading kpoints from file '{}' ...".format(kpoints))
-    with h5py.File(kpoints, 'r') as f:
-        kpts = f['kpoints'].value
+    kpts = bs.io.load(kpoints)
 
     click.echo("Calculating energy eigenvalues ...")
-    eigenvalues = np.array(
-        [model.eigenval(k) for k in kpts]
+    eigenvalues = bs.eigenvals.EigenvalsData.from_eigenval_function(
+        kpoints=kpts,
+        eigenval_function=model.eigenval
     )
 
     click.echo("Writing kpoints and energy eigenvalues to file '{}' ...".format(output))
-    with h5py.File(output, 'w') as f:
-        f['kpoints'] = kpoints
-        f['eigenvals'] = eigenvalues
+    bs.io.save(eigenvalues, output)
     click.echo("Done!")
