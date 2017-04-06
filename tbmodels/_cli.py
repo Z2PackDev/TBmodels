@@ -145,21 +145,21 @@ def slice(input, output, slice_idx):
     model_slice = model.slice_orbitals(slice_idx=slice_idx)
     _write_output(model_slice, output)
 
-@cli.command(short_help="Calculate energy bands.")
+@cli.command(short_help="Calculate energy eigenvalues.")
 @_input_option
 @click.option(
     '-k', '--kpoints',
     type=click.Path(exists=True, dir_okay=False),
     default='kpoints.hdf5',
-    help='File containing the k-points for which the bands are evaluated.'
+    help='File containing the k-points for which the eigenvalues are evaluated.'
 )
 @_output_option(
-    default='bands.hdf5',
-    help='Output file for the energy bands.'
+    default='eigenvals.hdf5',
+    help='Output file for the energy eigenvalues.'
 )
-def bands(input, kpoints, output):
+def eigenvals(input, kpoints, output):
     """
-    Calculate the energy bands for a given set of k-points (in reduced coordinates). The input and output is given in an HDF5 file.
+    Calculate the energy eigenvalues for a given set of k-points (in reduced coordinates). The input and output is given in an HDF5 file.
     """
     model = _read_input(input)
     click.echo("Reading kpoints from file '{}' ...".format(kpoints))
