@@ -7,6 +7,7 @@ import os
 
 import pytest
 import tempfile
+import numpy as np
 import bandstructure_utils as bs
 from click.testing import CliRunner
 
@@ -31,4 +32,4 @@ def test_cli_bands():
         print(run.output)
         res = bs.io.load(out_file.name)
     reference = bs.io.load(os.path.join(samples_dir, 'silicon_bands.hdf5'))
-    assert bs.compare.difference(res, reference) == 0
+    np.testing.assert_allclose(bs.compare.difference(res, reference), 0)
