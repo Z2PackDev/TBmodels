@@ -7,13 +7,12 @@ import os
 from collections.abc import Iterable
 from functools import singledispatch
 
-import h5py
 import click
 import numpy as np
 import bandstructure_utils as bs
 import symmetry_representation as sr
 
-from ._tb_model import Model
+from . import Model
 
 @click.group()
 def cli():
