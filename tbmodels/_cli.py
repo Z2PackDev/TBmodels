@@ -167,7 +167,7 @@ def bands(input, kpoints, output):
     kpts = bs.io.load(kpoints)
 
     click.echo("Calculating energy eigenvalues ...")
-    eigenvalues = bs.eigenvals.EigenvalsData.from_eigenval_function(
+    eigenvalues = bs.EigenvalsData.from_eigenval_function(
         kpoints=kpts,
         eigenval_function=model.eigenval
     )

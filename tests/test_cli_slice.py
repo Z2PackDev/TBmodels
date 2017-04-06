@@ -21,7 +21,7 @@ def test_cli_slice(models_equal, slice_idx):
     runner = CliRunner()
     input_file = os.path.join(SAMPLES_DIR, 'InAs_nosym.hdf5')
     with tempfile.NamedTemporaryFile() as out_file:
-        runner.invoke(
+        run = runner.invoke(
             cli,
             [
                 'slice',
@@ -31,6 +31,7 @@ def test_cli_slice(models_equal, slice_idx):
             ,
             catch_exceptions=False
         )
+        print(run.output)
         model_res = tbmodels.Model.from_hdf5_file(out_file.name)
     model_reference = tbmodels.Model.from_hdf5_file(input_file).slice_orbitals(slice_idx=slice_idx)
     models_equal(model_res, model_reference)
