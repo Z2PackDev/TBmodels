@@ -5,8 +5,6 @@
 # Date:    05.05.2015 13:59:00 CEST
 # File:    hr_hamilton.py
 
-from os.path import join
-
 import pytest
 import itertools
 
@@ -16,12 +14,12 @@ import wraparound
 import numpy as np
 import scipy.linalg as la
 
-from parameters import T_VALUES, KPT, SAMPLES_DIR
+from parameters import T_VALUES, KPT
 
 @pytest.mark.parametrize('t', T_VALUES)
 def test_simple(t, get_model):
     model = get_model(*t)
-    
+
     latt = model.to_kwant_lattice()
     sym = kwant.TranslationalSymmetry(
         latt.vec((1, 0, 0)),
@@ -32,17 +30,17 @@ def test_simple(t, get_model):
     sys[latt.shape(lambda p: True, (0, 0, 0))] = 0
     model.add_hoppings_kwant(sys)
     sys = wraparound.wraparound(sys).finalized()
-    
+
     # the Hamiltonian doesn't match because the sites might be re-ordered -> test eigenval instead
     for k in KPT:
         k_kwant = tuple(np.array(k) * 2 * np.pi)
         np.testing.assert_allclose(model.eigenval(k), la.eigvalsh(sys.hamiltonian_submatrix(k_kwant)), atol=1e-8)
 
 @pytest.mark.parametrize('hr_name', ['hr_hamilton.dat', 'wannier90_hr.dat', 'wannier90_hr_v2.dat'])
-def test_realistic(compare_data, hr_name):
-    hr_file = join(SAMPLES_DIR, hr_name)
+def test_realistic(compare_data, hr_name, sample):
+    hr_file = sample(hr_name)
     model = tbmodels.Model.from_hr_file(hr_file, occ=28)
-    
+
     latt = model.to_kwant_lattice()
     sym = kwant.TranslationalSymmetry(
         latt.vec((1, 0, 0)),
@@ -53,7 +51,7 @@ def test_realistic(compare_data, hr_name):
     sys[latt.shape(lambda p: True, (0, 0, 0))] = 0
     model.add_hoppings_kwant(sys)
     sys = wraparound.wraparound(sys).finalized()
-    
+
     # don't split into separate tests because it takes too long
     # since there is only one 'site' we can also test the Hamiltonian
     for k in KPT:
@@ -77,7 +75,7 @@ def test_unequal_orbital_number():
         model.add_hop(t2, 0, 0, R)
         model.add_hop(-t2, 1, 1, R)
         model.add_hop(-t2, 2, 2, R)
-        
+
     latt = model.to_kwant_lattice()
     sym = kwant.TranslationalSymmetry(
         latt.vec((1, 0)),
@@ -87,7 +85,7 @@ def test_unequal_orbital_number():
     sys[latt.shape(lambda p: True, (0, 0))] = 0
     model.add_hoppings_kwant(sys)
     sys = wraparound.wraparound(sys).finalized()
-    
+
     for k in KPT:
         k = k[:2]
         k_kwant = tuple(np.array(k) * 2 * np.pi)

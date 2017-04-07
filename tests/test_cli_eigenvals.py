@@ -13,10 +13,9 @@ from click.testing import CliRunner
 
 import tbmodels
 from tbmodels._cli import cli
-from parameters import SAMPLES_DIR
 
-def test_cli_eigenvals():
-    samples_dir = os.path.join(SAMPLES_DIR, 'cli_eigenvals')
+def test_cli_eigenvals(sample):
+    samples_dir = sample('cli_eigenvals')
     runner = CliRunner()
     with tempfile.NamedTemporaryFile() as out_file:
         run = runner.invoke(

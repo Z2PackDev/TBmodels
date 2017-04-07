@@ -4,20 +4,16 @@
 # Author:  Dominik Gresch <greschd@gmx.ch>
 # Date:    05.05.2015 13:59:00 CEST
 
-from os.path import join
-
 import pytest
 
 import tbmodels
 import numpy as np
 
-from parameters import SAMPLES_DIR
-
 kpt = [(0.1, 0.2, 0.7), (-0.3, 0.5, 0.2), (0., 0., 0.), (0.1, -0.9, -0.7)]
 
 @pytest.mark.parametrize('hr_name', ['hr_hamilton.dat', 'wannier90_hr.dat', 'wannier90_hr_v2.dat', 'silicon_hr.dat'])
-def test_wannier_hr_only(compare_data, hr_name):
-    hr_file = join(SAMPLES_DIR, hr_name)
+def test_wannier_hr_only(compare_data, hr_name, sample):
+    hr_file = sample(hr_name)
     model = tbmodels.Model.from_wannier_files(hr_file=hr_file, occ=28)
     H_list = np.array([model.hamilton(k) for k in kpt])
 
@@ -27,10 +23,10 @@ def test_wannier_hr_only(compare_data, hr_name):
     ('silicon_hr.dat', 'silicon_wsvec.dat'),
     ('bi_hr.dat', 'bi_wsvec.dat')
 ])
-def test_wannier_hr_wsvec(compare_data, hr_name, wsvec_name):
+def test_wannier_hr_wsvec(compare_data, hr_name, wsvec_name, sample):
     model = tbmodels.Model.from_wannier_files(
-        hr_file=join(SAMPLES_DIR, hr_name),
-        wsvec_file=join(SAMPLES_DIR, wsvec_name)
+        hr_file=sample(hr_name),
+        wsvec_file=sample(wsvec_name)
     )
     H_list = np.array([model.hamilton(k) for k in kpt])
 
@@ -40,10 +36,10 @@ def test_wannier_hr_wsvec(compare_data, hr_name, wsvec_name):
     ('silicon_hr.dat', 'silicon_wsvec.dat', 'silicon_centres.xyz'),
     ('bi_hr.dat', 'bi_wsvec.dat', 'bi_centres.xyz')
 ])
-def test_wannier_hr_wsvec_xyz(compare_data, hr_name, wsvec_name, xyz_name):
-    hr_file = join(SAMPLES_DIR, hr_name)
-    wsvec_file = join(SAMPLES_DIR, wsvec_name)
-    xyz_file = join(SAMPLES_DIR, xyz_name)
+def test_wannier_hr_wsvec_xyz(compare_data, hr_name, wsvec_name, xyz_name, sample):
+    hr_file = sample(hr_name)
+    wsvec_file = sample(wsvec_name)
+    xyz_file = sample(xyz_name)
     # cannot determine reduced pos if uc is not given
     with pytest.raises(ValueError):
         model = tbmodels.Model.from_wannier_files(
@@ -102,11 +98,11 @@ def test_wannier_hr_wsvec_xyz(compare_data, hr_name, wsvec_name, xyz_name):
         ])
     )
 ])
-def test_wannier_all(compare_data, hr_name, wsvec_name, xyz_name, win_name, pos, uc, reciprocal_lattice):
-    hr_file = join(SAMPLES_DIR, hr_name)
-    wsvec_file = join(SAMPLES_DIR, wsvec_name)
-    xyz_file = join(SAMPLES_DIR, xyz_name)
-    win_file = join(SAMPLES_DIR, win_name)
+def test_wannier_all(compare_data, hr_name, wsvec_name, xyz_name, win_name, pos, uc, reciprocal_lattice, sample):
+    hr_file = sample(hr_name)
+    wsvec_file = sample(wsvec_name)
+    xyz_file = sample(xyz_name)
+    win_file = sample(win_name)
     model = tbmodels.Model.from_wannier_files(
         hr_file=hr_file,
         wsvec_file=wsvec_file,
@@ -134,27 +130,27 @@ def test_wannier_all(compare_data, hr_name, wsvec_name, xyz_name, win_name, pos,
     assert np.allclose(model.reciprocal_lattice, reciprocal_lattice)
 
 @pytest.mark.parametrize('hr_name', ['hr_hamilton.dat', 'wannier90_hr.dat', 'wannier90_hr_v2.dat'])
-def test_wannier_hr_equal(models_equal, hr_name):
-    hr_file = join(SAMPLES_DIR, hr_name)
+def test_wannier_hr_equal(models_equal, hr_name, sample):
+    hr_file = sample(hr_name)
     model1 = tbmodels.Model.from_hr_file(hr_file, occ=28)
     model2 = tbmodels.Model.from_wannier_files(hr_file=hr_file, occ=28)
     models_equal(model1, model2)
 
 @pytest.mark.parametrize('hr_name', ['wannier90_inconsistent.dat', 'wannier90_inconsistent_v2.dat'])
-def test_inconsistent(hr_name):
+def test_inconsistent(hr_name, sample):
     with pytest.raises(ValueError):
-        model = tbmodels.Model.from_wannier_files(hr_file=join(SAMPLES_DIR, hr_name))
+        model = tbmodels.Model.from_wannier_files(hr_file=sample(hr_name))
 
 
-def test_emptylines():
+def test_emptylines(sample):
     """test whether the input file with some random empty lines is correctly parsed"""
-    model1 = tbmodels.Model.from_wannier_files(hr_file=join(SAMPLES_DIR, 'wannier90_hr.dat'))
-    model2 = tbmodels.Model.from_wannier_files(hr_file=join(SAMPLES_DIR, 'wannier90_hr_v2.dat'))
+    model1 = tbmodels.Model.from_wannier_files(hr_file=sample('wannier90_hr.dat'))
+    model2 = tbmodels.Model.from_wannier_files(hr_file=sample('wannier90_hr_v2.dat'))
     hop1 = model1.hop
     hop2 = model2.hop
     for k in hop1.keys() | hop2.keys():
         assert (np.array(hop1[k]) == np.array(hop2[k])).all()
 
-def test_error():
+def test_error(sample):
     with pytest.raises(ValueError):
-        tbmodels.Model.from_wannier_files(hr_file=join(SAMPLES_DIR, 'hr_hamilton.dat'), occ=28, pos=[[1., 1., 1.]])
+        tbmodels.Model.from_wannier_files(hr_file=sample('hr_hamilton.dat'), occ=28, pos=[[1., 1., 1.]])

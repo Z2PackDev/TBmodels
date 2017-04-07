@@ -3,23 +3,20 @@
 #
 # Author:  Dominik Gresch <greschd@gmx.ch>
 
-import os
-
 import pytest
 import tempfile
 from click.testing import CliRunner
 
 import tbmodels
 from tbmodels._cli import cli
-from parameters import SAMPLES_DIR
 
 @pytest.mark.parametrize('slice_idx', [
     (3, 1, 2),
     (0, 1, 4, 2, 3, 5, 6, 8, 7, 9, 10, 11, 12)
 ])
-def test_cli_slice(models_equal, slice_idx):
+def test_cli_slice(models_equal, slice_idx, sample):
     runner = CliRunner()
-    input_file = os.path.join(SAMPLES_DIR, 'InAs_nosym.hdf5')
+    input_file = sample('InAs_nosym.hdf5')
     with tempfile.NamedTemporaryFile() as out_file:
         run = runner.invoke(
             cli,
@@ -39,9 +36,9 @@ def test_cli_slice(models_equal, slice_idx):
 @pytest.mark.parametrize('slice_idx', [
     (0, 200),
 ])
-def test_cli_slice_invalid(models_equal, slice_idx):
+def test_cli_slice_invalid(models_equal, slice_idx, sample):
     runner = CliRunner()
-    input_file = os.path.join(SAMPLES_DIR, 'InAs_nosym.hdf5')
+    input_file = sample('InAs_nosym.hdf5')
     with tempfile.NamedTemporaryFile() as out_file:
         with pytest.raises(IndexError):
             runner.invoke(

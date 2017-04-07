@@ -5,6 +5,7 @@
 # Date:    18.02.2016 18:07:11 MST
 # File:    conftest.py
 
+import os
 import json
 import pytest
 import numbers
@@ -36,7 +37,7 @@ def compare_data(request, test_name, scope="session"):
     """Returns a function which either saves some data to a file or (if that file exists already) compares it to pre-existing data using a given comparison function."""
     def inner(compare_fct, data, tag=None):
         full_name = test_name + (tag or '')
-        
+
         # get rid of json-specific quirks
         # store as string because I cannot add the decoder to the pytest cache
         data_str = json.dumps(data, default=encode)
@@ -47,7 +48,7 @@ def compare_data(request, test_name, scope="session"):
             request.config.cache.set(full_name, data_str)
             raise ValueError('Reference data does not exist.')
         else:
-            assert compare_fct(val, data) 
+            assert compare_fct(val, data)
     return inner
 
 @pytest.fixture
@@ -57,8 +58,8 @@ def compare_equal(compare_data):
 @pytest.fixture
 def compare_isclose(compare_data):
     return lambda data, tag=None: compare_data(np.allclose, data, tag)
-    
-    
+
+
 @pytest.fixture
 def models_equal():
     def inner(model1, model2, ignore_sparsity=False):
@@ -76,7 +77,7 @@ def models_equal():
             assert model1._sparse == model2._sparse
         return True
     return inner
-    
+
 @pytest.fixture
 def models_close():
     def inner(model1, model2, ignore_sparsity=False):
@@ -99,6 +100,15 @@ def models_close():
         if not ignore_sparsity:
             assert model1._sparse == model2._sparse
         return True
+    return inner
+
+@pytest.fixture
+def sample():
+    def inner(name):
+        return os.path.join(
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), 'samples'),
+            name
+        )
     return inner
 
 #-----------------------------------------------------------------------#
