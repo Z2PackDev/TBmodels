@@ -12,31 +12,31 @@ import numpy as np
 kpt = [(0.1, 0.2, 0.7), (-0.3, 0.5, 0.2), (0., 0., 0.), (0.1, -0.9, -0.7)]
 
 @pytest.mark.parametrize('hr_name', ['hr_hamilton.dat', 'wannier90_hr.dat', 'wannier90_hr_v2.dat', 'silicon_hr.dat'])
-def test_wannier_hr_only(compare_data, hr_name, sample):
+def test_wannier_hr_only(compare_isclose, hr_name, sample):
     hr_file = sample(hr_name)
     model = tbmodels.Model.from_wannier_files(hr_file=hr_file, occ=28)
     H_list = np.array([model.hamilton(k) for k in kpt])
 
-    compare_data(lambda x, y: np.isclose(x, y).all(), H_list)
+    compare_isclose(H_list)
 
 @pytest.mark.parametrize('hr_name, wsvec_name', [
     ('silicon_hr.dat', 'silicon_wsvec.dat'),
     ('bi_hr.dat', 'bi_wsvec.dat')
 ])
-def test_wannier_hr_wsvec(compare_data, hr_name, wsvec_name, sample):
+def test_wannier_hr_wsvec(compare_isclose, hr_name, wsvec_name, sample):
     model = tbmodels.Model.from_wannier_files(
         hr_file=sample(hr_name),
         wsvec_file=sample(wsvec_name)
     )
     H_list = np.array([model.hamilton(k) for k in kpt])
 
-    compare_data(lambda x, y: np.isclose(x, y).all(), H_list)
+    compare_isclose(H_list)
 
 @pytest.mark.parametrize('hr_name, wsvec_name, xyz_name', [
     ('silicon_hr.dat', 'silicon_wsvec.dat', 'silicon_centres.xyz'),
     ('bi_hr.dat', 'bi_wsvec.dat', 'bi_centres.xyz')
 ])
-def test_wannier_hr_wsvec_xyz(compare_data, hr_name, wsvec_name, xyz_name, sample):
+def test_wannier_hr_wsvec_xyz(hr_name, wsvec_name, xyz_name, sample):
     hr_file = sample(hr_name)
     wsvec_file = sample(wsvec_name)
     xyz_file = sample(xyz_name)
@@ -98,7 +98,7 @@ def test_wannier_hr_wsvec_xyz(compare_data, hr_name, wsvec_name, xyz_name, sampl
         ])
     )
 ])
-def test_wannier_all(compare_data, hr_name, wsvec_name, xyz_name, win_name, pos, uc, reciprocal_lattice, sample):
+def test_wannier_all(compare_isclose, hr_name, wsvec_name, xyz_name, win_name, pos, uc, reciprocal_lattice, sample):
     hr_file = sample(hr_name)
     wsvec_file = sample(wsvec_name)
     xyz_file = sample(xyz_name)
@@ -117,7 +117,7 @@ def test_wannier_all(compare_data, hr_name, wsvec_name, xyz_name, win_name, pos,
     H_list = np.array([model.hamilton(k) for k in kpt])
     H_list2 = np.array([model.hamilton(k) for k in kpt])
 
-    compare_data(lambda x, y: np.isclose(x, y).all(), H_list)
+    compare_isclose(H_list)
     assert np.isclose(H_list, H_list2).all()
 
     # check positions
