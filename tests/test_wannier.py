@@ -119,14 +119,8 @@ def test_wannier_all(compare_isclose, hr_name, wsvec_name, xyz_name, win_name, p
 
     compare_isclose(H_list)
     assert np.isclose(H_list, H_list2).all()
-
-    # check positions
     assert np.allclose(model.pos, pos % 1)
-
-    # check unit cell
     assert np.allclose(model.uc, uc)
-
-    # check reciprocal lattice
     assert np.allclose(model.reciprocal_lattice, reciprocal_lattice)
 
 @pytest.mark.parametrize('hr_name', ['hr_hamilton.dat', 'wannier90_hr.dat', 'wannier90_hr_v2.dat'])
@@ -140,7 +134,6 @@ def test_wannier_hr_equal(models_equal, hr_name, sample):
 def test_inconsistent(hr_name, sample):
     with pytest.raises(ValueError):
         model = tbmodels.Model.from_wannier_files(hr_file=sample(hr_name))
-
 
 def test_emptylines(sample):
     """test whether the input file with some random empty lines is correctly parsed"""
