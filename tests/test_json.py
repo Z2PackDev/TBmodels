@@ -25,7 +25,7 @@ def test_json_consistency(get_model, models_equal, kwargs):
     model1 = get_model(0.1, 0.2, **kwargs)
     model2 = tbmodels.Model.from_json(model1.to_json())
     models_equal(model1, model2)
-    
+
 @pytest.mark.parametrize('kwargs', KWARGS)
 def test_json_consistency_file(get_model, models_equal, kwargs):
     model1 = get_model(0.1, 0.2, **kwargs)
@@ -33,4 +33,3 @@ def test_json_consistency_file(get_model, models_equal, kwargs):
         model1.to_json_file(tmpf.name)
         model2 = tbmodels.Model.from_json_file(tmpf.name)
     models_equal(model1, model2)
-

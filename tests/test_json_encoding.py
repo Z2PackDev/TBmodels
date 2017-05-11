@@ -24,4 +24,3 @@ def test_dumpload_changed(obj, res):
 def test_fail(obj):
     with pytest.raises(TypeError):
         json.loads(json.dumps(obj, default=encode), object_hook=decode)
-

@@ -254,8 +254,7 @@ class Model:
             if self.uc.shape != (self.dim, self.dim):
                 raise ValueError('Inconsistend dimension of the unit cell: {0}, does not match the dimensionality of the system ({1})'.format(self.uc.shape, self.dim))
 
-    #----------------ALTERNATE CONSTRUCTORS---------------------------------#
-
+    #---------------- CONSTRUCTORS / (DE)SERIALIZATION ----------------#
     @classmethod
     def from_hop_list(cls, *, hop_list=(), size=None, **kwargs):
         """
@@ -329,7 +328,6 @@ class Model:
             **kwargs
         )
 
-
     @classmethod
     def from_hr_file(cls, hr_file, *, h_cutoff=0., **kwargs):
         """
@@ -354,7 +352,6 @@ class Model:
         h_entries = (hop for hop in h_entries if abs(hop[0]) > h_cutoff)
 
         return cls.from_hop_list(size=num_wann, hop_list=h_entries, **kwargs)
-
 
     @staticmethod
     def _read_hr(iterator, ignore_orbital_order=False):
@@ -397,6 +394,175 @@ class Model:
         hop_list = (to_entry(line, i) for i, line in enumerate(lines_nonempty))
 
         return num_wann, hop_list
+
+    def to_hr_file(self, hr_file):
+        """
+        Writes to a file, using Wannier90's ``*_hr.dat`` format.
+
+        :param hr_file:     Path of the output file
+        :type hr_file:      str
+
+        .. note :: The ``*_hr.dat`` format does not contain information about the position of the atoms or the shape of the unit cell. Consequently, this information is lost when saving the model in this format.
+
+        .. warning :: The ``*_hr.dat`` format does not preserve the full precision of the hopping strengths. This could lead to numerical errors.
+        """
+        with open(hr_file, 'w') as f:
+            f.write(self.to_hr())
+
+    def to_hr(self):
+        """
+        Returns a string containing the model in Wannier90's ``*_hr.dat`` format.
+
+        :returns: str
+
+        .. note :: The ``*_hr.dat`` format does not contain information about the position of the atoms or the shape of the unit cell. Consequently, this information is lost when saving the model in this format.
+
+        .. warning :: The ``*_hr.dat`` format does not preserve the full precision of the hopping strengths. This could lead to numerical errors.
+        """
+        lines = []
+        tagline = ' created by the TBmodels package    ' + time.strftime('%a, %d %b %Y %H:%M:%S %Z')
+        lines.append(tagline)
+        lines.append('{0:>12}'.format(self.size))
+        num_g = len(self.hop.keys()) * 2 - 1
+        if num_g <= 0:
+            raise ValueError('Cannot print empty model to hr format.')
+        lines.append('{0:>12}'.format(num_g))
+        tmp = ''
+        for i in range(num_g):
+            if tmp != '' and i % 15 == 0:
+                lines.append(tmp)
+                tmp = ''
+            tmp += '    1'
+        lines.append(tmp)
+
+        # negative
+        for R in reversed(sorted(self.hop.keys())):
+            if R != self._zero_vec:
+                minus_R = tuple(-x for x in R)
+                lines.extend(self._mat_to_hr(
+                    minus_R, self.hop[R].conjugate().transpose()
+                ))
+        # zero
+        if self._zero_vec in self.hop.keys():
+            lines.extend(self._mat_to_hr(
+                self._zero_vec,
+                self.hop[self._zero_vec] + self.hop[self._zero_vec].conjugate().transpose()
+            ))
+        # positive
+        for R in sorted(self.hop.keys()):
+            if R != self._zero_vec:
+                lines.extend(self._mat_to_hr(
+                    R, self.hop[R]
+                ))
+
+        return '\n'.join(lines)
+
+    @staticmethod
+    def _mat_to_hr(R, mat):
+        """
+        Creates the ``*_hr.dat`` string for a single hopping matrix.
+        """
+        lines = []
+        mat = np.array(mat).T # to be consistent with W90's ordering
+        for j, column in enumerate(mat):
+            for i, t in enumerate(column):
+                lines.append(
+                    '{0[0]:>5}{0[1]:>5}{0[2]:>5}{1:>5}{2:>5}{3.real:>22.14f}{3.imag:>22.14f}'.format(R, i + 1, j + 1, t)
+                )
+        return lines
+
+    @classmethod
+    def from_wannier_folder(cls, folder='.', prefix='wannier', **kwargs):
+        """
+        Create a :class:`.Model` instance from Wannier90 output files, given the folder containing the files and file prefix.
+
+        :param folder: Directory containing the Wannier90 output files.
+        :type folder: str
+
+        :param prefix: Prefix of the Wannier90 output files.
+        :type prefix: str
+
+        :param kwargs: Keyword arguments passed to :meth:`.from_wannier_files`. If input files are explicitly given, they take precedence over those found in the ``folder``.
+        """
+        common_path = os.path.join(folder, prefix)
+        input_files = dict()
+        input_files['hr_file'] = common_path + '_hr.dat'
+
+        for key, suffix in [
+                ('win_file', '.win'),
+                ('wsvec_file', '_wsvec.dat'),
+                ('xyz_file', '_centres.xyz'),
+        ]:
+            filename = common_path + suffix
+            if os.path.isfile(filename):
+                input_files[key] = filename
+
+        return cls.from_wannier_files(**co.ChainMap(kwargs, input_files))
+
+    @classmethod
+    def from_wannier_files(cls, *, hr_file, wsvec_file=None, xyz_file=None, win_file=None, h_cutoff=0., ignore_orbital_order=False, **kwargs):
+        """
+        Create a :class:`.Model` instance from Wannier90 output files.
+
+        :param hr_file:     Path of the ``*_hr.dat`` file. Together with the ``*_wsvec.dat`` file, this determines the hopping terms.
+        :type hr_file:      str
+
+        :param wsvec_file: Path of the ``*_wsvec.dat`` file. This file determines the remapping of hopping terms when ``use_ws_distance`` is used in the Wannier90 calculation.
+        :type wsvec_file: str
+
+        :param xyz_file: Path of the ``*_centres.xyz`` file. This file is used to determine the positions of the orbitals, from the Wannier centers given by Wannier90.
+        :type xyz_file: str
+
+        :param win_file: Path of the ``*.win`` file. This file is used to determine the unit cell.
+        :type win_file: str
+
+        :param h_cutoff:    Cutoff value for the hopping strength. Hoppings with a smaller absolute value are ignored.
+        :type h_cutoff:     float
+
+        :param ignore_orbital_order: Do not throw an error when the order of orbitals does not match what is expected from the Wannier90 output.
+        :type ignore_orbital_order: bool
+
+        :param kwargs:  :class:`.Model` keyword arguments.
+        """
+
+        if win_file is not None:
+            if 'uc' in kwargs:
+                raise ValueError("Ambiguous unit cell: It can be given either via 'uc' or the 'win_file' keywords, but not both.")
+            with open(win_file, 'r') as f:
+                kwargs['uc'] = cls._read_win(f)['unit_cell_cart']
+
+        if xyz_file is not None:
+            if 'pos' in kwargs:
+                raise ValueError("Ambiguous orbital positions: The positions can be given either via the 'pos' or the 'xyz_file' keywords, but not both.")
+            if 'uc' not in kwargs:
+                raise ValueError("Positions cannot be read from .xyz file without unit cell given: Transformation from cartesian to reduced coordinates not possible. Specify the unit cell using one of the keywords 'uc' or 'win_file'.")
+            with open(xyz_file, 'r') as f:
+                wannier_pos_cartesian, _ = cls._read_xyz(f)
+                kwargs['pos'] = la.solve(kwargs['uc'].T, np.array(wannier_pos_cartesian).T).T
+
+        with open(hr_file, 'r') as f:
+            num_wann, hop_entries = cls._read_hr(f, ignore_orbital_order=ignore_orbital_order)
+            hop_entries = (hop for hop in hop_entries if abs(hop[0]) > h_cutoff)
+
+            if wsvec_file is not None:
+                with open(wsvec_file, 'r') as f:
+                    # wsvec_mapping is not a generator because it doesn't have
+                    # the same order as the hoppings in _hr.dat
+                    # This could still be done, but would be more complicated.
+                    wsvec_generator = cls._async_parse(cls._read_wsvec(f), chunksize=num_wann)
+
+                    def remap_hoppings(hop_entries):
+                        for t, orbital_1, orbital_2, R in hop_entries:
+                            next(wsvec_generator)
+                            T_list = wsvec_generator.send((orbital_1, orbital_2, tuple(R)))
+                            N = len(T_list)
+                            for T in T_list:
+                                # not using numpy here increases performance
+                                yield (t / N, orbital_1, orbital_2, tuple(r + t for r, t in zip(R, T)))
+                    hop_entries = remap_hoppings(hop_entries)
+                    return cls.from_hop_list(size=num_wann, hop_list=hop_entries, **kwargs)
+
+            return cls.from_hop_list(size=num_wann, hop_list=hop_entries, **kwargs)
 
     @staticmethod
     def _async_parse(iterator, chunksize=1):
@@ -500,97 +666,19 @@ class Model:
         return mapping
 
     @classmethod
-    def from_wannier_files(cls, *, hr_file, wsvec_file=None, xyz_file=None, win_file=None, h_cutoff=0., ignore_orbital_order=False, **kwargs):
+    def from_json_file(cls, json_file):
         """
-        Create a :class:`.Model` instance from Wannier90 output files.
+        Create a ``Model`` instance containing a JSON - serialized model.
 
-        :param hr_file:     Path of the ``*_hr.dat`` file. Together with the ``*_wsvec.dat`` file, this determines the hopping terms.
-        :type hr_file:      str
+        :param json_file:   Path of the input file
+        :type json_file:    str
 
-        :param wsvec_file: Path of the ``*_wsvec.dat`` file. This file determines the remapping of hopping terms when ``use_ws_distance`` is used in the Wannier90 calculation.
-        :type wsvec_file: str
-
-        :param xyz_file: Path of the ``*_centres.xyz`` file. This file is used to determine the positions of the orbitals, from the Wannier centers given by Wannier90.
-        :type xyz_file: str
-
-        :param win_file: Path of the ``*.win`` file. This file is used to determine the unit cell.
-        :type win_file: str
-
-        :param h_cutoff:    Cutoff value for the hopping strength. Hoppings with a smaller absolute value are ignored.
-        :type h_cutoff:     float
-
-        :param ignore_orbital_order: Do not throw an error when the order of orbitals does not match what is expected from the Wannier90 output.
-        :type ignore_orbital_order: bool
-
-        :param kwargs:  :class:`.Model` keyword arguments.
+        .. note :: The JSON serialization interface is deprecated in favour of the more efficient HDF5 interface.
         """
-
-        if win_file is not None:
-            if 'uc' in kwargs:
-                raise ValueError("Ambiguous unit cell: It can be given either via 'uc' or the 'win_file' keywords, but not both.")
-            with open(win_file, 'r') as f:
-                kwargs['uc'] = cls._read_win(f)['unit_cell_cart']
-
-        if xyz_file is not None:
-            if 'pos' in kwargs:
-                raise ValueError("Ambiguous orbital positions: The positions can be given either via the 'pos' or the 'xyz_file' keywords, but not both.")
-            if 'uc' not in kwargs:
-                raise ValueError("Positions cannot be read from .xyz file without unit cell given: Transformation from cartesian to reduced coordinates not possible. Specify the unit cell using one of the keywords 'uc' or 'win_file'.")
-            with open(xyz_file, 'r') as f:
-                wannier_pos_cartesian, _ = cls._read_xyz(f)
-                kwargs['pos'] = la.solve(kwargs['uc'].T, np.array(wannier_pos_cartesian).T).T
-
-        with open(hr_file, 'r') as f:
-            num_wann, hop_entries = cls._read_hr(f, ignore_orbital_order=ignore_orbital_order)
-            hop_entries = (hop for hop in hop_entries if abs(hop[0]) > h_cutoff)
-
-            if wsvec_file is not None:
-                with open(wsvec_file, 'r') as f:
-                    # wsvec_mapping is not a generator because it doesn't have
-                    # the same order as the hoppings in _hr.dat
-                    # This could still be done, but would be more complicated.
-                    wsvec_generator = cls._async_parse(cls._read_wsvec(f), chunksize=num_wann)
-
-                    def remap_hoppings(hop_entries):
-                        for t, orbital_1, orbital_2, R in hop_entries:
-                            next(wsvec_generator)
-                            T_list = wsvec_generator.send((orbital_1, orbital_2, tuple(R)))
-                            N = len(T_list)
-                            for T in T_list:
-                                # not using numpy here increases performance
-                                yield (t / N, orbital_1, orbital_2, tuple(r + t for r, t in zip(R, T)))
-                    hop_entries = remap_hoppings(hop_entries)
-                    return cls.from_hop_list(size=num_wann, hop_list=hop_entries, **kwargs)
-
-            return cls.from_hop_list(size=num_wann, hop_list=hop_entries, **kwargs)
-
-    @classmethod
-    def from_wannier_folder(cls, folder='.', prefix='wannier', **kwargs):
-        """
-        Create a :class:`.Model` instance from Wannier90 output files, given the folder containing the files and file prefix.
-
-        :param folder: Directory containing the Wannier90 output files.
-        :type folder: str
-
-        :param prefix: Prefix of the Wannier90 output files.
-        :type prefix: str
-
-        :param kwargs: Keyword arguments passed to :meth:`.from_wannier_files`. If input files are explicitly given, they take precedence over those found in the ``folder``.
-        """
-        common_path = os.path.join(folder, prefix)
-        input_files = dict()
-        input_files['hr_file'] = common_path + '_hr.dat'
-
-        for key, suffix in [
-                ('win_file', '.win'),
-                ('wsvec_file', '_wsvec.dat'),
-                ('xyz_file', '_centres.xyz'),
-        ]:
-            filename = common_path + suffix
-            if os.path.isfile(filename):
-                input_files[key] = filename
-
-        return cls.from_wannier_files(**co.ChainMap(kwargs, input_files))
+        warnings.warn('The JSON serialization interface is deprecated in favour of the more efficient HDF5 interface.', DeprecationWarning, stacklevel=1)
+        from .helpers import decode
+        with open(json_file, 'r') as f:
+            return json.load(f, object_hook=decode)
 
     @classmethod
     def from_json(cls, json_string):
@@ -599,23 +687,38 @@ class Model:
 
         :param json_string: Input string
         :type json_string:  str
+
+        .. note :: The JSON serialization interface is deprecated in favour of the more efficient HDF5 interface.
         """
+        warnings.warn('The JSON serialization interface is deprecated in favour of the more efficient HDF5 interface.', DeprecationWarning, stacklevel=1)
         from .helpers import decode
         return json.loads(json_string, object_hook=decode)
 
-    @classmethod
-    def from_json_file(cls, json_file):
+    def to_json_file(self, json_file):
         """
-        Create a ``Model`` instance containing a JSON - serialized model.
+        Saves the model instance to a file, using a JSON format.
 
-        :param json_file:   Path of the input file
+        :param json_file:   Path to the output file.
         :type json_file:    str
-        """
-        from .helpers import decode
-        with open(json_file, 'r') as f:
-            return json.load(f, object_hook=decode)
 
-    #------------------SERIALIZATION TO DIFFERENT FORMATS---------------#
+        .. note :: This interface is deprecated in favor of the :meth:`.to_hdf5_file` interface.
+        """
+        warnings.warn('The to_json and to_json_file functions are deprecated in favour of the more efficient to_hdf5_file', DeprecationWarning, stacklevel=1)
+        from .helpers import encode
+        with open(json_file, 'w') as f:
+            json.dump(self, f, default=encode)
+
+    def to_json(self):
+        """
+        Serializes the model instance to a string in JSON format.
+
+        :returns:   str
+
+        .. note :: This interface is deprecated in favor of the :meth:`.to_hdf5_file` interface.
+        """
+        warnings.warn('The to_json and to_json_file functions are deprecated in favor of the more efficient to_hdf5_file', DeprecationWarning, stacklevel=1)
+        from .helpers import encode
+        return json.dumps(self, default=encode)
 
     def to_kwant_lattice(self):
         """
@@ -644,7 +747,6 @@ class Model:
         kwant_sublattices = self.to_kwant_lattice().sublattices
 
         # handle R = 0 case (on-site)
-        # copy.deepcopy to avoid chaning the matrix in-place
         on_site_mat = copy.deepcopy(self._array_cast(self.hop[self._zero_vec]))
         on_site_mat += on_site_mat.conjugate().transpose()
         # R = 0 terms within a sublattice (on-site)
@@ -710,96 +812,6 @@ class Model:
                 sublattices.append(Sublattice(pos=p_orb, indices=[i]))
         return sublattices
 
-    def to_hr(self):
-        """
-        Returns a string containing the model in Wannier90's ``*_hr.dat`` format.
-
-        :returns: str
-
-        .. note :: The ``*_hr.dat`` format does not contain information about the position of the atoms or the shape of the unit cell. Consequently, this information is lost when saving the model in this format.
-
-        .. warning :: The ``*_hr.dat`` format does not preserve the full precision of the hopping strengths. This could lead to numerical errors.
-        """
-        lines = []
-        tagline = ' created by the TBmodels package    ' + time.strftime('%a, %d %b %Y %H:%M:%S %Z')
-        lines.append(tagline)
-        lines.append('{0:>12}'.format(self.size))
-        num_g = len(self.hop.keys()) * 2 - 1
-        if num_g <= 0:
-            raise ValueError('Cannot print empty model to hr format.')
-        lines.append('{0:>12}'.format(num_g))
-        tmp = ''
-        for i in range(num_g):
-            if tmp != '' and i % 15 == 0:
-                lines.append(tmp)
-                tmp = ''
-            tmp += '    1'
-        lines.append(tmp)
-
-        # negative
-        for R in reversed(sorted(self.hop.keys())):
-            if R != self._zero_vec:
-                minus_R = tuple(-x for x in R)
-                lines.extend(self._mat_to_hr(
-                    minus_R, self.hop[R].conjugate().transpose()
-                ))
-        # zero
-        if self._zero_vec in self.hop.keys():
-            lines.extend(self._mat_to_hr(
-                self._zero_vec,
-                self.hop[self._zero_vec] + self.hop[self._zero_vec].conjugate().transpose()
-            ))
-        # positive
-        for R in sorted(self.hop.keys()):
-            if R != self._zero_vec:
-                lines.extend(self._mat_to_hr(
-                    R, self.hop[R]
-                ))
-
-        return '\n'.join(lines)
-
-    def to_hr_file(self, hr_file):
-        """
-        Writes to a file, using Wannier90's ``*_hr.dat`` format.
-
-        :param hr_file:     Path of the output file
-        :type hr_file:      str
-
-        .. note :: The ``*_hr.dat`` format does not contain information about the position of the atoms or the shape of the unit cell. Consequently, this information is lost when saving the model in this format.
-
-        .. warning :: The ``*_hr.dat`` format does not preserve the full precision of the hopping strengths. This could lead to numerical errors.
-        """
-        with open(hr_file, 'w') as f:
-            f.write(self.to_hr())
-
-    def to_hdf5_file(self, hdf5_file):
-        """
-        Serializes the model instance to a file in HDF5 format.
-
-        :param hdf5_file: Path of the output file.
-        :type hdf5_file: str
-        """
-        with h5py.File(hdf5_file, 'w') as f:
-            if self.uc is not None:
-                f['uc'] = self.uc
-            if self.occ is not None:
-                f['occ'] = self.occ
-            f['size'] = self.size
-            f['dim'] = self.dim
-            f['pos'] = self.pos
-            f['sparse'] = self._sparse
-            hop = f.create_group('hop')
-            for i, (R, mat) in enumerate(self.hop.items()):
-                group = hop.create_group(str(i))
-                group['R'] = R
-                if self._sparse:
-                    group['data'] = mat.data
-                    group['indices'] = mat.indices
-                    group['indptr'] = mat.indptr
-                    group['shape'] = mat.shape
-                else:
-                    group['mat'] = mat
-
     @classmethod
     def from_hdf5_file(cls, hdf5_file, **kwargs):
         """
@@ -830,46 +842,33 @@ class Model:
                 file_kwargs['contains_cc'] = False
         return cls(**co.ChainMap(kwargs, file_kwargs))
 
-    def to_json(self):
+    def to_hdf5_file(self, hdf5_file):
         """
-        Serializes the model instance to a string in JSON format.
+        Serializes the model instance to a file in HDF5 format.
 
-        :returns:   str
-
-        .. note :: This interface is deprecated in favor of the :meth:`.to_hdf5_file` interface.
+        :param hdf5_file: Path of the output file.
+        :type hdf5_file: str
         """
-        warnings.warn('The to_json and to_json_file functions are deprecated in favor of the more efficient to_hdf5_file', DeprecationWarning, stacklevel=1)
-        from .helpers import encode
-        return json.dumps(self, default=encode)
-
-    def to_json_file(self, json_file):
-        """
-        Saves the model instance to a file, using a JSON format.
-
-        :param json_file:   Path to the output file.
-        :type json_file:    str
-
-        .. note :: This interface is deprecated in favor of the :meth:`.to_hdf5_file` interface.
-        """
-        warnings.warn('The to_json and to_json_file functions are deprecated in favour of the more efficient to_hdf5_file', DeprecationWarning, stacklevel=1)
-        from .helpers import encode
-        with open(json_file, 'w') as f:
-            json.dump(self, f, default=encode)
-
-
-    @staticmethod
-    def _mat_to_hr(R, mat):
-        """
-        Creates the ``*_hr.dat`` string for a single hopping matrix.
-        """
-        lines = []
-        mat = np.array(mat).T # to be consistent with W90's ordering
-        for j, column in enumerate(mat):
-            for i, t in enumerate(column):
-                lines.append(
-                    '{0[0]:>5}{0[1]:>5}{0[2]:>5}{1:>5}{2:>5}{3.real:>22.14f}{3.imag:>22.14f}'.format(R, i + 1, j + 1, t)
-                )
-        return lines
+        with h5py.File(hdf5_file, 'w') as f:
+            if self.uc is not None:
+                f['uc'] = self.uc
+            if self.occ is not None:
+                f['occ'] = self.occ
+            f['size'] = self.size
+            f['dim'] = self.dim
+            f['pos'] = self.pos
+            f['sparse'] = self._sparse
+            hop = f.create_group('hop')
+            for i, (R, mat) in enumerate(self.hop.items()):
+                group = hop.create_group(str(i))
+                group['R'] = R
+                if self._sparse:
+                    group['data'] = mat.data
+                    group['indices'] = mat.indices
+                    group['indptr'] = mat.indptr
+                    group['shape'] = mat.shape
+                else:
+                    group['mat'] = mat
 
     def __repr__(self):
         return ' '.join('tbmodels.Model(hop={1}, pos={0.pos!r}, uc={0.uc!r}, occ={0.occ}, contains_cc=False)'.format(self, dict(self.hop)).replace('\n', ' ').replace('array', 'np.array').split())
@@ -912,7 +911,6 @@ class Model:
         :returns:   array of eigenvalues
         """
         return la.eigvalsh(self.hamilton(k))
-
 
     #-------------------MODIFYING THE MODEL ----------------------------#
     def add_hop(self, overlap, orbital_1, orbital_2, R):
@@ -1186,7 +1184,6 @@ class Model:
         Changes the sign of all hopping terms.
         """
         return -1 * self
-
 
     def __mul__(self, x):
         """
