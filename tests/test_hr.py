@@ -14,19 +14,16 @@ kpt = [(0.1, 0.2, 0.7), (-0.3, 0.5, 0.2), (0., 0., 0.), (0.1, -0.9, -0.7)]
 
 
 @pytest.mark.parametrize('hr_name', ['hr_hamilton.dat', 'wannier90_hr.dat', 'wannier90_hr_v2.dat'])
-def test_hr(compare_data, hr_name, sample):
+def test_hr(compare_isclose, hr_name, sample):
     hr_file = sample(hr_name)
     model = tbmodels.Model.from_hr_file(hr_file, occ=28)
     H_list = np.array([model.hamilton(k) for k in kpt])
-
-    compare_data(lambda x, y: np.isclose(x, y).all(), H_list)
-
+    compare_isclose(H_list)
 
 @pytest.mark.parametrize('hr_name', ['wannier90_inconsistent.dat', 'wannier90_inconsistent_v2.dat'])
 def test_inconsistent(hr_name, sample):
     with pytest.raises(ValueError):
         model = tbmodels.Model.from_hr_file(sample(hr_name))
-
 
 def test_emptylines(sample):
     """test whether the input file with some random empty lines is correctly parsed"""
