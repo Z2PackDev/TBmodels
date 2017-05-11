@@ -37,7 +37,7 @@ def test_simple(t, get_model):
         np.testing.assert_allclose(model.eigenval(k), la.eigvalsh(sys.hamiltonian_submatrix(k_kwant)), atol=1e-8)
 
 @pytest.mark.parametrize('hr_name', ['hr_hamilton.dat', 'wannier90_hr.dat', 'wannier90_hr_v2.dat'])
-def test_realistic(compare_data, hr_name, sample):
+def test_realistic(hr_name, sample):
     hr_file = sample(hr_name)
     model = tbmodels.Model.from_hr_file(hr_file, occ=28)
 
