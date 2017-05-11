@@ -665,61 +665,6 @@ class Model:
 
         return mapping
 
-    @classmethod
-    def from_json_file(cls, json_file):
-        """
-        Create a ``Model`` instance containing a JSON - serialized model.
-
-        :param json_file:   Path of the input file
-        :type json_file:    str
-
-        .. note :: The JSON serialization interface is deprecated in favour of the more efficient HDF5 interface.
-        """
-        warnings.warn('The JSON serialization interface is deprecated in favour of the more efficient HDF5 interface.', DeprecationWarning, stacklevel=1)
-        from .helpers import decode
-        with open(json_file, 'r') as f:
-            return json.load(f, object_hook=decode)
-
-    @classmethod
-    def from_json(cls, json_string):
-        """
-        Create a ``Model`` instance from a string which contains a JSON - serialized model.
-
-        :param json_string: Input string
-        :type json_string:  str
-
-        .. note :: The JSON serialization interface is deprecated in favour of the more efficient HDF5 interface.
-        """
-        warnings.warn('The JSON serialization interface is deprecated in favour of the more efficient HDF5 interface.', DeprecationWarning, stacklevel=1)
-        from .helpers import decode
-        return json.loads(json_string, object_hook=decode)
-
-    def to_json_file(self, json_file):
-        """
-        Saves the model instance to a file, using a JSON format.
-
-        :param json_file:   Path to the output file.
-        :type json_file:    str
-
-        .. note :: This interface is deprecated in favor of the :meth:`.to_hdf5_file` interface.
-        """
-        warnings.warn('The to_json and to_json_file functions are deprecated in favour of the more efficient to_hdf5_file', DeprecationWarning, stacklevel=1)
-        from .helpers import encode
-        with open(json_file, 'w') as f:
-            json.dump(self, f, default=encode)
-
-    def to_json(self):
-        """
-        Serializes the model instance to a string in JSON format.
-
-        :returns:   str
-
-        .. note :: This interface is deprecated in favor of the :meth:`.to_hdf5_file` interface.
-        """
-        warnings.warn('The to_json and to_json_file functions are deprecated in favor of the more efficient to_hdf5_file', DeprecationWarning, stacklevel=1)
-        from .helpers import encode
-        return json.dumps(self, default=encode)
-
     def to_kwant_lattice(self):
         """
         Returns a kwant lattice corresponding to the current model. Orbitals with the same position are grouped into the same Monoatomic sublattice.
@@ -822,25 +767,36 @@ class Model:
 
         :param kwargs: :class:`.Model` keyword arguments. Explicitly specified keywords take precedence over those given in the HDF5 file.
         """
-        file_kwargs = {}
-        file_kwargs['hop'] = {}
         with h5py.File(hdf5_file, 'r') as f:
-            for key in ['uc', 'occ', 'size', 'dim', 'pos', 'sparse']:
-                if key in f:
-                    file_kwargs[key] = f[key].value
+            return cls.from_hdf5(f, **kwargs)
 
-            if 'hop' not in kwargs:
-                for group in f['hop'].values():
-                    R = tuple(group['R'])
-                    if file_kwargs['sparse']:
-                        file_kwargs['hop'][R] = sp.csr(
-                            (group['data'], group['indices'], group['indptr']),
-                            shape=group['shape']
-                        )
-                    else:
-                        file_kwargs['hop'][R] = np.array(group['mat'])
-                file_kwargs['contains_cc'] = False
-        return cls(**co.ChainMap(kwargs, file_kwargs))
+    @classmethod
+    def from_hdf5(cls, hdf5_handle, **kwargs):
+        try:
+            tb_model_group = hdf5_handle['tb_model']
+        # for backwards compatibility with v.1.1, which didn't have the
+        # top-level 'tb_model' attribute
+        except KeyError:
+            tb_model_group = hdf5_handle
+        new_kwargs = {}
+        new_kwargs['hop'] = {}
+
+        for key in ['uc', 'occ', 'size', 'dim', 'pos', 'sparse']:
+            if key in tb_model_group:
+                new_kwargs[key] = tb_model_group[key].value
+
+        if 'hop' not in kwargs:
+            for group in tb_model_group['hop'].values():
+                R = tuple(group['R'])
+                if new_kwargs['sparse']:
+                    new_kwargs['hop'][R] = sp.csr(
+                        (group['data'], group['indices'], group['indptr']),
+                        shape=group['shape']
+                    )
+                else:
+                    new_kwargs['hop'][R] = np.array(group['mat'])
+            new_kwargs['contains_cc'] = False
+        return cls(**co.ChainMap(kwargs, new_kwargs))
 
     def to_hdf5_file(self, hdf5_file):
         """
@@ -850,25 +806,29 @@ class Model:
         :type hdf5_file: str
         """
         with h5py.File(hdf5_file, 'w') as f:
-            if self.uc is not None:
-                f['uc'] = self.uc
-            if self.occ is not None:
-                f['occ'] = self.occ
-            f['size'] = self.size
-            f['dim'] = self.dim
-            f['pos'] = self.pos
-            f['sparse'] = self._sparse
-            hop = f.create_group('hop')
-            for i, (R, mat) in enumerate(self.hop.items()):
-                group = hop.create_group(str(i))
-                group['R'] = R
-                if self._sparse:
-                    group['data'] = mat.data
-                    group['indices'] = mat.indices
-                    group['indptr'] = mat.indptr
-                    group['shape'] = mat.shape
-                else:
-                    group['mat'] = mat
+            self.to_hdf5(f)
+
+    def to_hdf5(self, hdf5_handle):
+        tb_model_group = hdf5_handle.create_group('tb_model')
+        if self.uc is not None:
+            tb_model_group['uc'] = self.uc
+        if self.occ is not None:
+            tb_model_group['occ'] = self.occ
+        tb_model_group['size'] = self.size
+        tb_model_group['dim'] = self.dim
+        tb_model_group['pos'] = self.pos
+        tb_model_group['sparse'] = self._sparse
+        hop = tb_model_group.create_group('hop')
+        for i, (R, mat) in enumerate(self.hop.items()):
+            group = hop.create_group(str(i))
+            group['R'] = R
+            if self._sparse:
+                group['data'] = mat.data
+                group['indices'] = mat.indices
+                group['indptr'] = mat.indptr
+                group['shape'] = mat.shape
+            else:
+                group['mat'] = mat
 
     def __repr__(self):
         return ' '.join('tbmodels.Model(hop={1}, pos={0.pos!r}, uc={0.uc!r}, occ={0.occ}, contains_cc=False)'.format(self, dict(self.hop)).replace('\n', ' ').replace('array', 'np.array').split())

@@ -23,29 +23,27 @@ except ImportError:
 import numpy as np
 
 import tbmodels
-from tbmodels.helpers import encode, decode
+from tbmodels.io import save, load
 
 #--------------------------FIXTURES-------------------------------------#
 
 @pytest.fixture
 def test_name(request):
     """Returns module_name.function_name for a given test"""
-    return request.module.__name__ + '/' + request._parent_request._pyfuncitem.name
+    return (request.module.__name__, request._parent_request._pyfuncitem.name)
 
 @pytest.fixture
 def compare_data(request, test_name, scope="session"):
     """Returns a function which either saves some data to a file or (if that file exists already) compares it to pre-existing data using a given comparison function."""
     def inner(compare_fct, data, tag=None):
-        full_name = test_name + (tag or '')
-
-        # get rid of json-specific quirks
-        # store as string because I cannot add the decoder to the pytest cache
-        data_str = json.dumps(data, default=encode)
-        data = json.loads(data_str, object_hook=decode)
-        val = json.loads(request.config.cache.get(full_name, 'null'), object_hook=decode)
-
-        if val is None:
-            request.config.cache.set(full_name, data_str)
+        dir_name, file_name = test_name
+        file_name += tag or ''
+        cache_dir = str(request.config.cache.makedir(dir_name))
+        file_name_full = os.path.join(cache_dir, file_name)
+        try:
+            val = load(file_name_full)
+        except OSError:
+            save(data, file_name_full)
             raise ValueError('Reference data does not exist.')
         else:
             assert compare_fct(val, data)
