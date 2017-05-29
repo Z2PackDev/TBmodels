@@ -27,10 +27,8 @@ tbmodels/_ptools/.gitignore
 
 # selectively choose _ptools
 tbmodels/_ptools/*
-!tbmodels/_ptools/__init__.py  
-!tbmodels/_ptools/replace.py  
+!tbmodels/_ptools/__init__.py
 !tbmodels/_ptools/sparse_matrix.py
-!tbmodels/_ptools/locker.py
 
 # debug folder
 debug
@@ -51,3 +49,6 @@ tests/.coverage
 speed_test/data
 
 playground
+
+# mypy
+.mypy_cache
