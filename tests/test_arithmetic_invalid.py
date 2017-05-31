@@ -1,9 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#
-# Author:  Dominik Gresch <greschd@gmx.ch>
-# Date:    05.10.2015 16:54:52 CEST
-# File:    arithmetics.py
 
 import pytest
 import tbmodels

@@ -1,9 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#
-# Author:  Dominik Gresch <greschd@gmx.ch>
-# Date:    05.05.2015 13:59:00 CEST
-# File:    hr_hamilton.py
 
 import pickle
 import tempfile
@@ -26,4 +22,3 @@ def test_pickle_consistency(get_model, models_equal, kwargs):
     model1 = get_model(0.1, 0.2, **kwargs)
     model2 = pickle.loads(pickle.dumps(model1))
     models_equal(model1, model2)
-

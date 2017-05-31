@@ -1,9 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#
-# Author:  Dominik Gresch <greschd@gmx.ch>
-# Date:    05.05.2015 13:59:00 CEST
-# File:    hr_hamilton.py
 
 import pytest
 import itertools

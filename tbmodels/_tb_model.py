@@ -1,9 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#
-# Author:  Dominik Gresch <greschd@gmx.ch>
-# Date:    02.06.2015 17:50:33 CEST
-# File:    _tb_model.py
 
 import re
 import os

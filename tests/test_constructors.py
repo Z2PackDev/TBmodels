@@ -1,9 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#
-# Author:  Dominik Gresch <greschd@gmx.ch>
-# Date:    04.07.2016 14:01:18 CEST
-# File:    test_invalid_constructors.py
 
 import itertools
 

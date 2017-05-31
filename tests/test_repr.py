@@ -1,9 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#
-# Author:  Dominik Gresch <greschd@gmx.ch>
-# Date:    15.10.2014 10:22:43 CEST
-# File:    repr.py
 
 import pytest
 import tbmodels

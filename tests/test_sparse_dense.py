@@ -1,9 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#
-# Author:  Dominik Gresch <greschd@gmx.ch>
-# Date:    07.07.2016 01:05:06 CEST
-# File:    test_sparse_dense.py
 
 import pytest
 import tbmodels
