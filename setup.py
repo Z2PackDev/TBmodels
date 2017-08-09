@@ -24,7 +24,7 @@ setup(
     author='Dominik Gresch',
     author_email='greschd@gmx.ch',
     description='Reading, creating and modifying tight-binding models.',
-    install_requires=['numpy', 'scipy', 'h5py', 'fsc.export', 'symmetry-representation', 'click', 'bandstructure-utils'],
+    install_requires=['numpy', 'scipy', 'h5py', 'fsc.export', 'symmetry-representation', 'click', 'bands-inspect'],
     extras_require={'kwant': ['kwant']},
     long_description=readme,
     classifiers=[

@@ -7,7 +7,7 @@ from functools import singledispatch
 
 import click
 import numpy as np
-import bandstructure_utils as bs
+import bands_inspect as bi
 import symmetry_representation as sr
 
 from . import Model
@@ -161,14 +161,14 @@ def eigenvals(input, kpoints, output):
     """
     model = _read_input(input)
     click.echo("Reading kpoints from file '{}' ...".format(kpoints))
-    kpts = bs.io.load(kpoints)
+    kpts = bi.io.load(kpoints)
 
     click.echo("Calculating energy eigenvalues ...")
-    eigenvalues = bs.EigenvalsData.from_eigenval_function(
+    eigenvalues = bi.eigenvals.EigenvalsData.from_eigenval_function(
         kpoints=kpts,
         eigenval_function=model.eigenval
     )
 
     click.echo("Writing kpoints and energy eigenvalues to file '{}' ...".format(output))
-    bs.io.save(eigenvalues, output)
+    bi.io.save(eigenvalues, output)
     click.echo("Done!")
