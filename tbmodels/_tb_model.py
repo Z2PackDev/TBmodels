@@ -18,6 +18,7 @@ from fsc.export import export
 
 from ._ptools import sparse_matrix as sp
 
+
 @export
 class Model:
     """
@@ -50,18 +51,19 @@ class Model:
     :param sparse:      Specifies whether the hopping matrices should be saved in sparse format.
     :type sparse:       bool
     """
+
     def __init__(
-            self,
-            *,
-            on_site=None,
-            hop=None,
-            size=None,
-            dim=None,
-            occ=None,
-            pos=None,
-            uc=None,
-            contains_cc=True,
-            sparse=False
+        self,
+        *,
+        on_site=None,
+        hop=None,
+        size=None,
+        dim=None,
+        occ=None,
+        pos=None,
+        uc=None,
+        contains_cc=True,
+        sparse=False
     ):
         if hop is None:
             hop = dict()
@@ -75,15 +77,11 @@ class Model:
         self._init_dim(dim=dim, hop=hop, pos=pos)
 
         # ---- UNIT CELL ----
-        self.uc = None if uc is None else np.array(uc) # implicit copy
-
+        self.uc = None if uc is None else np.array(uc)  # implicit copy
 
         # ---- HOPPING TERMS AND POSITIONS ----
         self._init_hop_pos(
-            on_site=on_site,
-            hop=hop,
-            pos=pos,
-            contains_cc=contains_cc
+            on_site=on_site, hop=hop, pos=pos, contains_cc=contains_cc
         )
 
         # ---- CONSISTENCY CHECK FOR SIZE ----
@@ -113,7 +111,9 @@ class Model:
         elif len(hop) != 0:
             self.size = next(iter(hop.values())).shape[0]
         else:
-            raise ValueError('Empty hoppings dictionary supplied and no size, on-site energies or positions given. Cannot determine the size of the system.')
+            raise ValueError(
+                'Empty hoppings dictionary supplied and no size, on-site energies or positions given. Cannot determine the size of the system.'
+            )
 
     def _init_dim(self, dim, hop, pos):
         r"""
@@ -126,7 +126,9 @@ class Model:
         elif len(hop.keys()) > 0:
             self.dim = len(next(iter(hop.keys())))
         else:
-            raise ValueError('No dimension specified and no positions or hoppings are given. The dimensionality of the system cannot be determined.')
+            raise ValueError(
+                'No dimension specified and no positions or hoppings are given. The dimensionality of the system cannot be determined.'
+            )
 
         self._zero_vec = tuple([0] * self.dim)
 
@@ -136,20 +138,27 @@ class Model:
         """
         # The double-constructor is needed to avoid a double-constructor in the sparse to-array
         # but still allow for the dtype argument.
-        hop = {tuple(key): self._matrix_type(self._matrix_type(value), dtype=complex) for key, value in hop.items()}
+        hop = {
+            tuple(key):
+            self._matrix_type(self._matrix_type(value), dtype=complex)
+            for key, value in hop.items()
+        }
 
         # positions
         if pos is None:
             self.pos = np.zeros((self.size, self.dim))
         elif len(pos) == self.size and all(len(p) == self.dim for p in pos):
             pos, hop = self._map_to_uc(pos, hop)
-            self.pos = np.array(pos) # implicit copy
+            self.pos = np.array(pos)  # implicit copy
         else:
             if len(pos) != self.size:
-                raise ValueError("Invalid argument for 'pos': The number of positions must be the same as the size (number of orbitals) of the system.")
+                raise ValueError(
+                    "Invalid argument for 'pos': The number of positions must be the same as the size (number of orbitals) of the system."
+                )
             else:
-                raise ValueError("Invalid argument for 'pos': The length of each position must be the same as the dimensionality of the system.")
-
+                raise ValueError(
+                    "Invalid argument for 'pos': The length of each position must be the same as the dimensionality of the system."
+                )
 
         if contains_cc:
             hop = self._reduce_hop(hop)
@@ -162,8 +171,12 @@ class Model:
         # add on-site terms
         if on_site is not None:
             if len(on_site) != self.size:
-                raise ValueError('The number of on-site energies {0} does not match the size of the system {1}'.format(len(on_site), self.size))
-            self.hop[self._zero_vec] += 0.5 * self._matrix_type(np.diag(on_site))
+                raise ValueError(
+                    'The number of on-site energies {0} does not match the size of the system {1}'.
+                    format(len(on_site), self.size)
+                )
+            self.hop[self._zero_vec
+                     ] += 0.5 * self._matrix_type(np.diag(on_site))
 
     # helpers for _init_hop_pos
     def _map_to_uc(self, pos, hop):
@@ -177,15 +190,23 @@ class Model:
 
         # ---- uncommon case: handle mapping ----
         new_pos = [np.array(p) % 1 for p in pos]
-        new_hop = co.defaultdict(lambda: np.zeros((self.size, self.size), dtype=complex))
+        new_hop = co.defaultdict(
+            lambda: np.zeros((self.size, self.size), dtype=complex)
+        )
         for R, hop_mat in hop.items():
             hop_mat = np.array(hop_mat)
             for i0, row in enumerate(hop_mat):
                 for i1, t in enumerate(row):
                     if t != 0:
-                        R_new = tuple(np.array(R, dtype=int) + uc_offsets[i1] - uc_offsets[i0])
+                        R_new = tuple(
+                            np.array(R, dtype=int) + uc_offsets[i1] -
+                            uc_offsets[i0]
+                        )
                         new_hop[R_new][i0][i1] += t
-        new_hop = {key: self._matrix_type(value) for key, value in new_hop.items()}
+        new_hop = {
+            key: self._matrix_type(value)
+            for key, value in new_hop.items()
+        }
         return new_pos, new_hop
 
     @staticmethod
@@ -196,10 +217,12 @@ class Model:
         # Consistency checks
         for R, mat in hop.items():
             if la.norm(
-                    mat -
-                    hop.get(tuple(-x for x in R), np.zeros(mat.shape)).T.conjugate()
+                mat - hop.get(tuple(-x for x in R), np.zeros(mat.shape)
+                              ).T.conjugate()
             ) > 1e-12:
-                raise ValueError('The provided hoppings do not correspond to a hermitian Hamiltonian. hoppings[-R] = hoppings[R].H is not fulfilled.')
+                raise ValueError(
+                    'The provided hoppings do not correspond to a hermitian Hamiltonian. hoppings[-R] = hoppings[R].H is not fulfilled.'
+                )
 
         res = dict()
         for R, mat in hop.items():
@@ -231,6 +254,7 @@ class Model:
                 # The Hamiltonian is anyway made hermitian later.
                 new_hop[R] += 0.5 * mat + 0.5 * mat.conjugate().transpose()
         return new_hop
+
     # end helpers for _init_hop_pos
 
     def _check_size_hop(self):
@@ -239,16 +263,25 @@ class Model:
         """
         for h_mat in self.hop.values():
             if not h_mat.shape == (self.size, self.size):
-                raise ValueError('Hopping matrix of shape {0} found, should be ({1},{1}).'.format(h_mat.shape, self.size))
+                raise ValueError(
+                    'Hopping matrix of shape {0} found, should be ({1},{1}).'.
+                    format(h_mat.shape, self.size)
+                )
 
     def _check_dim(self):
         """Consistency check for the dimension of the hoppings and unit cell. The position is checked in _init_hop_pos"""
         for key in self.hop.keys():
             if len(key) != self.dim:
-                raise ValueError('The length of R = {0} does not match the dimensionality of the system ({1})'.format(key, self.dim))
+                raise ValueError(
+                    'The length of R = {0} does not match the dimensionality of the system ({1})'.
+                    format(key, self.dim)
+                )
         if self.uc is not None:
             if self.uc.shape != (self.dim, self.dim):
-                raise ValueError('Inconsistend dimension of the unit cell: {0}, does not match the dimensionality of the system ({1})'.format(self.uc.shape, self.dim))
+                raise ValueError(
+                    'Inconsistend dimension of the unit cell: {0}, does not match the dimensionality of the system ({1})'.
+                    format(self.uc.shape, self.dim)
+                )
 
     #---------------- CONSTRUCTORS / (DE)SERIALIZATION ----------------#
     @classmethod
@@ -273,12 +306,15 @@ class Model:
             try:
                 size = len(kwargs['on_site'])
             except KeyError:
-                raise ValueError('No on-site energies and no size given. The size of the system cannot be determined.')
+                raise ValueError(
+                    'No on-site energies and no size given. The size of the system cannot be determined.'
+                )
 
         class _hop(object):
             """
             POD for hoppings
             """
+
             def __init__(self):
                 self.data = []
                 self.row_idx = []
@@ -298,7 +334,9 @@ class Model:
         # creating CSR matrices
         hop_dict = dict()
         for key, val in hop_list_dict.items():
-            hop_dict[key] = sp.csr((val.data, (val.row_idx, val.col_idx)), dtype=complex, shape=(size, size))
+            hop_dict[key] = sp.csr((val.data, (val.row_idx, val.col_idx)),
+                                   dtype=complex,
+                                   shape=(size, size))
 
         return cls(size=size, hop=hop_dict, **kwargs)
 
@@ -319,9 +357,7 @@ class Model:
         .. note :: This interface is deprecated in favor of the :meth:`.from_wannier_files` interface.
         """
         return cls._from_hr_iterator(
-            iter(hr_string.splitlines()),
-            h_cutoff=h_cutoff,
-            **kwargs
+            iter(hr_string.splitlines()), h_cutoff=h_cutoff, **kwargs
         )
 
     @classmethod
@@ -338,11 +374,17 @@ class Model:
         .. note :: This function is deprecated in favor of the :meth:`.from_wannier_files` interface.
         """
         with open(hr_file, 'r') as file_handle:
-            return cls._from_hr_iterator(file_handle, h_cutoff=h_cutoff, **kwargs)
+            return cls._from_hr_iterator(
+                file_handle, h_cutoff=h_cutoff, **kwargs
+            )
 
     @classmethod
     def _from_hr_iterator(cls, hr_iterator, *, h_cutoff=0., **kwargs):
-        warnings.warn('The from_hr and from_hr_file functions are deprecated. Use from_wannier_files instead.', DeprecationWarning, stacklevel=2)
+        warnings.warn(
+            'The from_hr and from_hr_file functions are deprecated. Use from_wannier_files instead.',
+            DeprecationWarning,
+            stacklevel=2
+        )
         num_wann, h_entries = cls._read_hr(hr_iterator)
 
         h_entries = (hop for hop in h_entries if abs(hop[0]) > h_cutoff)
@@ -355,7 +397,7 @@ class Model:
         read the number of wannier functions and the hopping entries
         from *hr.dat and converts them into the right format
         """
-        next(iterator) # skip first line
+        next(iterator)  # skip first line
         num_wann = int(next(iterator))
         nrpts = int(next(iterator))
 
@@ -367,6 +409,7 @@ class Model:
         assert len(deg_pts) == nrpts
 
         num_wann_square = num_wann**2
+
         def to_entry(line, i):
             """Turns a line (string) into a hop_list entry"""
             entry = line.split()
@@ -374,16 +417,15 @@ class Model:
             orbital_b = int(entry[4]) - 1
             # test consistency of orbital numbers
             if not ignore_orbital_order:
-                if not (orbital_a == i % num_wann) and (orbital_b == (i % num_wann_square) // num_wann):
+                if not (orbital_a == i % num_wann
+                        ) and (orbital_b == (i % num_wann_square) // num_wann):
                     raise ValueError(
-                        "Inconsistent orbital numbers in line '{}'".format(line)
+                        "Inconsistent orbital numbers in line '{}'".
+                        format(line)
                     )
-            return [
-                (float(entry[5]) + 1j * float(entry[6])) / (deg_pts[i // num_wann_square]),
-                orbital_a,
-                orbital_b,
-                [int(x) for x in entry[:3]]
-            ]
+            return [(float(entry[5]) + 1j * float(entry[6])) /
+                    (deg_pts[i // num_wann_square]), orbital_a, orbital_b,
+                    [int(x) for x in entry[:3]]]
 
         # skip random empty lines
         lines_nonempty = (l for l in iterator if l.strip())
@@ -416,7 +458,9 @@ class Model:
         .. warning :: The ``*_hr.dat`` format does not preserve the full precision of the hopping strengths. This could lead to numerical errors.
         """
         lines = []
-        tagline = ' created by the TBmodels package    ' + time.strftime('%a, %d %b %Y %H:%M:%S %Z')
+        tagline = ' created by the TBmodels package    ' + time.strftime(
+            '%a, %d %b %Y %H:%M:%S %Z'
+        )
         lines.append(tagline)
         lines.append('{0:>12}'.format(self.size))
         num_g = len(self.hop.keys()) * 2 - 1
@@ -435,21 +479,22 @@ class Model:
         for R in reversed(sorted(self.hop.keys())):
             if R != self._zero_vec:
                 minus_R = tuple(-x for x in R)
-                lines.extend(self._mat_to_hr(
-                    minus_R, self.hop[R].conjugate().transpose()
-                ))
+                lines.extend(
+                    self.
+                    _mat_to_hr(minus_R, self.hop[R].conjugate().transpose())
+                )
         # zero
         if self._zero_vec in self.hop.keys():
-            lines.extend(self._mat_to_hr(
-                self._zero_vec,
-                self.hop[self._zero_vec] + self.hop[self._zero_vec].conjugate().transpose()
-            ))
+            lines.extend(
+                self._mat_to_hr(
+                    self._zero_vec, self.hop[self._zero_vec] +
+                    self.hop[self._zero_vec].conjugate().transpose()
+                )
+            )
         # positive
         for R in sorted(self.hop.keys()):
             if R != self._zero_vec:
-                lines.extend(self._mat_to_hr(
-                    R, self.hop[R]
-                ))
+                lines.extend(self._mat_to_hr(R, self.hop[R]))
 
         return '\n'.join(lines)
 
@@ -459,11 +504,12 @@ class Model:
         Creates the ``*_hr.dat`` string for a single hopping matrix.
         """
         lines = []
-        mat = np.array(mat).T # to be consistent with W90's ordering
+        mat = np.array(mat).T  # to be consistent with W90's ordering
         for j, column in enumerate(mat):
             for i, t in enumerate(column):
                 lines.append(
-                    '{0[0]:>5}{0[1]:>5}{0[2]:>5}{1:>5}{2:>5}{3.real:>22.14f}{3.imag:>22.14f}'.format(R, i + 1, j + 1, t)
+                    '{0[0]:>5}{0[1]:>5}{0[2]:>5}{1:>5}{2:>5}{3.real:>22.14f}{3.imag:>22.14f}'.
+                    format(R, i + 1, j + 1, t)
                 )
         return lines
 
@@ -485,9 +531,9 @@ class Model:
         input_files['hr_file'] = common_path + '_hr.dat'
 
         for key, suffix in [
-                ('win_file', '.win'),
-                ('wsvec_file', '_wsvec.dat'),
-                ('xyz_file', '_centres.xyz'),
+            ('win_file', '.win'),
+            ('wsvec_file', '_wsvec.dat'),
+            ('xyz_file', '_centres.xyz'),
         ]:
             filename = common_path + suffix
             if os.path.isfile(filename):
@@ -496,7 +542,17 @@ class Model:
         return cls.from_wannier_files(**co.ChainMap(kwargs, input_files))
 
     @classmethod
-    def from_wannier_files(cls, *, hr_file, wsvec_file=None, xyz_file=None, win_file=None, h_cutoff=0., ignore_orbital_order=False, **kwargs):
+    def from_wannier_files(
+        cls,
+        *,
+        hr_file,
+        wsvec_file=None,
+        xyz_file=None,
+        win_file=None,
+        h_cutoff=0.,
+        ignore_orbital_order=False,
+        **kwargs
+    ):
         """
         Create a :class:`.Model` instance from Wannier90 output files.
 
@@ -523,42 +579,66 @@ class Model:
 
         if win_file is not None:
             if 'uc' in kwargs:
-                raise ValueError("Ambiguous unit cell: It can be given either via 'uc' or the 'win_file' keywords, but not both.")
+                raise ValueError(
+                    "Ambiguous unit cell: It can be given either via 'uc' or the 'win_file' keywords, but not both."
+                )
             with open(win_file, 'r') as f:
                 kwargs['uc'] = cls._read_win(f)['unit_cell_cart']
 
         if xyz_file is not None:
             if 'pos' in kwargs:
-                raise ValueError("Ambiguous orbital positions: The positions can be given either via the 'pos' or the 'xyz_file' keywords, but not both.")
+                raise ValueError(
+                    "Ambiguous orbital positions: The positions can be given either via the 'pos' or the 'xyz_file' keywords, but not both."
+                )
             if 'uc' not in kwargs:
-                raise ValueError("Positions cannot be read from .xyz file without unit cell given: Transformation from cartesian to reduced coordinates not possible. Specify the unit cell using one of the keywords 'uc' or 'win_file'.")
+                raise ValueError(
+                    "Positions cannot be read from .xyz file without unit cell given: Transformation from cartesian to reduced coordinates not possible. Specify the unit cell using one of the keywords 'uc' or 'win_file'."
+                )
             with open(xyz_file, 'r') as f:
                 wannier_pos_cartesian, _ = cls._read_xyz(f)
-                kwargs['pos'] = la.solve(kwargs['uc'].T, np.array(wannier_pos_cartesian).T).T
+                kwargs['pos'] = la.solve(
+                    kwargs['uc'].T, np.array(wannier_pos_cartesian).T
+                ).T
 
         with open(hr_file, 'r') as f:
-            num_wann, hop_entries = cls._read_hr(f, ignore_orbital_order=ignore_orbital_order)
-            hop_entries = (hop for hop in hop_entries if abs(hop[0]) > h_cutoff)
+            num_wann, hop_entries = cls._read_hr(
+                f, ignore_orbital_order=ignore_orbital_order
+            )
+            hop_entries = (
+                hop for hop in hop_entries if abs(hop[0]) > h_cutoff
+            )
 
             if wsvec_file is not None:
                 with open(wsvec_file, 'r') as f:
                     # wsvec_mapping is not a generator because it doesn't have
                     # the same order as the hoppings in _hr.dat
                     # This could still be done, but would be more complicated.
-                    wsvec_generator = cls._async_parse(cls._read_wsvec(f), chunksize=num_wann)
+                    wsvec_generator = cls._async_parse(
+                        cls._read_wsvec(f), chunksize=num_wann
+                    )
 
                     def remap_hoppings(hop_entries):
                         for t, orbital_1, orbital_2, R in hop_entries:
                             next(wsvec_generator)
-                            T_list = wsvec_generator.send((orbital_1, orbital_2, tuple(R)))
+                            T_list = wsvec_generator.send(
+                                (orbital_1, orbital_2, tuple(R))
+                            )
                             N = len(T_list)
                             for T in T_list:
                                 # not using numpy here increases performance
-                                yield (t / N, orbital_1, orbital_2, tuple(r + t for r, t in zip(R, T)))
-                    hop_entries = remap_hoppings(hop_entries)
-                    return cls.from_hop_list(size=num_wann, hop_list=hop_entries, **kwargs)
+                                yield (
+                                    t / N, orbital_1, orbital_2,
+                                    tuple(r + t for r, t in zip(R, T))
+                                )
 
-            return cls.from_hop_list(size=num_wann, hop_list=hop_entries, **kwargs)
+                    hop_entries = remap_hoppings(hop_entries)
+                    return cls.from_hop_list(
+                        size=num_wann, hop_list=hop_entries, **kwargs
+                    )
+
+            return cls.from_hop_list(
+                size=num_wann, hop_list=hop_entries, **kwargs
+            )
 
     @staticmethod
     def _async_parse(iterator, chunksize=1):
@@ -594,7 +674,10 @@ class Model:
             # in our convention, orbital indices start at 0.
             key = (o1 - 1, o2 - 1, tuple(R))
             N = int(next(iterator))
-            val = [tuple(int(x) for x in next(iterator).split()) for _ in range(N)]
+            val = [
+                tuple(int(x) for x in next(iterator).split())
+                for _ in range(N)
+            ]
             yield key, val
 
     @staticmethod
@@ -603,7 +686,7 @@ class Model:
         # This functionality exists within pymatgen, so it might make sense
         # to use that if we anyway want pymatgen as a dependency.
         N = int(next(iterator))
-        next(iterator) # skip comment line
+        next(iterator)  # skip comment line
         wannier_centres = []
         atom_positions = []
         AtomPosition = co.namedtuple('AtomPosition', ['kind', 'pos'])
@@ -653,7 +736,8 @@ class Model:
                 # unit = unit[0]
             else:
                 unit = 'ang'
-            val = [[float(x) for x in split_token.split(line)] for line in uc_input]
+            val = [[float(x) for x in split_token.split(line)]
+                   for line in uc_input]
             val = np.array(val).reshape(3, 3)
             if unit == 'bohr':
                 val *= 0.52917721092
@@ -672,10 +756,7 @@ class Model:
         uc = self.uc if self.uc is not None else np.eye(self.dim)
         # get sublattice positions in cartesian coordinates
         pos_abs = np.dot(np.array([sl.pos for sl in sublattices]), uc)
-        return kwant.lattice.general(
-            prim_vecs=uc,
-            basis=pos_abs
-        )
+        return kwant.lattice.general(prim_vecs=uc, basis=pos_abs)
 
     def add_hoppings_kwant(self, kwant_sys):
         """
@@ -700,7 +781,9 @@ class Model:
             # site doesn't belong to any sublattice
             else:
                 # TODO: check if there is a legitimate use case which triggers this
-                raise ValueError('Site {} did not match any sublattice.'.format(site))
+                raise ValueError(
+                    'Site {} did not match any sublattice.'.format(site)
+                )
 
         # R = 0 terms between different sublattices
         for i, s1 in enumerate(sublattices):
@@ -709,11 +792,10 @@ class Model:
                     # handled above
                     continue
                 else:
-                    kwant_sys[
-                        kwant.builder.HoppingKind(
-                            self._zero_vec, kwant_sublattices[i], kwant_sublattices[j]
-                        )
-                    ] = on_site_mat[np.ix_(s1.indices, s2.indices)]
+                    kwant_sys[kwant.builder.HoppingKind(
+                        self._zero_vec, kwant_sublattices[i],
+                        kwant_sublattices[j]
+                    )] = on_site_mat[np.ix_(s1.indices, s2.indices)]
 
         # R != 0 terms
         for R, mat in self.hop.items():
@@ -727,16 +809,12 @@ class Model:
                     for j, s2 in enumerate(sublattices):
                         sub_matrix = mat[np.ix_(s1.indices, s2.indices)]
                         # TODO: check "signs"
-                        kwant_sys[
-                            kwant.builder.HoppingKind(
-                                minus_R, kwant_sublattices[i], kwant_sublattices[j]
-                            )
-                        ] = sub_matrix
-                        kwant_sys[
-                            kwant.builder.HoppingKind(
-                                R, kwant_sublattices[j], kwant_sublattices[i]
-                            )
-                        ] = np.transpose(np.conj(sub_matrix))
+                        kwant_sys[kwant.builder.HoppingKind(
+                            minus_R, kwant_sublattices[i], kwant_sublattices[j]
+                        )] = sub_matrix
+                        kwant_sys[kwant.builder.HoppingKind(
+                            R, kwant_sublattices[j], kwant_sublattices[i]
+                        )] = np.transpose(np.conj(sub_matrix))
         return kwant_sys
 
     def _get_sublattices(self):
@@ -827,7 +905,11 @@ class Model:
                 group['mat'] = mat
 
     def __repr__(self):
-        return ' '.join('tbmodels.Model(hop={1}, pos={0.pos!r}, uc={0.uc!r}, occ={0.occ}, contains_cc=False)'.format(self, dict(self.hop)).replace('\n', ' ').replace('array', 'np.array').split())
+        return ' '.join(
+            'tbmodels.Model(hop={1}, pos={0.pos!r}, uc={0.uc!r}, occ={0.occ}, contains_cc=False)'.
+            format(self, dict(self.hop)
+                   ).replace('\n', ' ').replace('array', 'np.array').split()
+        )
 
     #---------------- BASIC FUNCTIONALITY ----------------------------------#
     @property
@@ -848,12 +930,20 @@ class Model:
         :returns:   2D numpy array
         """
         if convention not in [1, 2]:
-            raise ValueError("Invalid value '{}' for 'convention': must be either '1' or '2'".format(convention))
+            raise ValueError(
+                "Invalid value '{}' for 'convention': must be either '1' or '2'".
+                format(convention)
+            )
         k = np.array(k, ndmin=1)
-        H = sum(self._array_cast(hop) * np.exp(2j * np.pi * np.dot(R, k)) for R, hop in self.hop.items())
+        H = sum(
+            self._array_cast(hop) * np.exp(2j * np.pi * np.dot(R, k))
+            for R, hop in self.hop.items()
+        )
         H += H.conjugate().T
         if convention == 1:
-            pos_exponential = np.array([[np.exp(2j * np.pi * np.dot(p, k)) for p in self.pos]])
+            pos_exponential = np.array([[
+                np.exp(2j * np.pi * np.dot(p, k)) for p in self.pos
+            ]])
             H = pos_exponential.conjugate().transpose() * H * pos_exponential
         return H
 
@@ -896,7 +986,10 @@ class Model:
         """
         R = tuple(R)
         if len(R) != self.dim:
-            raise ValueError('Dimension of R ({}) does not match the model dimension ({})'.format(len(R), self.dim))
+            raise ValueError(
+                'Dimension of R ({}) does not match the model dimension ({})'.
+                format(len(R), self.dim)
+            )
 
         mat = np.zeros((self.size, self.size), dtype=complex)
         nonzero_idx = np.nonzero(R)[0]
@@ -919,17 +1012,17 @@ class Model:
         """
         if self.size != len(on_site):
             raise ValueError(
-                'The number of on-site energy terms should be {}, but is {}.'.format(
-                    self.size,
-                    len(on_site)
-                )
+                'The number of on-site energy terms should be {}, but is {}.'.
+                format(self.size, len(on_site))
             )
         for orbital, energy in enumerate(on_site):
             self.add_hop(energy / 2., orbital, orbital, self._zero_vec)
 
     def _empty_matrix(self):
         """Returns an empty matrix, either sparse or dense according to the current setting. The size is determined by the system's size"""
-        return self._matrix_type(np.zeros((self.size, self.size), dtype=complex))
+        return self._matrix_type(
+            np.zeros((self.size, self.size), dtype=complex)
+        )
 
     def set_sparse(self, sparse=True):
         """
@@ -991,13 +1084,14 @@ class Model:
         if full_group:
             new_model = self._apply_operation(symmetries[0])
             return 1 / len(symmetries) * sum(
-                (self._apply_operation(s) for s in symmetries[1:]),
-                new_model
+                (self._apply_operation(s) for s in symmetries[1:]), new_model
             )
         else:
             new_model = self
             for sym in symmetries:
-                new_model = 1 / 2 * (new_model + new_model._apply_operation(sym))
+                new_model = 1 / 2 * (
+                    new_model + new_model._apply_operation(sym)
+                )
             return new_model
 
     def _apply_operation(self, symmetry_operation):
@@ -1023,14 +1117,22 @@ class Model:
                 ):
                     valid_shifts.append(tuple(shift))
             if len(valid_shifts) == 0:
-                raise ValueError('New position {} does not match any known sublattice'.format(new_pos))
+                raise ValueError(
+                    'New position {} does not match any known sublattice'.
+                    format(new_pos)
+                )
             if len(valid_shifts) > 1:
-                raise ValueError('Ambiguity error: New position {} matches more than one known sublattice'.format(new_pos))
+                raise ValueError(
+                    'Ambiguity error: New position {} matches more than one known sublattice'.
+                    format(new_pos)
+                )
             uc_shift.append(valid_shifts[0])
 
         # setting up the indices to slice the hopping matrices
         hop_shifts_idx = co.defaultdict(lambda: ([], []))
-        for (i, Ti), (j, Tj) in itertools.product(enumerate(uc_shift), repeat=2):
+        for (i, Ti), (j, Tj) in itertools.product(
+            enumerate(uc_shift), repeat=2
+        ):
             shift = tuple(np.array(Tj) - np.array(Ti))
             for idx1, idx2 in itertools.product(
                 sublattices[i].indices, sublattices[j].indices
@@ -1041,9 +1143,10 @@ class Model:
         # create hoppings with shifted R (by uc_shift[j] - uc_shift[i])
         new_hop = co.defaultdict(self._empty_matrix)
         for R, mat in self.hop.items():
-            R_transformed = np.array(np.rint(
-                np.dot(symmetry_operation.rotation_matrix, R)
-            ), dtype=int)
+            R_transformed = np.array(
+                np.rint(np.dot(symmetry_operation.rotation_matrix, R)),
+                dtype=int
+            )
             for shift, (idx1, idx2) in hop_shifts_idx.items():
                 new_R = tuple(np.array(R_transformed) + np.array(shift))
                 new_hop[new_R][idx1, idx2] += mat[idx1, idx2]
@@ -1054,11 +1157,7 @@ class Model:
             if symmetry_operation.repr.has_cc:
                 new_hop[R] = np.conj(new_hop[R])
             new_hop[R] = np.dot(
-                sym_op,
-                np.dot(
-                    new_hop[R],
-                    np.conj(np.transpose(sym_op))
-                )
+                sym_op, np.dot(new_hop[R], np.conj(np.transpose(sym_op)))
             )
 
         return Model(**co.ChainMap(dict(hop=new_hop), self._input_kwargs))
@@ -1071,24 +1170,38 @@ class Model:
         :type slice_idx: :py:class:`list` ( :py:class:`int` )
         """
         new_pos = self.pos[tuple(slice_idx), :]
-        new_hop = {key: np.array(val)[np.ix_(slice_idx, slice_idx)] for key, val in self.hop.items()}
-        return Model(**co.ChainMap(dict(hop=new_hop, pos=new_pos), self._input_kwargs))
+        new_hop = {
+            key: np.array(val)[np.ix_(slice_idx, slice_idx)]
+            for key, val in self.hop.items()
+        }
+        return Model(
+            **co.ChainMap(dict(hop=new_hop, pos=new_pos), self._input_kwargs)
+        )
 
     def __add__(self, model):
         """
         Adds two models together by adding their hopping terms.
         """
         if not isinstance(model, Model):
-            raise ValueError('Invalid argument type for Model.__add__: {}'.format(type(model)))
+            raise ValueError(
+                'Invalid argument type for Model.__add__: {}'.
+                format(type(model))
+            )
 
         # ---- CONSISTENCY CHECKS ----
         # check if the occupation number matches
         if self.occ != model.occ:
-            raise ValueError('Error when adding Models: occupation numbers ({0}, {1}) don\'t match'.format(self.occ, model.occ))
+            raise ValueError(
+                'Error when adding Models: occupation numbers ({0}, {1}) don\'t match'.
+                format(self.occ, model.occ)
+            )
 
         # check if the size of the hopping matrices match
         if self.size != model.size:
-            raise ValueError('Error when adding Models: the number of states ({0}, {1}) doesn\'t match'.format(self.size, model.size))
+            raise ValueError(
+                'Error when adding Models: the number of states ({0}, {1}) doesn\'t match'.
+                format(self.size, model.size)
+            )
 
         # check if the unit cells match
         uc_match = True
@@ -1105,7 +1218,10 @@ class Model:
                         uc_match = False
                         break
         if not uc_match:
-            raise ValueError('Error when adding Models: unit cells don\'t match.\nModel 1:\n{0.uc}\n\nModel 2:\n{1.uc}'.format(self, model))
+            raise ValueError(
+                'Error when adding Models: unit cells don\'t match.\nModel 1:\n{0.uc}\n\nModel 2:\n{1.uc}'.
+                format(self, model)
+            )
 
         # check if the positions match
         pos_match = True
@@ -1118,16 +1234,17 @@ class Model:
                     pos_match = False
                     break
         if not pos_match:
-            raise ValueError('Error when adding Models: positions don\'t match.\nModel 1:\n{0.pos}\n\nModel 2:\n{1.pos}'.format(self, model))
+            raise ValueError(
+                'Error when adding Models: positions don\'t match.\nModel 1:\n{0.pos}\n\nModel 2:\n{1.pos}'.
+                format(self, model)
+            )
 
         # ---- MAIN PART ----
         new_hop = copy.deepcopy(self.hop)
         for R, hop_mat in model.hop.items():
             new_hop[R] += hop_mat
         # -------------------
-        return Model(
-            **co.ChainMap(dict(hop=new_hop), self._input_kwargs)
-        )
+        return Model(**co.ChainMap(dict(hop=new_hop), self._input_kwargs))
 
     def __sub__(self, model):
         """
@@ -1149,9 +1266,7 @@ class Model:
         for R, hop_mat in self.hop.items():
             new_hop[R] = x * hop_mat
 
-        return Model(
-            **co.ChainMap(dict(hop=new_hop), self._input_kwargs)
-        )
+        return Model(**co.ChainMap(dict(hop=new_hop), self._input_kwargs))
 
     def __rmul__(self, x):
         """

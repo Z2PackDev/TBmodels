@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 """
 This module contains a helper function to create a list of hoppings from a given matrix (:meth:`matrix_to_hop`).
 """
 
 import numpy as np
 from fsc.export import export
+
 
 @export
 def matrix_to_hop(mat, orbitals=None, R=(0, 0, 0), multiplier=1.):
@@ -29,5 +29,8 @@ def matrix_to_hop(mat, orbitals=None, R=(0, 0, 0), multiplier=1.):
     hop = []
     for i, row in enumerate(mat):
         for j, x in enumerate(row):
-            hop.append([multiplier * x, orbitals[i], orbitals[j], np.array(R, dtype=int)])
+            hop.append([
+                multiplier * x, orbitals[i], orbitals[j],
+                np.array(R, dtype=int)
+            ])
     return hop

@@ -10,6 +10,7 @@ import pymatgen as mg
 import pymatgen.symmetry.analyzer
 import symmetry_representation as sr
 
+
 def spin_reps(prep):
     """
     Calculates the spin rotation matrices. The formulas to determine the rotation axes and angles
@@ -32,7 +33,8 @@ def spin_reps(prep):
             n[0] = prep[2, 1] - prep[1, 2]
             n[1] = prep[0, 2] - prep[2, 0]
             n[2] = prep[1, 0] - prep[0, 1]
-            if np.round(np.linalg.norm(n), 5) == 0.:  # theta = pi, that is C2 rotations
+            if np.round(np.linalg.norm(n),
+                        5) == 0.:  # theta = pi, that is C2 rotations
                 e, v = la.eig(prep)
                 n = v[:, list(np.round(e, 10)).index(1.)]
                 spin = np.round(D12(n[0], n[1], n[2], np.pi), 15)
@@ -57,10 +59,15 @@ def spin_reps(prep):
                 n /= np.linalg.norm(n)
                 # rotation followed by reflection:
                 spin = np.round(
-                    np.dot(D12(n[0], n[1], n[2], np.pi), D12(n[0], n[1], n[2], theta)), 15)
+                    np.dot(
+                        D12(n[0], n[1], n[2], np.pi),
+                        D12(n[0], n[1], n[2], theta)
+                    ), 15
+                )
         else:  # case of inversion (does not do anything to spin)
             spin = D12(0, 0, 0, 0)
     return np.array(spin)
+
 
 if __name__ == '__main__':
     # For this example we already changed the order of the orbitals (unlike the
@@ -104,11 +111,7 @@ if __name__ == '__main__':
             rotation_matrix=rot,
             repr_matrix=repr_mat,
             repr_has_cc=False
-        )
-        for rot, repr_mat in zip(rots, reps)
+        ) for rot, repr_mat in zip(rots, reps)
     ]
-    point_group = sr.SymmetryGroup(
-        symmetries=symmetries,
-        full_group=True
-    )
+    point_group = sr.SymmetryGroup(symmetries=symmetries, full_group=True)
     sr.io.save([time_reversal, point_group], 'results/symmetries.hdf5')

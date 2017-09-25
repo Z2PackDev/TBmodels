@@ -11,6 +11,7 @@ from fsc.export import export
 
 from ._tb_model import Model
 
+
 @export
 def save(obj, file_path):
     """
@@ -19,9 +20,11 @@ def save(obj, file_path):
     with h5py.File(file_path, 'w') as hf:
         _encode(obj, hf)
 
+
 @singledispatch
 def _encode(obj, hf):
     raise ValueError('Cannot encode object of type {}'.format(type(obj)))
+
 
 @_encode.register(str)
 @_encode.register(numbers.Complex)
@@ -29,20 +32,24 @@ def _encode(obj, hf):
 def _(obj, hf):
     hf['val'] = obj
 
+
 @_encode.register(Iterable)
 def _(obj, hf):
     for i, part in enumerate(obj):
         sub_group = hf.create_group(str(i))
         _encode(part, sub_group)
 
+
 @_encode.register(Model)
 def _(obj, hf):
     obj.to_hdf5(hf)
+
 
 @export
 def load(file_path):
     with h5py.File(file_path, 'r') as hf:
         return _decode(hf)
+
 
 def _decode(hf):
     if 'tb_model' in hf:
@@ -54,11 +61,14 @@ def _decode(hf):
     else:
         raise ValueError('File structure not understood.')
 
+
 def _decode_iterable(hf):
     return [_decode(hf[key]) for key in sorted(hf, key=int)]
 
+
 def _decode_model(hf):
     return Model.from_hdf5(hf)
+
 
 def _decode_val(hf):
     return hf['val'].value

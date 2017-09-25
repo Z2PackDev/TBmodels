@@ -10,6 +10,7 @@ import pymatgen as mg
 import pymatgen.symmetry.bandstructure
 import symmetry_representation as sr
 
+
 def compare_bands_plot(model1, model2, structure):
     path = mg.symmetry.bandstructure.HighSymmKpath(structure)
     kpts, labels = path.get_kpoints(line_density=200)
@@ -41,10 +42,13 @@ def compare_bands_plot(model1, model2, structure):
     plt.ylim([-6, 6])
     plt.savefig('results/compare_bands.pdf', bbox_inches='tight')
 
+
 if __name__ == '__main__':
     model_nosym = tbmodels.Model.from_hdf5_file('data/model_nosym.hdf5')
     model_sym = tbmodels.Model.from_hdf5_file('results/model_symmetrized.hdf5')
-    reference_model = tbmodels.Model.from_hdf5_file('data/reference_model.hdf5')
+    reference_model = tbmodels.Model.from_hdf5_file(
+        'data/reference_model.hdf5'
+    )
 
     structure = mg.Structure(
         lattice=model_nosym.uc,

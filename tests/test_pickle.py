@@ -17,6 +17,7 @@ KWARGS = [
     dict(pos=np.zeros((2, 3)), uc=np.eye(3))
 ]
 
+
 @pytest.mark.parametrize('kwargs', KWARGS)
 def test_pickle_consistency(get_model, models_equal, kwargs):
     model1 = get_model(0.1, 0.2, **kwargs)

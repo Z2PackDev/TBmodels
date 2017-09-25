@@ -10,6 +10,7 @@ from tbmodels._ptools.sparse_matrix import csr
 
 from parameters import T_VALUES, KPT
 
+
 @pytest.mark.parametrize('t', T_VALUES)
 def test_repr_reload(t, get_model):
     m1 = get_model(*t)

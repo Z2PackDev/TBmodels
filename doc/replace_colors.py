@@ -8,9 +8,11 @@
 import os
 import sys
 
+
 def replace_color(text, old_color, new_color):
     text = text.replace(old_color.lower(), new_color)
     return text.replace(old_color.upper(), new_color)
+
 
 def replace_all(path, colors):
     with open(path, 'r') as f:
@@ -20,13 +22,14 @@ def replace_all(path, colors):
     with open(path, 'w') as f:
         f.write(text)
 
+
 if __name__ == "__main__":
     builddir = sys.argv[1]
-    
+
     color_replacements = [
         ['#2980B9', '#CC2D2D'],
         ['#E7F2FA', '#FAE7E7'],
-        ['#3091D1', '#EE5555'], # hover
+        ['#3091D1', '#EE5555'],  # hover
         ['#6AB0DE', '#DE6A6A'],
         ['#DBFAF4', '#FADBE4'],
         ['#1ABC9C', '#BC1A45'],
@@ -37,5 +40,7 @@ if __name__ == "__main__":
         ['#409AD5', '#D54040'],
     ]
 
-    replace_all(os.path.join(builddir, '_static/css/theme.css'), color_replacements)
+    replace_all(
+        os.path.join(builddir, '_static/css/theme.css'), color_replacements
+    )
     print("replace_colors.py")

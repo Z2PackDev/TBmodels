@@ -17,6 +17,12 @@ with open('./tbmodels/_version.py', 'r') as f:
     match_expr = "__version__[^'" + '"]+([' + "'" + r'"])([^\1]+)\1'
     version = re.search(match_expr, f.read()).group(2)
 
+EXTRAS_REQUIRE = {
+    'kwant': ['kwant'],
+    'dev': ['pytest', 'yapf', 'pythtb', 'pre-commit']
+}
+EXTRAS_REQUIRE['dev'] += EXTRAS_REQUIRE['kwant']
+
 setup(
     name='tbmodels',
     version=version,
@@ -24,13 +30,15 @@ setup(
     author='Dominik Gresch',
     author_email='greschd@gmx.ch',
     description='Reading, creating and modifying tight-binding models.',
-    install_requires=['numpy', 'scipy', 'h5py', 'fsc.export', 'symmetry-representation', 'click', 'bands-inspect'],
-    extras_require={'kwant': ['kwant']},
+    install_requires=[
+        'numpy', 'scipy', 'h5py', 'fsc.export', 'symmetry-representation',
+        'click', 'bands-inspect'
+    ],
+    extras_require=EXTRAS_REQUIRE,
     long_description=readme,
     classifiers=[
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
-        'Natural Language :: English',
-        'Operating System :: Unix',
+        'Natural Language :: English', 'Operating System :: Unix',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',

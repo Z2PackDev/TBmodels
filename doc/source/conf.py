@@ -29,19 +29,14 @@ import tbmodels
 # If your documentation needs a minimal Sphinx version, state it here.
 #needs_sphinx = '1.0'
 
-
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.mathjax',
-    'sphinx.ext.intersphinx'
+    'sphinx.ext.autodoc', 'sphinx.ext.mathjax', 'sphinx.ext.intersphinx'
 ]
 
-intersphinx_mapping = {
-  'python': ('https://docs.python.org/3', None)
-  }
+intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
 
 # Add any paths that contain templates here, relative to this directory.
 #~ templates_path = ['templates']
@@ -115,7 +110,6 @@ pygments_style = 'sphinx'
 # If true, keep warnings as "system message" paragraphs in the built documents.
 #keep_warnings = False
 
-
 # -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -128,9 +122,9 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # further.  For a list of options available for each theme, see the
 # documentation.
 #~ html_theme_options = {
-  #~ 'inner_theme': True,
-  #~ 'inner_theme_name': 'bootswatch-darkly',
-  #~ 'nav_fixed_top': False
+#~ 'inner_theme': True,
+#~ 'inner_theme_name': 'bootswatch-darkly',
+#~ 'nav_fixed_top': False
 #~ }
 
 # Add any paths that contain custom themes here, relative to this directory.
@@ -176,7 +170,7 @@ html_static_path = ['_static']
 # Additional templates that should be rendered to pages, maps page names to
 # template names.
 #~ html_additional_pages = {
-    #~ 'foo': 'foo.html'
+#~ 'foo': 'foo.html'
 #~ }
 
 # If false, no module index is generated.
@@ -225,25 +219,27 @@ htmlhelp_basename = 'TBmodelsdoc'
 # -- Options for LaTeX output ---------------------------------------------
 
 latex_elements = {
-# The paper size ('letterpaper' or 'a4paper').
-#'papersize': 'letterpaper',
+    # The paper size ('letterpaper' or 'a4paper').
+    #'papersize': 'letterpaper',
 
-# The font size ('10pt', '11pt' or '12pt').
-#'pointsize': '10pt',
+    # The font size ('10pt', '11pt' or '12pt').
+    #'pointsize': '10pt',
 
-# Additional stuff for the LaTeX preamble.
-#'preamble': '',
+    # Additional stuff for the LaTeX preamble.
+    #'preamble': '',
 
-# Latex figure (float) alignment
-#'figure_align': 'htbp',
+    # Latex figure (float) alignment
+    #'figure_align': 'htbp',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('index', 'TBmodels.tex', u'TBmodels Documentation',
-   u'Dominik Gresch', 'manual'),
+    (
+        'index', 'TBmodels.tex', u'TBmodels Documentation', u'Dominik Gresch',
+        'manual'
+    ),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -266,19 +262,16 @@ latex_documents = [
 # If false, no module index is generated.
 #latex_domain_indices = True
 
-
 # -- Options for manual page output ---------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'tbmodels', u'TBmodels Documentation',
-     [u'Dominik Gresch'], 1)
+    ('index', 'tbmodels', u'TBmodels Documentation', [u'Dominik Gresch'], 1)
 ]
 
 # If true, show URL addresses after external links.
 #man_show_urls = False
-
 
 # -- Options for Texinfo output -------------------------------------------
 
@@ -286,9 +279,10 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'TBmodels', u'TBmodels Documentation',
-   u'Dominik Gresch', 'TBmodels', 'One line description of project.',
-   'Miscellaneous'),
+    (
+        'index', 'TBmodels', u'TBmodels Documentation', u'Dominik Gresch',
+        'TBmodels', 'One line description of project.', 'Miscellaneous'
+    ),
 ]
 
 # Documents to append as an appendix to all manuals.

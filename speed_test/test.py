@@ -24,15 +24,15 @@ model1 = tbmodels.Model.from_hr_file('data/dense_hr.dat', sparse=True)
 with Timer('sparse'):
     for k in k_list:
         model1.hamilton(k)
-        
+
 # For the sparse model a supercell or TRS model should be used
 #~ print('sparse model')
 #~ model2 = tbmodels.Model.from_hr_file('data/sparse_hr.dat', sparse=False)
 #~ with Timer('dense'):
-    #~ for k in k_list:
-        #~ model2.hamilton(k)
+#~ for k in k_list:
+#~ model2.hamilton(k)
 
 #~ model1 = tbmodels.Model.from_hr_file('data/sparse_hr.dat', sparse=True)
 #~ with Timer('sparse'):
-    #~ for k in k_list:
-        #~ model1.hamilton(k)
+#~ for k in k_list:
+#~ model1.hamilton(k)

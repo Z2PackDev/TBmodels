@@ -23,14 +23,17 @@ from tbmodels.io import save, load
 
 #--------------------------FIXTURES-------------------------------------#
 
+
 @pytest.fixture
 def test_name(request):
     """Returns module_name.function_name for a given test"""
     return (request.module.__name__, request._parent_request._pyfuncitem.name)
 
+
 @pytest.fixture
 def compare_data(request, test_name, scope="session"):
     """Returns a function which either saves some data to a file or (if that file exists already) compares it to pre-existing data using a given comparison function."""
+
     def inner(compare_fct, data, tag=None):
         dir_name, file_name = test_name
         file_name += tag or ''
@@ -43,11 +46,14 @@ def compare_data(request, test_name, scope="session"):
             raise ValueError('Reference data does not exist.')
         else:
             assert compare_fct(val, data)
+
     return inner
+
 
 @pytest.fixture
 def compare_equal(compare_data):
     return lambda data, tag=None: compare_data(operator.eq, data, tag)
+
 
 @pytest.fixture
 def compare_isclose(compare_data):
@@ -70,7 +76,9 @@ def models_equal():
         if not ignore_sparsity:
             assert model1._sparse == model2._sparse
         return True
+
     return inner
+
 
 @pytest.fixture
 def models_close():
@@ -86,7 +94,9 @@ def models_close():
             print('k:', k)
             print('model1:\n', np.array(model1.hop[k]))
             print('model2:\n', np.array(model2.hop[k]))
-            assert np.isclose(np.array(model1.hop[k]), np.array(model2.hop[k])).all()
+            assert np.isclose(
+                np.array(model1.hop[k]), np.array(model2.hop[k])
+            ).all()
         if model1.pos is None:
             assert model1.pos == model2.pos
         else:
@@ -94,16 +104,21 @@ def models_close():
         if not ignore_sparsity:
             assert model1._sparse == model2._sparse
         return True
+
     return inner
+
 
 @pytest.fixture
 def sample():
     def inner(name):
         return os.path.join(
-            os.path.join(os.path.dirname(os.path.abspath(__file__)), 'samples'),
-            name
+            os.path.join(
+                os.path.dirname(os.path.abspath(__file__)), 'samples'
+            ), name
         )
+
     return inner
+
 
 #-----------------------------------------------------------------------#
 @pytest.fixture
@@ -124,19 +139,23 @@ def get_model_clean():
         defaults['sparse'] = sparsity_default
         model = tbmodels.Model(**ChainMap(kwargs, defaults))
 
-        for phase, R in zip([1, -1j, 1j, -1], itertools.product([0, -1], [0, -1], [0])):
+        for phase, R in zip([1, -1j, 1j, -1],
+                            itertools.product([0, -1], [0, -1], [0])):
             model.add_hop(t1 * phase, 0, 1, R)
 
         for R in ((r[0], r[1], 0) for r in itertools.permutations([0, 1])):
             model.add_hop(t2, 0, 0, R)
             model.add_hop(-t2, 1, 1, R)
         return model
+
     return inner
+
 
 @pytest.fixture(params=[True, False])
 def sparse(request):
     return request.param
 
-@pytest.fixture() # params is for sparse / dense
+
+@pytest.fixture()  # params is for sparse / dense
 def get_model(get_model_clean, sparse):
     return partial(get_model_clean, sparsity_default=sparse)
