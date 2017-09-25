@@ -1,20 +1,14 @@
 language: python
 cache: pip
-sudo: true
 python:
     - "3.4"
     - "3.5"
     - "3.6"
     - "3.6-dev"
 
-before_install:
-    - sudo apt-get update -qq
-    - sudo apt-get install -qq liblapack.so liblapack-dev
-
 install:
-    - pip install .[kwant]
+    - pip install .[dev]
     - pip install git+https://gitlab.kwant-project.org/cwg/wraparound.git
-    - pip install pythtb
 
 # run tests
 script:
