@@ -217,8 +217,9 @@ class Model:
         # Consistency checks
         for R, mat in hop.items():
             if la.norm(
-                mat - hop.get(tuple(-x for x in R), np.zeros(mat.shape)
-                              ).T.conjugate()
+                mat -
+                hop.get(tuple(-x
+                              for x in R), np.zeros(mat.shape)).T.conjugate()
             ) > 1e-12:
                 raise ValueError(
                     'The provided hoppings do not correspond to a hermitian Hamiltonian. hoppings[-R] = hoppings[R].H is not fulfilled.'
@@ -598,7 +599,8 @@ class Model:
             with open(xyz_file, 'r') as f:
                 wannier_pos_cartesian, _ = cls._read_xyz(f)
                 kwargs['pos'] = la.solve(
-                    kwargs['uc'].T, np.array(wannier_pos_cartesian).T
+                    kwargs['uc'].T,
+                    np.array(wannier_pos_cartesian).T
                 ).T
 
         with open(hr_file, 'r') as f:
