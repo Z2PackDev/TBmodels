@@ -7,6 +7,14 @@ python:
   - "3.6"
   - "3.6-dev"
 
+env:
+  - TEST_TYPE="test"
+
+matrix:
+  include:
+    - python: 3.6
+      env: TEST_TYPE="compliance"
+
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq liblapack3 liblapack-dev
@@ -16,14 +24,5 @@ install:
   - pip install git+https://gitlab.kwant-project.org/cwg/wraparound.git
 
 script:
-  - cd tests
-  - py.test
-
-jobs:
-  include:
-    - stage: compliance
-      script: pre-commit run --all-files
-
-stages:
-  - compliance
-  - test
+  - if [ "$TEST_TYPE" == "compliance" ] ; then pre-commit run --all-files ; fi
+  - if [ "$TEST_TYPE" == "test" ] ; then cd tests; py.test ; fi
