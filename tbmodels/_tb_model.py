@@ -480,8 +480,9 @@ class Model:
             if R != self._zero_vec:
                 minus_R = tuple(-x for x in R)
                 lines.extend(
-                    self.
-                    _mat_to_hr(minus_R, self.hop[R].conjugate().transpose())
+                    self._mat_to_hr(
+                        minus_R, self.hop[R].conjugate().transpose()
+                    )
                 )
         # zero
         if self._zero_vec in self.hop.keys():
@@ -907,8 +908,10 @@ class Model:
     def __repr__(self):
         return ' '.join(
             'tbmodels.Model(hop={1}, pos={0.pos!r}, uc={0.uc!r}, occ={0.occ}, contains_cc=False)'.
-            format(self, dict(self.hop)
-                   ).replace('\n', ' ').replace('array', 'np.array').split()
+            format(self,
+                   dict(self.hop)).replace('\n',
+                                           ' ').replace('array',
+                                                        'np.array').split()
         )
 
     #---------------- BASIC FUNCTIONALITY ----------------------------------#
@@ -1184,8 +1187,9 @@ class Model:
         """
         if not isinstance(model, Model):
             raise ValueError(
-                'Invalid argument type for Model.__add__: {}'.
-                format(type(model))
+                'Invalid argument type for Model.__add__: {}'.format(
+                    type(model)
+                )
             )
 
         # ---- CONSISTENCY CHECKS ----
