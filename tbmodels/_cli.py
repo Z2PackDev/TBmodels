@@ -59,8 +59,14 @@ def _write_output(model, output):
     default='wannier',
     help='Common prefix of the Wannier90 output files.'
 )
+@click.option(
+    '--pos-kind',
+    type=click.Choice(['wannier', 'nearest_atom']),
+    default='wannier',
+    help="Which position to use for the orbitals."
+)
 @_output_option(default='model.hdf5', help='Path of the output file.')
-def parse(folder, prefix, output):
+def parse(folder, prefix, output, pos_kind):
     """
     Parse Wannier90 output files and create an HDF5 file containing the tight-binding model.
     """
@@ -68,7 +74,10 @@ def parse(folder, prefix, output):
         "Parsing output files '{}*' ...".format(os.path.join(folder, prefix))
     )
     model = Model.from_wannier_folder(
-        folder=folder, prefix=prefix, ignore_orbital_order=True
+        folder=folder,
+        prefix=prefix,
+        ignore_orbital_order=True,
+        pos_kind=pos_kind
     )
     _write_output(model, output)
 
