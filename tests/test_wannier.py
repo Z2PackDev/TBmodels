@@ -53,8 +53,11 @@ def test_wannier_hr_wsvec_xyz(hr_name, wsvec_name, xyz_name, sample):
 
 
 @pytest.mark.parametrize(
-    'hr_name, wsvec_name, xyz_name, win_name, pos, uc, reciprocal_lattice', [(
-        'silicon_hr.dat', 'silicon_wsvec.dat', 'silicon_centres.xyz',
+    'hr_name, wsvec_name, xyz_name, win_name, pos, uc, reciprocal_lattice, pos_kind',
+    [(
+        'silicon_hr.dat',
+        'silicon_wsvec.dat',
+        'silicon_centres.xyz',
         'silicon.win',
         np.array([[0.08535249, -0.25608288, 0.08537316], [
             0.08536001, 0.08535213, 0.08536136
@@ -70,9 +73,13 @@ def test_wannier_hr_wsvec_xyz(hr_name, wsvec_name, xyz_name, sample):
             [-1.164070, -1.164070, 1.164070],
             [1.164070, 1.164070, 1.164070],
             [-1.164070, 1.164070, -1.164070],
-        ])
+        ]),
+        'wannier',
     ), (
-        'bi_hr.dat', 'bi_wsvec.dat', 'bi_centres.xyz', 'bi.win',
+        'bi_hr.dat',
+        'bi_wsvec.dat',
+        'bi_centres.xyz',
+        'bi.win',
         np.array([[0.08775382, -0.00245227, -0.05753982], [
             -0.05495596, 0.14636127, -0.0485512
         ], [-0.06553189, -0.0240915, 0.12595038], [
@@ -90,12 +97,37 @@ def test_wannier_hr_wsvec_xyz(hr_name, wsvec_name, xyz_name, sample):
             [1.382141, -0.797980, 0.529693],
             [0.000000, 1.595959, 0.529693],
             [-1.382141, -0.797980, 0.529693],
-        ])
+        ]),
+        'wannier',
+    ), (
+        'bi_hr.dat',
+        'bi_wsvec.dat',
+        'bi_centres.xyz',
+        'bi.win',
+        np.array([[0.08775382, -0.00245227, -0.05753982], [
+            -0.05495596, 0.14636127, -0.0485512
+        ], [-0.06553189, -0.0240915, 0.12595038], [
+            0.08499069, 0.09910585, 0.00461952
+        ], [0.07323644, -0.0895939, -0.17143996], [
+            -0.03101997, -0.0348563, 0.01921201
+        ], [-0.05896055, -0.00482994, -0.10247473], [
+            0.04122294, -0.01290763, -0.1097073
+        ], [0.21852895, -0.16835099, -0.12195773],
+                  [-0.02580571, -0.02781471, 0.09245878]]),
+        np.array([[2.272990, -1.312311, 3.953982], [
+            0.000000, 2.624622, 3.953982
+        ], [-2.272990, -1.312311, 3.953982]]),
+        np.array([
+            [1.382141, -0.797980, 0.529693],
+            [0.000000, 1.595959, 0.529693],
+            [-1.382141, -0.797980, 0.529693],
+        ]),
+        'nearest_atom',
     )]
 )
 def test_wannier_all(
     compare_isclose, hr_name, wsvec_name, xyz_name, win_name, pos, uc,
-    reciprocal_lattice, sample
+    reciprocal_lattice, sample, pos_kind
 ):
     hr_file = sample(hr_name)
     wsvec_file = sample(wsvec_name)
@@ -105,7 +137,8 @@ def test_wannier_all(
         hr_file=hr_file,
         wsvec_file=wsvec_file,
         xyz_file=xyz_file,
-        win_file=win_file
+        win_file=win_file,
+        pos_kind=pos_kind,
     )
     model2 = tbmodels.Model.from_wannier_files(
         hr_file=hr_file, wsvec_file=wsvec_file, win_file=win_file

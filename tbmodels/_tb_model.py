@@ -553,6 +553,7 @@ class Model:
         win_file=None,
         h_cutoff=0.,
         ignore_orbital_order=False,
+        pos_kind='wannier',
         **kwargs
     ):
         """
@@ -597,10 +598,30 @@ class Model:
                     "Positions cannot be read from .xyz file without unit cell given: Transformation from cartesian to reduced coordinates not possible. Specify the unit cell using one of the keywords 'uc' or 'win_file'."
                 )
             with open(xyz_file, 'r') as f:
-                wannier_pos_cartesian, _ = cls._read_xyz(f)
+                wannier_pos_list_cartesian, atom_list_cartesian = cls._read_xyz(
+                    f
+                )
+                wannier_pos_cartesian = np.array(wannier_pos_list_cartesian)
+                atom_pos_cartesian = np.array([
+                    a.pos for a in atom_list_cartesian
+                ])
+                if pos_kind == 'wannier':
+                    pos_cartesian = wannier_pos_cartesian
+                elif pos_kind == 'nearest_atom':
+                    pos_cartesian = []
+                    for p in wannier_pos_cartesian:
+                        distances = la.norm(p - atom_pos_cartesian)
+                        pos_cartesian.append(
+                            atom_pos_cartesian[np.argmin(distances)]
+                        )
+                else:
+                    raise ValueError(
+                        "Invalid value '{}' for 'pos_kind', must be 'wannier' or 'atom_nearest'".
+                        format(pos_kind)
+                    )
                 kwargs['pos'] = la.solve(
                     kwargs['uc'].T,
-                    np.array(wannier_pos_cartesian).T
+                    np.array(pos_cartesian).T
                 ).T
 
         with open(hr_file, 'r') as f:

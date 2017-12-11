@@ -1,4 +1,4 @@
-TBModels
+# TBmodels
 
 A tool for creating, modifying and evaluating tight-binding models
 
