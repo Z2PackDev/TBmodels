@@ -610,7 +610,7 @@ class Model:
                 elif pos_kind == 'nearest_atom':
                     pos_cartesian = []
                     for p in wannier_pos_cartesian:
-                        distances = la.norm(p - atom_pos_cartesian)
+                        distances = la.norm(p - atom_pos_cartesian, axis=-1)
                         pos_cartesian.append(
                             atom_pos_cartesian[np.argmin(distances)]
                         )
