@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 import numbers
 from collections.abc import Iterable
 from functools import singledispatch

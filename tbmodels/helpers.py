@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 This module contains a helper function to create a list of hoppings from a given matrix (:meth:`matrix_to_hop`).
 """

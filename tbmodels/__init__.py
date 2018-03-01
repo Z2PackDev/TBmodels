@@ -1,7 +1,5 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 r"""
-TBModels is a tool for creating / loading and manipulating tight-binding models.
+TBmodels is a tool for creating / loading and manipulating tight-binding models.
 """
 
 from ._version import __version__
