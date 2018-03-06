@@ -13,6 +13,7 @@ import numpy as np
 import scipy.linalg as la
 from fsc.export import export
 
+from . import _check_compatibility
 from ._ptools import sparse_matrix as sp
 
 
@@ -1201,6 +1202,32 @@ class Model:
             **co.ChainMap(dict(hop=new_hop, pos=new_pos), self._input_kwargs)
         )
 
+    @classmethod
+    def join_models(cls, *models):
+        if not models:
+            raise ValueError('At least one model must be given.')
+
+        first_model = model[0]
+        # check dim
+        if not _check_compatibility._check_dim(*models):
+            raise ValueError('Model dimensions do not match.')
+        new_dim = first_model.dim
+
+        # check uc compatibility
+        if not _check_compatibility._check_uc(*models):
+            raise ValueError('Model unit cells do not match.')
+
+        # join positions (must either all be set, or all None)
+
+        # add occ (is set to None if any model has occ=None)
+
+        # combine hop
+        all_R = set()
+        for m in models:
+            all_R.update(m.hop.keys())
+
+        return cls(contains_cc=False, )
+
     def __add__(self, model):
         """
         Adds two models together by adding their hopping terms.
@@ -1228,20 +1255,7 @@ class Model:
             )
 
         # check if the unit cells match
-        uc_match = True
-        if self.uc is None or model.uc is None:
-            if model.uc is not self.uc:
-                uc_match = False
-        else:
-            tolerance = 1e-6
-            for v1, v2 in zip(self.uc, model.uc):
-                if not uc_match:
-                    break
-                for x1, x2 in zip(v1, v2):
-                    if abs(x1 - x2) > tolerance:
-                        uc_match = False
-                        break
-        if not uc_match:
+        if not _check_compatibility._check_uc(self, model):
             raise ValueError(
                 'Error when adding Models: unit cells don\'t match.\nModel 1:\n{0.uc}\n\nModel 2:\n{1.uc}'.
                 format(self, model)
