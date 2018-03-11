@@ -41,7 +41,8 @@ decorator.py
 venv*
 
 # pytest
-.cache/v/cache
+.pytest_cache/v/cache
+tests/.pytest_cache
 tests/.cache
 htmlcov
 tests/.coverage
