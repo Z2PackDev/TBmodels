@@ -20,7 +20,7 @@ before_install:
   - sudo apt-get install -qq liblapack3 liblapack-dev
 
 install:
-  - pip install .[dev]
+  - pip install -U .[dev]
   - pip install git+https://gitlab.kwant-project.org/cwg/wraparound.git
 
 script:
