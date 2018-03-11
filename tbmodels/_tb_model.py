@@ -11,15 +11,14 @@ import h5py
 import numpy as np
 import scipy.linalg as la
 from fsc.export import export
-from fsc.hdf5_io import subscribe_hdf5
-from fsc.hdf5_io.base_classes import Serializable
+from fsc.hdf5_io import subscribe_hdf5, HDF5Enabled
 
 from ._ptools import sparse_matrix as sp
 
 
 @export
 @subscribe_hdf5('tbmodels.model', check_on_load=False)
-class Model(Serializable):
+class Model(HDF5Enabled):
     """
     A class describing a tight-binding model. It contains methods for modifying the model, evaluating the Hamiltonian or eigenvalues at specific k-points, and writing to and from different file formats.
 
