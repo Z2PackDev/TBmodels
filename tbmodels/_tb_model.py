@@ -1197,7 +1197,7 @@ class Model(HDF5Enabled):
         if not models:
             raise ValueError('At least one model must be given.')
 
-        first_model = model[0]
+        first_model = models[0]
         # check dim
         if not _check_compatibility._check_dim(*models):
             raise ValueError('Model dimensions do not match.')
@@ -1206,17 +1206,53 @@ class Model(HDF5Enabled):
         # check uc compatibility
         if not _check_compatibility._check_uc(*models):
             raise ValueError('Model unit cells do not match.')
+        new_uc = first_model.uc
 
         # join positions (must either all be set, or all None)
+        pos_list = list(m.pos for m in models)
+        if any(pos is None for pos in pos_list):
+            if not all(pos is None for pos in pos_list):
+                raise ValueError('Either all or no positions must be set.')
+            new_pos = None
+        else:
+            new_pos = np.concatenate(pos_list)
 
         # add occ (is set to None if any model has occ=None)
+        occ_list = list(m.occ for m in models)
+        if any(occ is None for occ in occ_list):
+            if not all(occ is None for occ in occ_list):
+                raise ValueError(
+                    'Either all occupation numbers must be set, or none.'
+                )
+            new_occ = None
+        else:
+            new_occ = sum(occ_list)
 
         # combine hop
         all_R = set()
         for m in models:
             all_R.update(m.hop.keys())
 
-        return cls(contains_cc=False, )
+        new_hop = dict()
+
+        def _get_mat(m, R):
+            hop_mat = m.hop[R]
+            if m._sparse:
+                return hop_mat.toarray()
+            return hop_mat
+
+        for R in all_R:
+            hop_list = [_get_mat(m, R) for m in models]
+            new_hop[R] = la.block_diag(*hop_list)
+
+        return cls(
+            dim=new_dim,
+            uc=new_uc,
+            pos=new_pos,
+            occ=new_occ,
+            hop=new_hop,
+            contains_cc=False
+        )
 
     def __add__(self, model):
         """
