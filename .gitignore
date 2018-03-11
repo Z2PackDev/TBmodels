@@ -41,7 +41,8 @@ decorator.py
 venv*
 
 # pytest
-.cache/v/cache
+.pytest_cache/v/cache
+tests/.pytest_cache
 tests/.cache
 htmlcov
 tests/.coverage
@@ -52,3 +53,6 @@ playground
 
 # mypy
 .mypy_cache
+
+# Atom ide-python
+.ropeproject

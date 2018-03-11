@@ -1,7 +1,6 @@
 import re
 import os
 import copy
-import json
 import time
 import warnings
 import itertools
@@ -12,12 +11,14 @@ import h5py
 import numpy as np
 import scipy.linalg as la
 from fsc.export import export
+from fsc.hdf5_io import subscribe_hdf5, HDF5Enabled
 
 from ._ptools import sparse_matrix as sp
 
 
 @export
-class Model:
+@subscribe_hdf5('tbmodels.model', check_on_load=False)
+class Model(HDF5Enabled):
     """
     A class describing a tight-binding model. It contains methods for modifying the model, evaluating the Hamiltonian or eigenvalues at specific k-points, and writing to and from different file formats.
 
@@ -867,10 +868,10 @@ class Model:
 
     @classmethod
     def from_hdf5(cls, hdf5_handle, **kwargs):
+        # For compatibility with a development version which created a top-level
+        # 'tb_model' attribute.
         try:
             tb_model_group = hdf5_handle['tb_model']
-        # for backwards compatibility with v.1.1, which didn't have the
-        # top-level 'tb_model' attribute
         except KeyError:
             tb_model_group = hdf5_handle
         new_kwargs = {}
@@ -893,27 +894,16 @@ class Model:
             new_kwargs['contains_cc'] = False
         return cls(**co.ChainMap(kwargs, new_kwargs))
 
-    def to_hdf5_file(self, hdf5_file):
-        """
-        Serializes the model instance to a file in HDF5 format.
-
-        :param hdf5_file: Path of the output file.
-        :type hdf5_file: str
-        """
-        with h5py.File(hdf5_file, 'w') as f:
-            self.to_hdf5(f)
-
     def to_hdf5(self, hdf5_handle):
-        tb_model_group = hdf5_handle.create_group('tb_model')
         if self.uc is not None:
-            tb_model_group['uc'] = self.uc
+            hdf5_handle['uc'] = self.uc
         if self.occ is not None:
-            tb_model_group['occ'] = self.occ
-        tb_model_group['size'] = self.size
-        tb_model_group['dim'] = self.dim
-        tb_model_group['pos'] = self.pos
-        tb_model_group['sparse'] = self._sparse
-        hop = tb_model_group.create_group('hop')
+            hdf5_handle['occ'] = self.occ
+        hdf5_handle['size'] = self.size
+        hdf5_handle['dim'] = self.dim
+        hdf5_handle['pos'] = self.pos
+        hdf5_handle['sparse'] = self._sparse
+        hop = hdf5_handle.create_group('hop')
         for i, (R, mat) in enumerate(self.hop.items()):
             group = hop.create_group(str(i))
             group['R'] = R
