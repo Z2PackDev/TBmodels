@@ -1226,10 +1226,6 @@ class Model(HDF5Enabled):
         # add occ (is set to None if any model has occ=None)
         occ_list = list(m.occ for m in models)
         if any(occ is None for occ in occ_list):
-            if not all(occ is None for occ in occ_list):
-                raise ValueError(
-                    'Either all occupation numbers must be set, or none.'
-                )
             new_occ = None
         else:
             new_occ = sum(occ_list)
