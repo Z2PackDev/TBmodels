@@ -1194,6 +1194,12 @@ class Model(HDF5Enabled):
 
     @classmethod
     def join_models(cls, *models):
+        """
+        Creates a tight-binding model which contains all orbitals of the given input models. The orbitals are ordered by model, such that the resulting Hamiltonian is block-diagonal.
+
+        :param models: Models which should be joined together.
+        :type models: tbmodels.Model
+        """
         if not models:
             raise ValueError('At least one model must be given.')
 
