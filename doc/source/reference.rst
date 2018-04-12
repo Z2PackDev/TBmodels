@@ -12,6 +12,7 @@ Model Class
 .. autoclass:: tbmodels.Model
     :members:
     :special-members:
+    :inherited-members:
 
 
 Helper functions

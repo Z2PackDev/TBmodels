@@ -33,7 +33,8 @@ import tbmodels
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc', 'sphinx.ext.mathjax', 'sphinx.ext.intersphinx'
+    'sphinx.ext.autodoc', 'sphinx.ext.mathjax', 'sphinx.ext.intersphinx',
+    'sphinx.ext.viewcode'
 ]
 
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
