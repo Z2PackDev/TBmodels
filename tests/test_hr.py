@@ -9,9 +9,7 @@ import numpy as np
 kpt = [(0.1, 0.2, 0.7), (-0.3, 0.5, 0.2), (0., 0., 0.), (0.1, -0.9, -0.7)]
 
 
-@pytest.mark.parametrize(
-    'hr_name', ['hr_hamilton.dat', 'wannier90_hr.dat', 'wannier90_hr_v2.dat']
-)
+@pytest.mark.parametrize('hr_name', ['hr_hamilton.dat', 'wannier90_hr.dat', 'wannier90_hr_v2.dat'])
 def test_hr(compare_isclose, hr_name, sample):
     hr_file = sample(hr_name)
     model = tbmodels.Model.from_hr_file(hr_file, occ=28)
@@ -19,9 +17,7 @@ def test_hr(compare_isclose, hr_name, sample):
     compare_isclose(H_list)
 
 
-@pytest.mark.parametrize(
-    'hr_name', ['wannier90_inconsistent.dat', 'wannier90_inconsistent_v2.dat']
-)
+@pytest.mark.parametrize('hr_name', ['wannier90_inconsistent.dat', 'wannier90_inconsistent_v2.dat'])
 def test_inconsistent(hr_name, sample):
     with pytest.raises(ValueError):
         model = tbmodels.Model.from_hr_file(sample(hr_name))
@@ -39,6 +35,4 @@ def test_emptylines(sample):
 
 def test_error(sample):
     with pytest.raises(ValueError):
-        tbmodels.Model.from_hr_file(
-            sample('hr_hamilton.dat'), occ=28, pos=[[1., 1., 1.]]
-        )
+        tbmodels.Model.from_hr_file(sample('hr_hamilton.dat'), occ=28, pos=[[1., 1., 1.]])

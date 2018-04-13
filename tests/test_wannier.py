@@ -9,12 +9,7 @@ import numpy as np
 kpt = [(0.1, 0.2, 0.7), (-0.3, 0.5, 0.2), (0., 0., 0.), (0.1, -0.9, -0.7)]
 
 
-@pytest.mark.parametrize(
-    'hr_name', [
-        'hr_hamilton.dat', 'wannier90_hr.dat', 'wannier90_hr_v2.dat',
-        'silicon_hr.dat'
-    ]
-)
+@pytest.mark.parametrize('hr_name', ['hr_hamilton.dat', 'wannier90_hr.dat', 'wannier90_hr_v2.dat', 'silicon_hr.dat'])
 def test_wannier_hr_only(compare_isclose, hr_name, sample):
     hr_file = sample(hr_name)
     model = tbmodels.Model.from_wannier_files(hr_file=hr_file, occ=28)
@@ -24,22 +19,18 @@ def test_wannier_hr_only(compare_isclose, hr_name, sample):
 
 
 @pytest.mark.parametrize(
-    'hr_name, wsvec_name', [('silicon_hr.dat', 'silicon_wsvec.dat'),
-                            ('bi_hr.dat', 'bi_wsvec.dat')]
+    'hr_name, wsvec_name', [('silicon_hr.dat', 'silicon_wsvec.dat'), ('bi_hr.dat', 'bi_wsvec.dat')]
 )
 def test_wannier_hr_wsvec(compare_isclose, hr_name, wsvec_name, sample):
-    model = tbmodels.Model.from_wannier_files(
-        hr_file=sample(hr_name), wsvec_file=sample(wsvec_name)
-    )
+    model = tbmodels.Model.from_wannier_files(hr_file=sample(hr_name), wsvec_file=sample(wsvec_name))
     H_list = np.array([model.hamilton(k) for k in kpt])
 
     compare_isclose(H_list)
 
 
 @pytest.mark.parametrize(
-    'hr_name, wsvec_name, xyz_name',
-    [('silicon_hr.dat', 'silicon_wsvec.dat', 'silicon_centres.xyz'),
-     ('bi_hr.dat', 'bi_wsvec.dat', 'bi_centres.xyz')]
+    'hr_name, wsvec_name, xyz_name', [('silicon_hr.dat', 'silicon_wsvec.dat', 'silicon_centres.xyz'),
+                                      ('bi_hr.dat', 'bi_wsvec.dat', 'bi_centres.xyz')]
 )
 def test_wannier_hr_wsvec_xyz(hr_name, wsvec_name, xyz_name, sample):
     hr_file = sample(hr_name)
@@ -47,9 +38,7 @@ def test_wannier_hr_wsvec_xyz(hr_name, wsvec_name, xyz_name, sample):
     xyz_file = sample(xyz_name)
     # cannot determine reduced pos if uc is not given
     with pytest.raises(ValueError):
-        model = tbmodels.Model.from_wannier_files(
-            hr_file=hr_file, wsvec_file=wsvec_file, xyz_file=xyz_file
-        )
+        model = tbmodels.Model.from_wannier_files(hr_file=hr_file, wsvec_file=wsvec_file, xyz_file=xyz_file)
 
 
 @pytest.mark.parametrize(
@@ -135,8 +124,7 @@ def test_wannier_hr_wsvec_xyz(hr_name, wsvec_name, xyz_name, sample):
     )]
 )
 def test_wannier_all(
-    compare_isclose, hr_name, wsvec_name, xyz_name, win_name, pos, uc,
-    reciprocal_lattice, sample, pos_kind
+    compare_isclose, hr_name, wsvec_name, xyz_name, win_name, pos, uc, reciprocal_lattice, sample, pos_kind
 ):
     hr_file = sample(hr_name)
     wsvec_file = sample(wsvec_name)
@@ -149,9 +137,7 @@ def test_wannier_all(
         win_file=win_file,
         pos_kind=pos_kind,
     )
-    model2 = tbmodels.Model.from_wannier_files(
-        hr_file=hr_file, wsvec_file=wsvec_file, win_file=win_file
-    )
+    model2 = tbmodels.Model.from_wannier_files(hr_file=hr_file, wsvec_file=wsvec_file, win_file=win_file)
     H_list = np.array([model.hamilton(k) for k in kpt])
     H_list2 = np.array([model.hamilton(k) for k in kpt])
 
@@ -162,9 +148,7 @@ def test_wannier_all(
     assert np.allclose(model.reciprocal_lattice, reciprocal_lattice)
 
 
-@pytest.mark.parametrize(
-    'hr_name', ['hr_hamilton.dat', 'wannier90_hr.dat', 'wannier90_hr_v2.dat']
-)
+@pytest.mark.parametrize('hr_name', ['hr_hamilton.dat', 'wannier90_hr.dat', 'wannier90_hr_v2.dat'])
 def test_wannier_hr_equal(models_equal, hr_name, sample):
     hr_file = sample(hr_name)
     model1 = tbmodels.Model.from_hr_file(hr_file, occ=28)
@@ -172,9 +156,7 @@ def test_wannier_hr_equal(models_equal, hr_name, sample):
     models_equal(model1, model2)
 
 
-@pytest.mark.parametrize(
-    'hr_name', ['wannier90_inconsistent.dat', 'wannier90_inconsistent_v2.dat']
-)
+@pytest.mark.parametrize('hr_name', ['wannier90_inconsistent.dat', 'wannier90_inconsistent_v2.dat'])
 def test_inconsistent(hr_name, sample):
     with pytest.raises(ValueError):
         model = tbmodels.Model.from_wannier_files(hr_file=sample(hr_name))
@@ -182,12 +164,8 @@ def test_inconsistent(hr_name, sample):
 
 def test_emptylines(sample):
     """test whether the input file with some random empty lines is correctly parsed"""
-    model1 = tbmodels.Model.from_wannier_files(
-        hr_file=sample('wannier90_hr.dat')
-    )
-    model2 = tbmodels.Model.from_wannier_files(
-        hr_file=sample('wannier90_hr_v2.dat')
-    )
+    model1 = tbmodels.Model.from_wannier_files(hr_file=sample('wannier90_hr.dat'))
+    model2 = tbmodels.Model.from_wannier_files(hr_file=sample('wannier90_hr_v2.dat'))
     hop1 = model1.hop
     hop2 = model2.hop
     for k in hop1.keys() | hop2.keys():
@@ -196,6 +174,4 @@ def test_emptylines(sample):
 
 def test_error(sample):
     with pytest.raises(ValueError):
-        tbmodels.Model.from_wannier_files(
-            hr_file=sample('hr_hamilton.dat'), occ=28, pos=[[1., 1., 1.]]
-        )
+        tbmodels.Model.from_wannier_files(hr_file=sample('hr_hamilton.dat'), occ=28, pos=[[1., 1., 1.]])

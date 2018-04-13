@@ -8,9 +8,7 @@ import subprocess
 import tbmodels as tb
 
 if __name__ == '__main__':
-    WANNIER90_COMMAND = os.path.expanduser(
-        '~/programming/wannier90/wannier90.x'
-    )
+    WANNIER90_COMMAND = os.path.expanduser('~/programming/wannier90/wannier90.x')
     BUILD_DIR = './build'
 
     shutil.rmtree(BUILD_DIR, ignore_errors=True)

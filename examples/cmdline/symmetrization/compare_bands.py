@@ -46,14 +46,10 @@ def compare_bands_plot(model1, model2, structure):
 if __name__ == '__main__':
     model_nosym = tbmodels.Model.from_hdf5_file('data/model_nosym.hdf5')
     model_sym = tbmodels.Model.from_hdf5_file('results/model_symmetrized.hdf5')
-    reference_model = tbmodels.Model.from_hdf5_file(
-        'data/reference_model.hdf5'
-    )
+    reference_model = tbmodels.Model.from_hdf5_file('data/reference_model.hdf5')
 
     structure = mg.Structure(
-        lattice=model_nosym.uc,
-        species=['In', 'As'],
-        coords=np.array([[0, 0, 0], [0.25, 0.25, 0.25]])
+        lattice=model_nosym.uc, species=['In', 'As'], coords=np.array([[0, 0, 0], [0.25, 0.25, 0.25]])
     )
 
     compare_bands_plot(model_nosym, model_sym, structure)

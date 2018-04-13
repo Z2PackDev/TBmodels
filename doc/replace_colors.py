@@ -40,7 +40,5 @@ if __name__ == "__main__":
         ['#409AD5', '#D54040'],
     ]
 
-    replace_all(
-        os.path.join(builddir, '_static/css/theme.css'), color_replacements
-    )
+    replace_all(os.path.join(builddir, '_static/css/theme.css'), color_replacements)
     print("replace_colors.py")

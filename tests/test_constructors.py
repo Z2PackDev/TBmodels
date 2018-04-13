@@ -59,20 +59,14 @@ def test_from_hop_list(get_model, models_equal, sparse):
     t1 = 0.1
     t2 = 0.2
     hoppings = []
-    for phase, R in zip([1, -1j, 1j, -1],
-                        itertools.product([0, -1], [0, -1], [0])):
+    for phase, R in zip([1, -1j, 1j, -1], itertools.product([0, -1], [0, -1], [0])):
         hoppings.append([t1 * phase, 0, 1, R])
 
     for R in ((r[0], r[1], 0) for r in itertools.permutations([0, 1])):
         hoppings.append([t2, 0, 0, R])
         hoppings.append([-t2, 1, 1, R])
     model1 = tbmodels.Model.from_hop_list(
-        hop_list=hoppings,
-        contains_cc=False,
-        on_site=(1, -1),
-        occ=1,
-        pos=((0., ) * 3, (0.5, 0.5, 0.)),
-        sparse=sparse
+        hop_list=hoppings, contains_cc=False, on_site=(1, -1), occ=1, pos=((0., ) * 3, (0.5, 0.5, 0.)), sparse=sparse
     )
     model2 = get_model(t1, t2, sparse=sparse)
     models_equal(model1, model2)
@@ -83,12 +77,10 @@ def test_from_hop_list_with_cc(get_model, models_close, sparse):
     t1 = 0.1
     t2 = 0.2
     hoppings = []
-    for phase, R in zip([1, -1j, 1j, -1],
-                        itertools.product([0, -1], [0, -1], [0])):
+    for phase, R in zip([1, -1j, 1j, -1], itertools.product([0, -1], [0, -1], [0])):
         hoppings.append([t1 * phase, 0, 1, R])
 
-    for phase, R in zip([1, -1j, 1j, -1],
-                        itertools.product([0, -1], [0, -1], [0])):
+    for phase, R in zip([1, -1j, 1j, -1], itertools.product([0, -1], [0, -1], [0])):
         hoppings.append([np.conjugate(t1 * phase), 1, 0, tuple(-x for x in R)])
 
     for R in ((r[0], r[1], 0) for r in itertools.permutations([0, 1])):
@@ -97,12 +89,7 @@ def test_from_hop_list_with_cc(get_model, models_close, sparse):
         hoppings.append([-t2, 1, 1, R])
         hoppings.append([-t2, 1, 1, tuple(-x for x in R)])
     model1 = tbmodels.Model.from_hop_list(
-        hop_list=hoppings,
-        contains_cc=True,
-        on_site=(1, -1),
-        occ=1,
-        pos=((0., ) * 3, (0.5, 0.5, 0.)),
-        sparse=sparse
+        hop_list=hoppings, contains_cc=True, on_site=(1, -1), occ=1, pos=((0., ) * 3, (0.5, 0.5, 0.)), sparse=sparse
     )
     model2 = get_model(t1, t2, sparse=sparse)
     models_close(model1, model2)
@@ -113,20 +100,14 @@ def test_pos_outside_uc_with_hoppings(get_model, models_equal, sparse):
     t1 = 0.1
     t2 = 0.2
     hoppings = []
-    for phase, R in zip([1, -1j, 1j, -1], [(1, 1, 0), (1, 0, 0), (0, 1, 0),
-                                           (0, 0, 0)]):
+    for phase, R in zip([1, -1j, 1j, -1], [(1, 1, 0), (1, 0, 0), (0, 1, 0), (0, 0, 0)]):
         hoppings.append([t1 * phase, 0, 1, R])
 
     for R in ((r[0], r[1], 0) for r in itertools.permutations([0, 1])):
         hoppings.append([t2, 0, 0, R])
         hoppings.append([-t2, 1, 1, R])
     model1 = tbmodels.Model.from_hop_list(
-        hop_list=hoppings,
-        contains_cc=False,
-        on_site=(1, -1),
-        occ=1,
-        pos=((0., ) * 3, (-0.5, -0.5, 0.)),
-        sparse=sparse
+        hop_list=hoppings, contains_cc=False, on_site=(1, -1), occ=1, pos=((0., ) * 3, (-0.5, -0.5, 0.)), sparse=sparse
     )
     model2 = get_model(t1, t2, sparse=sparse)
     models_equal(model1, model2)
@@ -139,30 +120,20 @@ def test_invalid_hopping_matrix():
 
 def test_non_hermitian_1():
     with pytest.raises(ValueError):
-        model = tbmodels.Model(
-            size=2, hop={(0, 0, 0): np.eye(2),
-                         (1, 0, 0): np.eye(2)}
-        )
+        model = tbmodels.Model(size=2, hop={(0, 0, 0): np.eye(2), (1, 0, 0): np.eye(2)})
 
 
 def test_non_hermitian_2():
     with pytest.raises(ValueError):
-        model = tbmodels.Model(
-            size=2,
-            hop={(0, 0, 0): np.eye(2),
-                 (1, 0, 0): np.eye(2),
-                 (-1, 0, 0): 2 * np.eye(2)}
-        )
+        model = tbmodels.Model(size=2, hop={(0, 0, 0): np.eye(2), (1, 0, 0): np.eye(2), (-1, 0, 0): 2 * np.eye(2)})
 
 
 def test_wrong_key_length():
     with pytest.raises(ValueError):
         model = tbmodels.Model(
-            size=2,
-            hop={(0, 0, 0): np.eye(2),
-                 (1, 0, 0): np.eye(2),
-                 (-1, 0, 0, 0): np.eye(2)},
-            contains_cc=False
+            size=2, hop={(0, 0, 0): np.eye(2),
+                         (1, 0, 0): np.eye(2),
+                         (-1, 0, 0, 0): np.eye(2)}, contains_cc=False
         )
 
 

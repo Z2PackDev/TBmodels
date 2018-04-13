@@ -27,8 +27,5 @@ def matrix_to_hop(mat, orbitals=None, R=(0, 0, 0), multiplier=1.):
     hop = []
     for i, row in enumerate(mat):
         for j, x in enumerate(row):
-            hop.append([
-                multiplier * x, orbitals[i], orbitals[j],
-                np.array(R, dtype=int)
-            ])
+            hop.append([multiplier * x, orbitals[i], orbitals[j], np.array(R, dtype=int)])
     return hop

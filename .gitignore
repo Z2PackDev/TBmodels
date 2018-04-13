@@ -56,3 +56,6 @@ playground
 
 # Atom ide-python
 .ropeproject
+
+# Tox
+.tox

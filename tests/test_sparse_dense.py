@@ -33,9 +33,7 @@ def test_change_to_sparse(t1, get_model, models_close):
     assert models_close(model1, model2)
 
 
-@pytest.mark.parametrize(
-    'hr_name', ['hr_hamilton.dat', 'wannier90_hr.dat', 'wannier90_hr_v2.dat']
-)
+@pytest.mark.parametrize('hr_name', ['hr_hamilton.dat', 'wannier90_hr.dat', 'wannier90_hr_v2.dat'])
 def test_hr(hr_name, sample):
     hr_file = sample(hr_name)
     model1 = tbmodels.Model.from_hr_file(hr_file, occ=28, sparse=False)
