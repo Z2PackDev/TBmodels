@@ -10,13 +10,12 @@ import random
 import numpy as np
 import scipy.linalg as la
 import matplotlib.pyplot as plt
-
 import tbmodels as tb
-from tbmodels.helpers import SymmetryOperation, Representation
-
 import pymatgen as mg
 import pymatgen.symmetry.analyzer
 import pymatgen.symmetry.bandstructure
+from symmetry_representation import SymmetryOperation
+
 
 def spin_reps(prep):
     """
@@ -47,7 +46,7 @@ def spin_reps(prep):
             else:
                 n /= np.linalg.norm(n)
                 spin = np.round(D12(n[0], n[1], n[2], theta), 15)
-        else:  # case of unitiy
+        else:  # case of unity
             spin = D12(0, 0, 0, 0)
     elif det == -1.:  # improper rotations and reflections
         theta = np.arccos(0.5 * (tr + 1.))
@@ -64,11 +63,11 @@ def spin_reps(prep):
             else:
                 n /= np.linalg.norm(n)
                 # rotation followed by reflection:
-                spin = np.round(
-                    np.dot(D12(n[0], n[1], n[2], np.pi), D12(n[0], n[1], n[2], theta)), 15)
+                spin = np.round(np.dot(D12(n[0], n[1], n[2], np.pi), D12(n[0], n[1], n[2], theta)), 15)
         else:  # case of inversion (does not do anything to spin)
             spin = D12(0, 0, 0, 0)
     return np.array(spin)
+
 
 def compare_bands_plot(model1, model2, structure):
     path = mg.symmetry.bandstructure.HighSymmKpath(structure)
@@ -101,6 +100,7 @@ def compare_bands_plot(model1, model2, structure):
     plt.ylim([-6, 6])
     plt.savefig('results/compare_bands.pdf', bbox_inches='tight')
 
+
 if __name__ == '__main__':
     model_nosym = tb.Model.from_hdf5_file('data/model_nosym.hdf5')
     reference_model = tb.Model.from_hdf5_file('data/reference_model.hdf5')
@@ -111,17 +111,11 @@ if __name__ == '__main__':
 
     # set up symmetry operations
     time_reversal = SymmetryOperation(
-        rotation_matrix=np.eye(3),
-        repr=Representation(
-            complex_conjugate=True,
-            matrix=np.kron([[0, -1j], [1j, 0]], np.eye(7))
-        )
+        rotation_matrix=np.eye(3), repr_matrix=np.kron([[0, -1j], [1j, 0]], np.eye(7)), repr_has_cc=True
     )
 
     structure = mg.Structure(
-        lattice=model_nosym.uc,
-        species=['In', 'As'],
-        coords=np.array([[0, 0, 0], [0.25, 0.25, 0.25]])
+        lattice=model_nosym.uc, species=['In', 'As'], coords=np.array([[0, 0, 0], [0.25, 0.25, 0.25]])
     )
 
     # get real-space representations
@@ -146,12 +140,9 @@ if __name__ == '__main__':
         SymmetryOperation(
             # r-space and k-space matrices are related by transposing and inverting
             rotation_matrix=rot,
-            repr=Representation(
-                complex_conjugate=False,
-                matrix=repr_mat
-            )
-        )
-        for rot, repr_mat in zip(rots, reps)
+            repr_matrix=repr_mat,
+            repr_has_cc=False
+        ) for rot, repr_mat in zip(rots, reps)
     ]
 
     os.makedirs('results', exist_ok=True)

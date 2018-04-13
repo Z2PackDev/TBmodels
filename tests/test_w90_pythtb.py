@@ -1,25 +1,21 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#
-# Author:  Dominik Gresch <greschd@gmx.ch>
-
-import os
 
 import pytest
 import numpy as np
 import pythtb as pt
 import tbmodels as tb
 
-from parameters import SAMPLES_DIR
 
-def test_si_pythtb():
-    pt_model = pt.w90(SAMPLES_DIR, 'silicon').model()
+@pytest.mark.parametrize('prefix', ['silicon'])  # bi takes too long
+def test_consistency_pythtb(prefix, sample):
+    pt_model = pt.w90(sample(''), prefix).model()
     tb_model = tb.Model.from_wannier_files(
-        hr_file=os.path.join(SAMPLES_DIR, 'silicon_hr.dat'),
-        win_file=os.path.join(SAMPLES_DIR, 'silicon.win'),
+        hr_file=sample(prefix + '_hr.dat'),
+        win_file=sample(prefix + '.win'),
         # This might be needed if pythtb supports wsvec.dat
-        # wsvec_file=os.path.join(SAMPLES_DIR, 'silicon_wsvec.dat'),
-        xyz_file=os.path.join(SAMPLES_DIR, 'silicon_centres.xyz')
+        # wsvec_file=sample('silicon_wsvec.dat'),
+        xyz_file=sample(prefix + '_centres.xyz')
     )
 
     assert np.allclose(pt_model._gen_ham([0, 0, 0]), tb_model.hamilton([0, 0, 0]))

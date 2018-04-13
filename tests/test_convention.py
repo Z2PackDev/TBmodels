@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#
-# Author:  Dominik Gresch <greschd@gmx.ch>
 
 import numpy as np
 import pythtb as pt
 import tbmodels as tb
+
 
 def test_compare_pythtb():
     pt_model = pt.tb_model(1, 1, lat=[[1]], orb=[[0], [0.2]])

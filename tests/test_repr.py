@@ -1,9 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#
-# Author:  Dominik Gresch <greschd@gmx.ch>
-# Date:    15.10.2014 10:22:43 CEST
-# File:    repr.py
 
 import pytest
 import tbmodels
@@ -13,6 +9,7 @@ import numpy as np
 from tbmodels._ptools.sparse_matrix import csr
 
 from parameters import T_VALUES, KPT
+
 
 @pytest.mark.parametrize('t', T_VALUES)
 def test_repr_reload(t, get_model):

@@ -12,4 +12,3 @@ import tbmodels as tb
 
 #~ res1 = model_1.to_kwant_lattice()
 #~ res2 = model_2.to_kwant_lattice()
-
