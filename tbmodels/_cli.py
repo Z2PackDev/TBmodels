@@ -16,9 +16,7 @@ def cli():
 
 
 def _output_option(**kwargs):
-    return click.option(
-        '--output', '-o', type=click.Path(dir_okay=False), **kwargs
-    )
+    return click.option('--output', '-o', type=click.Path(dir_okay=False), **kwargs)
 
 
 _input_option = click.option(
@@ -49,13 +47,7 @@ def _write_output(model, output):
     default='.',
     help='Directory containing the Wannier90 output files.'
 )
-@click.option(
-    '--prefix',
-    '-p',
-    type=str,
-    default='wannier',
-    help='Common prefix of the Wannier90 output files.'
-)
+@click.option('--prefix', '-p', type=str, default='wannier', help='Common prefix of the Wannier90 output files.')
 @click.option(
     '--pos-kind',
     type=click.Choice(['wannier', 'nearest_atom']),
@@ -67,31 +59,20 @@ def parse(folder, prefix, output, pos_kind):
     """
     Parse Wannier90 output files and create an HDF5 file containing the tight-binding model.
     """
-    click.echo(
-        "Parsing output files '{}*' ...".format(os.path.join(folder, prefix))
-    )
-    model = Model.from_wannier_folder(
-        folder=folder,
-        prefix=prefix,
-        ignore_orbital_order=True,
-        pos_kind=pos_kind
-    )
+    click.echo("Parsing output files '{}*' ...".format(os.path.join(folder, prefix)))
+    model = Model.from_wannier_folder(folder=folder, prefix=prefix, ignore_orbital_order=True, pos_kind=pos_kind)
     _write_output(model, output)
 
 
 @cli.command(short_help='Create symmetrized tight-binding model.')
 @_input_option
-@_output_option(
-    default='model_symmetrized.hdf5',
-    help='Output file for the symmetrized model.'
-)
+@_output_option(default='model_symmetrized.hdf5', help='Output file for the symmetrized model.')
 @click.option(
     '--symmetries',
     '-s',
     type=click.Path(),
     default='symmetries.hdf5',
-    help=
-    'File containing symmetry_representation.SymmetryGroup objects (in HDF5 form).'
+    help='File containing symmetry_representation.SymmetryGroup objects (in HDF5 form).'
 )
 @click.option(
     '--full-group/--no-full-group',
@@ -142,17 +123,14 @@ def _(sym, model, full_group):
 def _(sym, model, full_group):
     sym_group = sr.SymmetryGroup(
         symmetries=[sym],
-        full_group=full_group
-        or False  # catches 'None', does nothing for 'True' or 'False'
+        full_group=full_group or False  # catches 'None', does nothing for 'True' or 'False'
     )
     return _symmetrize(sym_group, model, full_group)
 
 
 @cli.command(short_help="Slice specific orbitals from model.")
 @_input_option
-@_output_option(
-    default='model_sliced.hdf5', help='Output file for the sliced model.'
-)
+@_output_option(default='model_sliced.hdf5', help='Output file for the sliced model.')
 @click.argument(
     'slice-idx',
     type=int,
@@ -177,9 +155,7 @@ def slice(input, output, slice_idx):
     default='kpoints.hdf5',
     help='File containing the k-points for which the eigenvalues are evaluated.'
 )
-@_output_option(
-    default='eigenvals.hdf5', help='Output file for the energy eigenvalues.'
-)
+@_output_option(default='eigenvals.hdf5', help='Output file for the energy eigenvalues.')
 def eigenvals(input, kpoints, output):
     """
     Calculate the energy eigenvalues for a given set of k-points (in reduced coordinates). The input and output is given in an HDF5 file.
@@ -189,13 +165,8 @@ def eigenvals(input, kpoints, output):
     kpts = bi.io.load(kpoints)
 
     click.echo("Calculating energy eigenvalues ...")
-    eigenvalues = bi.eigenvals.EigenvalsData.from_eigenval_function(
-        kpoints=kpts, eigenval_function=model.eigenval
-    )
+    eigenvalues = bi.eigenvals.EigenvalsData.from_eigenval_function(kpoints=kpts, eigenval_function=model.eigenval)
 
-    click.echo(
-        "Writing kpoints and energy eigenvalues to file '{}' ...".
-        format(output)
-    )
+    click.echo("Writing kpoints and energy eigenvalues to file '{}' ...".format(output))
     bi.io.save(eigenvalues, output)
     click.echo("Done!")

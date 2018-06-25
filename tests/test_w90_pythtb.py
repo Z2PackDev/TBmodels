@@ -18,17 +18,10 @@ def test_consistency_pythtb(prefix, sample):
         xyz_file=sample(prefix + '_centres.xyz')
     )
 
-    assert np.allclose(
-        pt_model._gen_ham([0, 0, 0]), tb_model.hamilton([0, 0, 0])
-    )
-    assert np.allclose(
-        pt_model._gen_ham([0, 0, 0]), tb_model.hamilton([0, 0, 0],
-                                                        convention=1)
-    )
+    assert np.allclose(pt_model._gen_ham([0, 0, 0]), tb_model.hamilton([0, 0, 0]))
+    assert np.allclose(pt_model._gen_ham([0, 0, 0]), tb_model.hamilton([0, 0, 0], convention=1))
 
     k = (0.123412512, 0.6234615, 0.72435235)
-    assert np.allclose(
-        pt_model._gen_ham(k), tb_model.hamilton(k, convention=1)
-    )
+    assert np.allclose(pt_model._gen_ham(k), tb_model.hamilton(k, convention=1))
     assert np.allclose(pt_model.get_lat(), tb_model.uc)
     assert np.allclose(pt_model.get_orb() % 1, tb_model.pos)

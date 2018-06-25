@@ -94,9 +94,7 @@ def models_close():
             print('k:', k)
             print('model1:\n', np.array(model1.hop[k]))
             print('model2:\n', np.array(model2.hop[k]))
-            assert np.isclose(
-                np.array(model1.hop[k]), np.array(model2.hop[k])
-            ).all()
+            assert np.isclose(np.array(model1.hop[k]), np.array(model2.hop[k])).all()
         if model1.pos is None:
             assert model1.pos == model2.pos
         else:
@@ -111,11 +109,7 @@ def models_close():
 @pytest.fixture
 def sample():
     def inner(name):
-        return os.path.join(
-            os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), 'samples'
-            ), name
-        )
+        return os.path.join(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'samples'), name)
 
     return inner
 
@@ -139,8 +133,7 @@ def get_model_clean():
         defaults['sparse'] = sparsity_default
         model = tbmodels.Model(**ChainMap(kwargs, defaults))
 
-        for phase, R in zip([1, -1j, 1j, -1],
-                            itertools.product([0, -1], [0, -1], [0])):
+        for phase, R in zip([1, -1j, 1j, -1], itertools.product([0, -1], [0, -1], [0])):
             model.add_hop(t1 * phase, 0, 1, R)
 
         for R in ((r[0], r[1], 0) for r in itertools.permutations([0, 1])):

@@ -15,11 +15,6 @@ def test_consistency(get_model_clean, models_equal, sparse):
         hoppings.extend(tbmodels.helpers.matrix_to_hop(np.array(v), R=k))
 
     model2 = tbmodels.Model.from_hop_list(
-        size=2,
-        hop_list=hoppings,
-        contains_cc=False,
-        occ=1,
-        pos=((0., ) * 3, (0.5, 0.5, 0.)),
-        sparse=sparse
+        size=2, hop_list=hoppings, contains_cc=False, occ=1, pos=((0., ) * 3, (0.5, 0.5, 0.)), sparse=sparse
     )
     models_equal(model1, model2)

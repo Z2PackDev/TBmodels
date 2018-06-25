@@ -28,6 +28,4 @@ def test_cli_eigenvals(sample):
         print(run.output)
         res = bi.io.load(out_file.name)
     reference = bi.io.load(os.path.join(samples_dir, 'silicon_eigenvals.hdf5'))
-    np.testing.assert_allclose(
-        bi.compare.difference.general(res, reference), 0, atol=1e-10
-    )
+    np.testing.assert_allclose(bi.compare.difference.general(res, reference), 0, atol=1e-10)

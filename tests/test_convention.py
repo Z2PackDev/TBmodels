@@ -14,13 +14,7 @@ def test_compare_pythtb():
     tb_model.add_hop(3j, 0, 1, [1])
 
     assert np.isclose(pt_model._gen_ham([0]), tb_model.hamilton([0])).all()
-    assert np.isclose(
-        pt_model._gen_ham([0]), tb_model.hamilton([0], convention=1)
-    ).all()
+    assert np.isclose(pt_model._gen_ham([0]), tb_model.hamilton([0], convention=1)).all()
 
-    assert np.isclose(
-        pt_model._gen_ham([1]), tb_model.hamilton([1], convention=1)
-    ).all()
-    assert np.isclose(
-        pt_model._gen_ham([0.2]), tb_model.hamilton(0.2, convention=1)
-    ).all()
+    assert np.isclose(pt_model._gen_ham([1]), tb_model.hamilton([1], convention=1)).all()
+    assert np.isclose(pt_model._gen_ham([0.2]), tb_model.hamilton(0.2, convention=1)).all()

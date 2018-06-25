@@ -53,8 +53,6 @@ def test_add_invalid_pos(get_model, compare_equal):
 
 def test_add_invalid_pos_2(get_model, compare_equal):
     m1 = tbmodels.Model.from_hop_list(size=2, dim=2, pos=((0, 0), (0, 0)))
-    m2 = tbmodels.Model.from_hop_list(
-        size=2, dim=2, pos=((0.5, 0), (0.5, 0.5))
-    )
+    m2 = tbmodels.Model.from_hop_list(size=2, dim=2, pos=((0.5, 0), (0.5, 0.5)))
     with pytest.raises(ValueError):
         m1 + m2
