@@ -683,6 +683,12 @@ class Model(HDF5Enabled):
                 mapping[key] = val
 
         # here we can continue parsing the individual keys as needed
+        if 'length_unit' in mapping:
+            length_unit = mapping['length_unit'].strip().lower()
+        else:
+            length_unit = 'ang'
+        mapping['length_unit'] = length_unit
+
         if 'unit_cell_cart' in mapping:
             uc_input = mapping['unit_cell_cart']
             # handle the case when the unit is explicitly given
@@ -690,7 +696,7 @@ class Model(HDF5Enabled):
                 unit, *uc_input = uc_input
                 # unit = unit[0]
             else:
-                unit = 'ang'
+                unit = length_unit
             val = [[float(x) for x in split_token.split(line)] for line in uc_input]
             val = np.array(val).reshape(3, 3)
             if unit == 'bohr':
