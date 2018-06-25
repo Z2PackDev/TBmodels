@@ -19,7 +19,8 @@ with open('./tbmodels/_version.py', 'r') as f:
 
 EXTRAS_REQUIRE = {
     'kwant': ['kwant'],
-    'dev': ['pytest', 'pytest-cov', 'yapf==0.20', 'pythtb', 'pre-commit', 'sphinx', 'sphinx-rtd-theme==0.2.4', 'sphinx-click']
+    'dev':
+    ['pytest', 'pytest-cov', 'yapf==0.22', 'pythtb', 'pre-commit', 'sphinx', 'sphinx-rtd-theme==0.2.4', 'sphinx-click']
 }
 EXTRAS_REQUIRE['dev'] += EXTRAS_REQUIRE['kwant']
 

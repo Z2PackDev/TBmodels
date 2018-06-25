@@ -1126,14 +1126,7 @@ class Model(HDF5Enabled):
             hop_list = [_get_mat(m, R) for m in models]
             new_hop[R] = la.block_diag(*hop_list)
 
-        return cls(
-            dim=new_dim,
-            uc=new_uc,
-            pos=new_pos,
-            occ=new_occ,
-            hop=new_hop,
-            contains_cc=False
-        )
+        return cls(dim=new_dim, uc=new_uc, pos=new_pos, occ=new_occ, hop=new_hop, contains_cc=False)
 
     def __add__(self, model):
         """

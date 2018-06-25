@@ -33,14 +33,10 @@ def test_join_models(model, num_models):
     joined_model = tbmodels.Model.join_models(*model_list)
 
     for k in [[0., 0., 0.], [0.1231, 0.236, 0.84512]]:
-        assert np.allclose(
-            sorted(list(model.eigenval(k)) * num_models),
-            joined_model.eigenval(k)
-        )
+        assert np.allclose(sorted(list(model.eigenval(k)) * num_models), joined_model.eigenval(k))
 
 
 def test_join_mixed_sparsity(model_dense, model_sparse, models_close):
     assert models_close(
-        tbmodels.Model.join_models(model_sparse, model_dense),
-        tbmodels.Model.join_models(model_dense, model_sparse)
+        tbmodels.Model.join_models(model_sparse, model_dense), tbmodels.Model.join_models(model_dense, model_sparse)
     )
