@@ -19,7 +19,8 @@ with open('./tbmodels/_version.py', 'r') as f:
 
 EXTRAS_REQUIRE = {
     'kwant': ['kwant'],
-    'dev': ['pytest', 'yapf==0.20', 'pythtb', 'pre-commit', 'sphinx', 'sphinx-rtd-theme==0.2.4', 'sphinx-click']
+    'dev':
+    ['pytest', 'pytest-cov', 'yapf==0.22', 'pythtb', 'pre-commit', 'sphinx', 'sphinx-rtd-theme==0.2.4', 'sphinx-click']
 }
 EXTRAS_REQUIRE['dev'] += EXTRAS_REQUIRE['kwant']
 
@@ -31,7 +32,7 @@ setup(
     author_email='greschd@gmx.ch',
     description='Reading, creating and modifying tight-binding models.',
     install_requires=[
-        'numpy', 'scipy', 'h5py', 'fsc.export', 'symmetry-representation', 'click', 'bands-inspect',
+        'numpy', 'scipy', 'h5py', 'fsc.export', 'symmetry-representation>=0.2', 'click', 'bands-inspect',
         'fsc.hdf5-io>=0.2.0'
     ],
     extras_require=EXTRAS_REQUIRE,

@@ -13,6 +13,7 @@ import scipy.linalg as la
 from fsc.export import export
 from fsc.hdf5_io import subscribe_hdf5, HDF5Enabled
 
+from . import _check_compatibility
 from ._ptools import sparse_matrix as sp
 
 
@@ -1007,14 +1008,20 @@ class Model(HDF5Enabled):
         else:
             new_model = self
             for sym in symmetries:
-                new_model = 1 / 2 * (new_model + new_model._apply_operation(sym))
+                order = sym.get_order()
+                sym_pow = sym
+                tmp_model = new_model
+                for i in range(1, order):
+                    tmp_model += new_model._apply_operation(sym_pow)
+                    sym_pow @= sym
+                new_model = 1 / order * tmp_model
             return new_model
 
     def _apply_operation(self, symmetry_operation):
         # apply symmetry operation on sublattice positions
         sublattices = self._get_sublattices()
 
-        new_sublattice_pos = [np.dot(symmetry_operation.rotation_matrix, latt.pos) for latt in sublattices]
+        new_sublattice_pos = [symmetry_operation.real_space_operator.apply(latt.pos) for latt in sublattices]
 
         # match to a known sublattice position to determine the shift vector
         uc_shift = []
@@ -1070,6 +1077,63 @@ class Model(HDF5Enabled):
         new_hop = {key: np.array(val)[np.ix_(slice_idx, slice_idx)] for key, val in self.hop.items()}
         return Model(**co.ChainMap(dict(hop=new_hop, pos=new_pos), self._input_kwargs))
 
+    @classmethod
+    def join_models(cls, *models):
+        """
+        Creates a tight-binding model which contains all orbitals of the given input models. The orbitals are ordered by model, such that the resulting Hamiltonian is block-diagonal.
+
+        :param models: Models which should be joined together.
+        :type models: tbmodels.Model
+        """
+        if not models:
+            raise ValueError('At least one model must be given.')
+
+        first_model = models[0]
+        # check dim
+        if not _check_compatibility._check_dim(*models):
+            raise ValueError('Model dimensions do not match.')
+        new_dim = first_model.dim
+
+        # check uc compatibility
+        if not _check_compatibility._check_uc(*models):
+            raise ValueError('Model unit cells do not match.')
+        new_uc = first_model.uc
+
+        # join positions (must either all be set, or all None)
+        pos_list = list(m.pos for m in models)
+        if any(pos is None for pos in pos_list):
+            if not all(pos is None for pos in pos_list):
+                raise ValueError('Either all or no positions must be set.')
+            new_pos = None
+        else:
+            new_pos = np.concatenate(pos_list)
+
+        # add occ (is set to None if any model has occ=None)
+        occ_list = list(m.occ for m in models)
+        if any(occ is None for occ in occ_list):
+            new_occ = None
+        else:
+            new_occ = sum(occ_list)
+
+        # combine hop
+        all_R = set()
+        for m in models:
+            all_R.update(m.hop.keys())
+
+        new_hop = dict()
+
+        def _get_mat(m, R):
+            hop_mat = m.hop[R]
+            if m._sparse:
+                return hop_mat.toarray()
+            return hop_mat
+
+        for R in all_R:
+            hop_list = [_get_mat(m, R) for m in models]
+            new_hop[R] = la.block_diag(*hop_list)
+
+        return cls(dim=new_dim, uc=new_uc, pos=new_pos, occ=new_occ, hop=new_hop, contains_cc=False)
+
     def __add__(self, model):
         """
         Adds two models together by adding their hopping terms.
@@ -1093,20 +1157,7 @@ class Model(HDF5Enabled):
             )
 
         # check if the unit cells match
-        uc_match = True
-        if self.uc is None or model.uc is None:
-            if model.uc is not self.uc:
-                uc_match = False
-        else:
-            tolerance = 1e-6
-            for v1, v2 in zip(self.uc, model.uc):
-                if not uc_match:
-                    break
-                for x1, x2 in zip(v1, v2):
-                    if abs(x1 - x2) > tolerance:
-                        uc_match = False
-                        break
-        if not uc_match:
+        if not _check_compatibility._check_uc(self, model):
             raise ValueError(
                 'Error when adding Models: unit cells don\'t match.\nModel 1:\n{0.uc}\n\nModel 2:\n{1.uc}'.format(
                     self, model
