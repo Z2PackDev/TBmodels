@@ -1008,14 +1008,20 @@ class Model(HDF5Enabled):
         else:
             new_model = self
             for sym in symmetries:
-                new_model = 1 / 2 * (new_model + new_model._apply_operation(sym))
+                order = sym.get_order()
+                sym_pow = sym
+                tmp_model = new_model
+                for i in range(1, order):
+                    tmp_model += new_model._apply_operation(sym_pow)
+                    sym_pow @= sym
+                new_model = 1 / order * tmp_model
             return new_model
 
     def _apply_operation(self, symmetry_operation):
         # apply symmetry operation on sublattice positions
         sublattices = self._get_sublattices()
 
-        new_sublattice_pos = [np.dot(symmetry_operation.rotation_matrix, latt.pos) for latt in sublattices]
+        new_sublattice_pos = [symmetry_operation.real_space_operator.apply(latt.pos) for latt in sublattices]
 
         # match to a known sublattice position to determine the shift vector
         uc_shift = []
