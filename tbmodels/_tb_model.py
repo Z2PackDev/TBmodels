@@ -1059,7 +1059,7 @@ class Model(HDF5Enabled):
 
         # apply D(g) ... D(g)^-1 (since D(g) is unitary: D(g)^-1 == D(g)^H)
         for R in new_hop.keys():
-            sym_op = symmetry_operation.repr.matrix
+            sym_op = np.array(symmetry_operation.repr.matrix).astype(complex)
             if symmetry_operation.repr.has_cc:
                 new_hop[R] = np.conj(new_hop[R])
             new_hop[R] = np.dot(sym_op, np.dot(new_hop[R], np.conj(np.transpose(sym_op))))
