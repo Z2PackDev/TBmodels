@@ -163,6 +163,8 @@ def eigenvals(input, kpoints, output):
     model = _read_input(input)
     click.echo("Reading kpoints from file '{}' ...".format(kpoints))
     kpts = bi.io.load(kpoints)
+    if isinstance(kpts, bi.eigenvals.EigenvalsData):
+        kpts = kpts.kpoints
 
     click.echo("Calculating energy eigenvalues ...")
     eigenvalues = bi.eigenvals.EigenvalsData.from_eigenval_function(kpoints=kpts, eigenval_function=model.eigenval)
