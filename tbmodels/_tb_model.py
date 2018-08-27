@@ -566,8 +566,14 @@ class Model(HDF5Enabled):
                 elif pos_kind == 'nearest_atom':
                     pos_cartesian = []
                     for p in wannier_pos_cartesian:
-                        distances = la.norm(p - atom_pos_cartesian, axis=-1)
-                        pos_cartesian.append(atom_pos_cartesian[np.argmin(distances)])
+                        p_reduced = la.solve(kwargs['uc'].T, np.array(p).T).T
+                        T_base = np.floor(p_reduced)
+                        all_atom_pos = np.array([
+                            kwargs['uc'].T @ (T_base + T_shift) + atom_pos for atom_pos in atom_pos_cartesian
+                            for T_shift in itertools.product([-1, 0, 1], repeat=3)
+                        ])
+                        distances = la.norm(p - all_atom_pos, axis=-1)
+                        pos_cartesian.append(all_atom_pos[np.argmin(distances)])
                 else:
                     raise ValueError(
                         "Invalid value '{}' for 'pos_kind', must be 'wannier' or 'atom_nearest'".format(pos_kind)
