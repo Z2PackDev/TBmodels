@@ -4,8 +4,6 @@
 # Author:  Georg Winkler, Dominik Gresch <greschd@gmx.ch>
 
 import os
-import sys
-import random
 
 import numpy as np
 import scipy.linalg as la
