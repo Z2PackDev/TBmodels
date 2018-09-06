@@ -49,11 +49,6 @@ def compare_bands_plot(*models, structure):
 if __name__ == '__main__':
     model_nosym = tb.Model.from_hdf5_file('data/model_nosym.hdf5')
 
-    # set up symmetry operations
-    time_reversal = sr.SymmetryOperation(
-        rotation_matrix=np.eye(3), repr_matrix=np.kron([[0, -1j], [1j, 0]], np.eye(8)), repr_has_cc=True
-    )
-
     structure = mg.Structure(
         lattice=model_nosym.uc, species=['Si', 'Si'], coords=np.array([[0.5, 0.5, 0.5], [0.75, 0.75, 0.75]])
     )
@@ -62,6 +57,8 @@ if __name__ == '__main__':
         sr.Orbital(position=coord, function_string=fct, spin=spin) for spin in (sr.SPIN_UP, sr.SPIN_DOWN)
         for coord in ([0.5, 0.5, 0.5], [0.75, 0.75, 0.75]) for fct in sr.WANNIER_ORBITALS['sp3']
     ]
+
+    time_reversal = sr.get_time_reversal(orbitals=orbitals, numeric=True)
 
     # get real-space representations
     analyzer = mg.symmetry.analyzer.SpacegroupAnalyzer(structure)
