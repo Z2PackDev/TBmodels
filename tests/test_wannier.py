@@ -5,6 +5,7 @@ import pytest
 
 import tbmodels
 import numpy as np
+from numpy.testing import assert_allclose
 
 kpt = [(0.1, 0.2, 0.7), (-0.3, 0.5, 0.2), (0., 0., 0.), (0.1, -0.9, -0.7)]
 
@@ -143,9 +144,9 @@ def test_wannier_all(
 
     compare_isclose(H_list)
     assert np.isclose(H_list, H_list2).all()
-    assert np.allclose(model.pos, pos % 1)
-    assert np.allclose(model.uc, uc)
-    assert np.allclose(model.reciprocal_lattice, reciprocal_lattice)
+    assert_allclose(model.pos, pos % 1, atol=1e-8)
+    assert_allclose(model.uc, uc, atol=1e-8)
+    assert_allclose(model.reciprocal_lattice, reciprocal_lattice, atol=1e-8)
 
 
 @pytest.mark.parametrize('hr_name', ['hr_hamilton.dat', 'wannier90_hr.dat', 'wannier90_hr_v2.dat'])
