@@ -259,8 +259,8 @@ class Model(HDF5Enabled):
         if self.uc is not None:
             if self.uc.shape != (self.dim, self.dim):
                 raise ValueError(
-                    'Inconsistend dimension of the unit cell: {0}, does not match the dimensionality of the system ({1})'.
-                    format(self.uc.shape, self.dim)
+                    'Inconsistend dimension of the unit cell: {0}, does not match the dimensionality of the system ({1})'
+                    .format(self.uc.shape, self.dim)
                 )
 
     #---------------- CONSTRUCTORS / (DE)SERIALIZATION ----------------#

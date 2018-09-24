@@ -8,8 +8,8 @@ except:
     from distutils.core import setup
 
 import sys
-if sys.version_info < (3, 4):
-    raise 'must use Python version 3.4 or higher'
+if sys.version_info < (3, 5):
+    raise 'must use Python version 3.5 or higher'
 
 README = """TBModels is a tool for reading, creating and modifying tight-binding models."""
 
@@ -20,7 +20,7 @@ with open('./tbmodels/__init__.py', 'r') as f:
 EXTRAS_REQUIRE = {
     'kwant': ['kwant'],
     'dev':
-    ['pytest', 'pytest-cov', 'yapf==0.22', 'pythtb', 'pre-commit', 'sphinx', 'sphinx-rtd-theme==0.2.4', 'sphinx-click']
+    ['pytest', 'pytest-cov', 'yapf==0.24', 'pythtb', 'pre-commit', 'sphinx', 'sphinx-rtd-theme==0.2.4', 'sphinx-click']
 }
 EXTRAS_REQUIRE['dev'] += EXTRAS_REQUIRE['kwant']
 
@@ -37,11 +37,16 @@ setup(
     ],
     extras_require=EXTRAS_REQUIRE,
     long_description=README,
-    classifiers=[
-        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)', 'Natural Language :: English',
-        'Operating System :: Unix', 'Programming Language :: Python :: 3', 'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5', 'Programming Language :: Python :: 3.6',
-        'Intended Audience :: Science/Research', 'Topic :: Scientific/Engineering :: Physics'
+    classifiers=[  # yapf:disable
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        'Natural Language :: English',
+        'Operating System :: Unix',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Intended Audience :: Science/Research',
+        'Topic :: Scientific/Engineering :: Physics'
     ],
     entry_points='''
         [console_scripts]
