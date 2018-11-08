@@ -882,7 +882,8 @@ class Model(HDF5Enabled):
         if convention not in [1, 2]:
             raise ValueError("Invalid value '{}' for 'convention': must be either '1' or '2'".format(convention))
         k = np.array(k, ndmin=1)
-        H = sum(self._array_cast(hop) * np.exp(2j * np.pi * np.dot(R, k)) for R, hop in self.hop.items())
+        H = sum((self._array_cast(hop) * np.exp(2j * np.pi * np.dot(R, k)) for R, hop in self.hop.items()),
+                np.zeros((self.size, self.size), dtype=complex))
         H += H.conjugate().T
         if convention == 1:
             pos_exponential = np.array([[np.exp(2j * np.pi * np.dot(p, k)) for p in self.pos]])
