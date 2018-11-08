@@ -160,6 +160,8 @@ class Model(HDF5Enabled):
         # use partial instead of lambda to allow for pickling
         self.hop = co.defaultdict(self._empty_matrix)
         for R, h_mat in hop.items():
+            if not np.any(h_mat):
+                continue
             self.hop[R] = self._matrix_type(h_mat)
         # add on-site terms
         if on_site is not None:
