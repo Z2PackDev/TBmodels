@@ -38,7 +38,7 @@ setup(
     extras_require=EXTRAS_REQUIRE,
     long_description=README,
     classifiers=[  # yapf:disable
-        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        'License :: OSI Approved :: Apache Software License',
         'Natural Language :: English',
         'Operating System :: Unix',
         'Programming Language :: Python :: 3',
