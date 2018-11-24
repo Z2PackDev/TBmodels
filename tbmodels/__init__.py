@@ -8,4 +8,6 @@ __version__ = '1.3.0b1'
 from . import helpers
 from ._tb_model import Model
 
+from . import _kdotp
+
 from . import io
