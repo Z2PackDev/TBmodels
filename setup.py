@@ -32,7 +32,7 @@ setup(
     author_email='greschd@gmx.ch',
     description='Reading, creating and modifying tight-binding models.',
     install_requires=[
-        'numpy', 'scipy', 'h5py', 'fsc.export', 'symmetry-representation>=0.2', 'click', 'bands-inspect',
+        'numpy', 'scipy>=0.14', 'h5py', 'fsc.export', 'symmetry-representation>=0.2', 'click', 'bands-inspect',
         'fsc.hdf5-io>=0.2.0'
     ],
     extras_require=EXTRAS_REQUIRE,

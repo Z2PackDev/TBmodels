@@ -10,7 +10,7 @@ import collections as co
 import h5py
 import numpy as np
 import scipy.linalg as la
-from scipy.misc import factorial
+from scipy.special import factorial
 from fsc.export import export
 from fsc.hdf5_io import subscribe_hdf5, HDF5Enabled
 
@@ -814,7 +814,7 @@ class Model(HDF5Enabled):
             curr_order = sum(pow)
             if curr_order > order:
                 continue
-            taylor_coefficients[pow] = ((2j * np.pi)**curr_order / np.prod(factorial(pow))) * sum((
+            taylor_coefficients[pow] = ((2j * np.pi)**curr_order / np.prod(factorial(pow, exact=True))) * sum((
                 np.prod(np.array(R)**np.array(pow)) * np.exp(2j * np.pi * np.dot(k, R)) * self._array_cast(mat) +
                 np.prod(
                     (-np.array(R))**np.array(pow)
