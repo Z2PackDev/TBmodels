@@ -3,7 +3,9 @@
 import pytest
 import numpy as np
 
+import tbmodels
 from tbmodels._kdotp import KdotpModel
+from parameters import KPT
 
 
 def test_kdotp_model():
@@ -19,3 +21,18 @@ def test_kdotp_model():
 def test_raises_not_hermitian():
     with pytest.raises(ValueError):
         KdotpModel({(0, 0): [[0, 1], [2, 0]]})
+
+
+@pytest.mark.parametrize('kpt', KPT)
+@pytest.mark.parametrize('order', [0, 1, 2, 3])
+def test_construct_kdotp(sample, kpt, order):
+    model_tb = tbmodels.io.load(sample('InAs_nosym.hdf5'))
+    model_kp = model_tb.construct_kdotp(kpt, order=order)
+
+    assert np.allclose(model_kp.eigenval((0, 0, 0)), model_tb.eigenval(kpt))
+
+
+def test_construct_kdotp_negative_order(sample):
+    model_tb = tbmodels.io.load(sample('InAs_nosym.hdf5'))
+    with pytest.raises(ValueError):
+        model_tb.construct_kdotp((0, 0, 0), order=-1)

@@ -801,6 +801,8 @@ class Model(HDF5Enabled):
         Construct a k.p model around a given k-point.
         """
         taylor_coefficients = dict()
+        if order < 0:
+            raise ValueError('The order for the k.p model must be positive.')
         for pow in itertools.product(range(order + 1), repeat=self.dim):
             curr_order = sum(pow)
             if curr_order > order:
