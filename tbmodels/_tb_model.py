@@ -796,9 +796,16 @@ class Model(HDF5Enabled):
                 sublattices.append(Sublattice(pos=p_orb, indices=[i]))
         return sublattices
 
-    def construct_kdotp(self, k, order, convention=2):
+    def construct_kdotp(self, k, order):
         """
         Construct a k.p model around a given k-point.
+
+        :param k: The k-point around which the k.p model is constructed.
+        :type k: list
+
+        :param order: The order (sum of powers) to which the Taylor expansion is
+            performed.
+        :type order: int
         """
         taylor_coefficients = dict()
         if order < 0:
