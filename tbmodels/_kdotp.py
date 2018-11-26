@@ -1,3 +1,9 @@
+"""
+Module defining k.p models. Note that this module should be considered temporary,
+and should not be relied on having a fixed import position. Since it does not
+treat tight-binding models, it might be moved to a separate package.
+"""
+
 import numpy as np
 import scipy.linalg as la
 

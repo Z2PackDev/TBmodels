@@ -1,9 +1,12 @@
+"""
+Defines the tbmodels command-line interface.
+"""
+
 import os
 from collections.abc import Iterable
 from functools import singledispatch
 
 import click
-import numpy as np
 import bands_inspect as bi
 import symmetry_representation as sr
 
@@ -19,7 +22,7 @@ def _output_option(**kwargs):
     return click.option('--output', '-o', type=click.Path(dir_okay=False), **kwargs)
 
 
-_input_option = click.option(
+_input_option = click.option(  # pylint: disable=invalid-name
     '--input',
     '-i',
     type=click.Path(exists=True, dir_okay=False),
@@ -28,7 +31,7 @@ _input_option = click.option(
 )
 
 
-def _read_input(input):
+def _read_input(input):  # pylint: disable=redefined-builtin
     click.echo("Reading initial model from file '{}' ...".format(input))
     return Model.from_hdf5_file(input)
 
@@ -83,31 +86,35 @@ def parse(folder, prefix, output, pos_kind):
     No full group: The symmetries only contain a generating subset of the full group. Overrides the option given in the symmetries file (if any).
     """
 )
-def symmetrize(input, output, symmetries, full_group):
+def symmetrize(input, output, symmetries, full_group):  # pylint: disable=redefined-builtin
     """
     Symmetrize tight-binding model with given symmetry group(s).
     """
     model = _read_input(input)
     click.echo("Reading symmetries from file '{}' ...".format(symmetries))
     sym = sr.io.load(symmetries)
-    model_sym = _symmetrize(sym, model, full_group)
+    model_sym = _symmetrize(sym, model, full_group)  # pylint: disable=assignment-from-no-return
     _write_output(model_sym, output)
 
 
 @singledispatch
-def _symmetrize(sym, model, full_group):
+def _symmetrize(sym, model, full_group):  # pylint: disable=unused-argument
+    """
+    Implementation for the symmetrization procedure. The singledispatch is used
+    to treat (nested) lists of symmetries or symmetry groups.
+    """
     raise ValueError("Invalid type '{}' for _symmetrize".format(type(sym)))
 
 
 @_symmetrize.register(Iterable)
 def _(sym, model, full_group):
     for s in sym:
-        model = _symmetrize(s, model, full_group)
+        model = _symmetrize(s, model, full_group)  # pylint: disable=assignment-from-no-return
     return model
 
 
 @_symmetrize.register(sr.SymmetryGroup)
-def _(sym, model, full_group):
+def _(sym, model, full_group):  # pylint: disable=missing-docstring
     symmetries = sym.symmetries
     if full_group is None:
         full_group = sym.full_group
@@ -120,7 +127,7 @@ def _(sym, model, full_group):
 
 
 @_symmetrize.register(sr.SymmetryOperation)
-def _(sym, model, full_group):
+def _(sym, model, full_group):  # pylint: disable=missing-docstring
     sym_group = sr.SymmetryGroup(
         symmetries=[sym],
         full_group=full_group or False  # catches 'None', does nothing for 'True' or 'False'
@@ -135,8 +142,8 @@ def _(sym, model, full_group):
     'slice-idx',
     type=int,
     nargs=-1,
-)
-def slice(input, output, slice_idx):
+)  # pylint: disable=redefined-builtin
+def slice(input, output, slice_idx):  # pylint: disable=redefined-builtin
     """
     Create a model containing only the orbitals given in the SLICE_IDX.
     """
@@ -156,7 +163,7 @@ def slice(input, output, slice_idx):
     help='File containing the k-points for which the eigenvalues are evaluated.'
 )
 @_output_option(default='eigenvals.hdf5', help='Output file for the energy eigenvalues.')
-def eigenvals(input, kpoints, output):
+def eigenvals(input, kpoints, output):  # pylint: disable=redefined-builtin
     """
     Calculate the energy eigenvalues for a given set of k-points (in reduced coordinates). The input and output is given in an HDF5 file.
     """
