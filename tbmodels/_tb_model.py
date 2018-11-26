@@ -10,11 +10,13 @@ import collections as co
 import h5py
 import numpy as np
 import scipy.linalg as la
+from scipy.misc import factorial
 from fsc.export import export
 from fsc.hdf5_io import subscribe_hdf5, HDF5Enabled
 
 from . import _check_compatibility
 from ._ptools import sparse_matrix as sp
+from ._kdotp import KdotpModel
 
 
 @export
@@ -793,6 +795,23 @@ class Model(HDF5Enabled):
             else:
                 sublattices.append(Sublattice(pos=p_orb, indices=[i]))
         return sublattices
+
+    def construct_kdotp(self, k, order, convention=2):
+        """
+        Construct a k.p model around a given k-point.
+        """
+        taylor_coefficients = dict()
+        for pow in itertools.product(range(order + 1), repeat=self.dim):
+            curr_order = sum(pow)
+            if curr_order > order:
+                continue
+            taylor_coefficients[pow] = ((2j * np.pi)**curr_order / np.prod(factorial(pow))) * sum((
+                np.prod(np.array(R)**np.array(pow)) * np.exp(2j * np.pi * np.dot(k, R)) * self._array_cast(mat) +
+                np.prod(
+                    (-np.array(R))**np.array(pow)
+                ) * np.exp(-2j * np.pi * np.dot(k, R)) * self._array_cast(mat).T.conj() for R, mat in self.hop.items()
+            ), np.zeros((self.size, self.size), dtype=complex))
+        return KdotpModel(taylor_coefficients=taylor_coefficients)
 
     @classmethod
     def from_hdf5_file(cls, hdf5_file, **kwargs):
