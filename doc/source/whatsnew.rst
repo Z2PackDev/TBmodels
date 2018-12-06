@@ -18,7 +18,12 @@ New features
 Other improvements
 ''''''''''''''''''
 
-- Empty hopping matrices are now automatically removed when constructing a new model. In some cases this can lead to significant performance improvements. No action is required to get these run-time benefits. To also reduce the size of existing models, they need to be loaded and saved.
+- **Efficiency**: Empty hopping matrices are now automatically removed when constructing a new model. In some cases this can lead to significant performance improvements. No action is required to get these run-time benefits. To also reduce the size of existing models, they need to be loaded and saved.
+
+Other changes
+'''''''''''''
+
+- **License**: TBmodels is now released under the more permissive Apache license.
 
 What's new in TBmodels 1.2
 --------------------------
