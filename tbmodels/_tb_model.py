@@ -798,7 +798,13 @@ class Model(HDF5Enabled):
 
     def construct_kdotp(self, k, order):
         """
-        Construct a k.p model around a given k-point.
+        Construct a k.p model around a given k-point. This is done by explicitly
+        evaluating the derivatives which make up the Taylor expansion of the k.p
+        models.
+        
+        This method can currently only construct models using
+        `convention 2  <http://www.physics.rutgers.edu/pythtb/_downloads/pythtb-formalism.pdf>`_
+        for the Hamiltonian.
 
         :param k: The k-point around which the k.p model is constructed.
         :type k: list

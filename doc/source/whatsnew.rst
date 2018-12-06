@@ -1,0 +1,21 @@
+.. _whatsnew:
+
+What's new
+==========
+
+The following is a short summary of the most important changes in new releases of TBmodels, starting *after* version 1.2.
+
+What's new in TBmodels 1.3
+--------------------------
+
+New features
+''''''''''''
+
+- **Constructing k.p models**: The :meth:`.construct_kdotp` method can be used to construct a k.p model from an existing tight-binding model.
+
+- **Joining models**: The :meth:`.join_models` method can be used to combine models of the same structure with different orbitals.
+
+Other improvements
+''''''''''''''''''
+
+- Empty hopping matrices are now automatically removed when constructing a new model. In some cases this can lead to significant performance improvements. No action is required to get these run-time benefits. To also reduce the size of existing models, they need to be loaded and saved.

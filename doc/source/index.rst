@@ -21,6 +21,9 @@
 | :ref:`reference`
 | detailed description of the classes and functions
 |
+| :ref:`whatsnew`
+| description of the updates since later versions
+|
 
 .. rubric:: Getting in touch
 
@@ -44,6 +47,7 @@ __ dg_
 
     tutorial.rst
     reference.rst
+    whatsnew.rst
 
 .. _dg: http://github.com/greschd
 .. _GitHub: http://github.com/Z2PackDev/TBmodels
