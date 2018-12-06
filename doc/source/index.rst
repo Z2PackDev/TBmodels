@@ -25,6 +25,9 @@
 | :ref:`tutorial`
 | start here
 |
+| :ref:`symmetrize`
+| tutorial for the symmetrization feature
+|
 | :ref:`reference`
 | detailed description of the classes and functions
 |
@@ -53,6 +56,7 @@ __ dg_
     :hidden:
 
     tutorial.rst
+    symmetrize.rst
     reference.rst
     whatsnew.rst
 

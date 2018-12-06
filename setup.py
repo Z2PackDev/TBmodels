@@ -21,7 +21,7 @@ EXTRAS_REQUIRE = {
     'kwant': ['kwant'],
     'dev': [
         'pytest', 'pytest-cov', 'yapf==0.24', 'pythtb', 'pre-commit', 'sphinx', 'sphinx-rtd-theme==0.2.4',
-        'sphinx-click', 'prospector==1.1.6.*', 'pylint==2.1.*'
+        'ipython>=6.2', 'sphinx-click', 'prospector==1.1.6.*', 'pylint==2.1.*'
     ]
 }
 EXTRAS_REQUIRE['dev'] += EXTRAS_REQUIRE['kwant']
