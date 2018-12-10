@@ -43,3 +43,11 @@ def test_hdf5_load_freefunc(hdf5_sample):
 def test_hdf5_load_method(hdf5_sample):
     res = tbmodels.Model.from_hdf5_file(hdf5_sample)
     assert isinstance(res, tbmodels.Model)
+
+
+def test_hdf5_kdotp(kdotp_models_equal):
+    kp_model = tbmodels._kdotp.KdotpModel({(1, 0): [[0.1, 0.2j], [-0.2j, 0.3]], (0, 0): np.eye(2)})
+    with tempfile.NamedTemporaryFile() as tmpf:
+        tbmodels.io.save(kp_model, tmpf.name)
+        model2 = tbmodels.io.load(tmpf.name)
+    kdotp_models_equal(kp_model, model2)

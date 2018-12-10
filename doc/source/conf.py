@@ -33,7 +33,8 @@ import tbmodels
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc', 'sphinx.ext.mathjax', 'sphinx.ext.intersphinx', 'sphinx.ext.viewcode', 'sphinx_click.ext'
+    'sphinx.ext.autodoc', 'sphinx.ext.mathjax', 'sphinx.ext.intersphinx', 'sphinx.ext.viewcode', 'sphinx_click.ext',
+    'IPython.sphinxext.ipython_console_highlighting', 'IPython.sphinxext.ipython_directive'
 ]
 
 intersphinx_mapping = {
@@ -42,6 +43,7 @@ intersphinx_mapping = {
 }
 
 nitpick_ignore = [('py:class', 'array')]
+ipython_warning_is_error = False
 
 # Add any paths that contain templates here, relative to this directory.
 #~ templates_path = ['templates']

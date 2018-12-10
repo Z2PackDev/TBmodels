@@ -81,6 +81,16 @@ def models_equal():
 
 
 @pytest.fixture
+def kdotp_models_equal():
+    def inner(model1, model2):
+        for pow in model1.taylor_coefficients.keys() | model1.taylor_coefficients.keys():
+            assert (np.array(model1.taylor_coefficients[pow]) == np.array(model2.taylor_coefficients[pow])).all()
+        return True
+
+    return inner
+
+
+@pytest.fixture
 def models_close():
     def inner(model1, model2, ignore_sparsity=False):
         assert model1.size == model2.size

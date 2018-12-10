@@ -11,6 +11,13 @@
 
     TBmodels is a Python package for evaluating tight-binding models. It features methods for reading and writing tight-binding models to various formats, and evaluating the Hamiltonian and eigenvalues of the system. It is considerably faster than comparable packages, enabling it to handle first-principles derived tight-binding models.
 
+    .. rubric:: Please cite
+
+    For the symmetrization feature:
+
+    * Dominik Gresch, QuanSheng Wu, Georg W. Winkler, Rico Häuselmann, Matthias Troyer, and Alexey A. Soluyanov "Automated construction of symmetrized Wannier-like tight-binding models from ab initio calculations" [`PhysRevMaterials.2.103805 <https://doi.org/10.1103/PhysRevMaterials.2.103805>`_]
+
+
 |
 
 .. rubric:: Parts of the documentation
@@ -18,8 +25,14 @@
 | :ref:`tutorial`
 | start here
 |
+| :ref:`symmetrize`
+| tutorial for the symmetrization feature
+|
 | :ref:`reference`
 | detailed description of the classes and functions
+|
+| :ref:`whatsnew`
+| description of the updates since later versions
 |
 
 .. rubric:: Getting in touch
@@ -43,7 +56,9 @@ __ dg_
     :hidden:
 
     tutorial.rst
+    symmetrize.rst
     reference.rst
+    whatsnew.rst
 
 .. _dg: http://github.com/greschd
 .. _GitHub: http://github.com/Z2PackDev/TBmodels

@@ -1,2 +1,2 @@
 pymatgen
-symmetry-representation
+symmetry-representation>=0.2

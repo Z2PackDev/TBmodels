@@ -10,10 +10,13 @@ import collections as co
 import h5py
 import numpy as np
 import scipy.linalg as la
+from scipy.special import factorial
 from fsc.export import export
 from fsc.hdf5_io import subscribe_hdf5, HDF5Enabled
 
+from . import _check_compatibility
 from ._ptools import sparse_matrix as sp
+from ._kdotp import KdotpModel
 
 
 @export
@@ -159,6 +162,8 @@ class Model(HDF5Enabled):
         # use partial instead of lambda to allow for pickling
         self.hop = co.defaultdict(self._empty_matrix)
         for R, h_mat in hop.items():
+            if not np.any(h_mat):
+                continue
             self.hop[R] = self._matrix_type(h_mat)
         # add on-site terms
         if on_site is not None:
@@ -258,8 +263,8 @@ class Model(HDF5Enabled):
         if self.uc is not None:
             if self.uc.shape != (self.dim, self.dim):
                 raise ValueError(
-                    'Inconsistend dimension of the unit cell: {0}, does not match the dimensionality of the system ({1})'.
-                    format(self.uc.shape, self.dim)
+                    'Inconsistend dimension of the unit cell: {0}, does not match the dimensionality of the system ({1})'
+                    .format(self.uc.shape, self.dim)
                 )
 
     #---------------- CONSTRUCTORS / (DE)SERIALIZATION ----------------#
@@ -565,8 +570,14 @@ class Model(HDF5Enabled):
                 elif pos_kind == 'nearest_atom':
                     pos_cartesian = []
                     for p in wannier_pos_cartesian:
-                        distances = la.norm(p - atom_pos_cartesian, axis=-1)
-                        pos_cartesian.append(atom_pos_cartesian[np.argmin(distances)])
+                        p_reduced = la.solve(kwargs['uc'].T, np.array(p).T).T
+                        T_base = np.floor(p_reduced)
+                        all_atom_pos = np.array([
+                            kwargs['uc'].T @ (T_base + T_shift) + atom_pos for atom_pos in atom_pos_cartesian
+                            for T_shift in itertools.product([-1, 0, 1], repeat=3)
+                        ])
+                        distances = la.norm(p - all_atom_pos, axis=-1)
+                        pos_cartesian.append(all_atom_pos[np.argmin(distances)])
                 else:
                     raise ValueError(
                         "Invalid value '{}' for 'pos_kind', must be 'wannier' or 'atom_nearest'".format(pos_kind)
@@ -683,6 +694,12 @@ class Model(HDF5Enabled):
                 mapping[key] = val
 
         # here we can continue parsing the individual keys as needed
+        if 'length_unit' in mapping:
+            length_unit = mapping['length_unit'].strip().lower()
+        else:
+            length_unit = 'ang'
+        mapping['length_unit'] = length_unit
+
         if 'unit_cell_cart' in mapping:
             uc_input = mapping['unit_cell_cart']
             # handle the case when the unit is explicitly given
@@ -690,7 +707,7 @@ class Model(HDF5Enabled):
                 unit, *uc_input = uc_input
                 # unit = unit[0]
             else:
-                unit = 'ang'
+                unit = length_unit
             val = [[float(x) for x in split_token.split(line)] for line in uc_input]
             val = np.array(val).reshape(3, 3)
             if unit == 'bohr':
@@ -778,6 +795,38 @@ class Model(HDF5Enabled):
             else:
                 sublattices.append(Sublattice(pos=p_orb, indices=[i]))
         return sublattices
+
+    def construct_kdotp(self, k, order):
+        """
+        Construct a k.p model around a given k-point. This is done by explicitly
+        evaluating the derivatives which make up the Taylor expansion of the k.p
+        models.
+        
+        This method can currently only construct models using
+        `convention 2  <http://www.physics.rutgers.edu/pythtb/_downloads/pythtb-formalism.pdf>`_
+        for the Hamiltonian.
+
+        :param k: The k-point around which the k.p model is constructed.
+        :type k: list
+
+        :param order: The order (sum of powers) to which the Taylor expansion is
+            performed.
+        :type order: int
+        """
+        taylor_coefficients = dict()
+        if order < 0:
+            raise ValueError('The order for the k.p model must be positive.')
+        for pow in itertools.product(range(order + 1), repeat=self.dim):
+            curr_order = sum(pow)
+            if curr_order > order:
+                continue
+            taylor_coefficients[pow] = ((2j * np.pi)**curr_order / np.prod(factorial(pow, exact=True))) * sum((
+                np.prod(np.array(R)**np.array(pow)) * np.exp(2j * np.pi * np.dot(k, R)) * self._array_cast(mat) +
+                np.prod(
+                    (-np.array(R))**np.array(pow)
+                ) * np.exp(-2j * np.pi * np.dot(k, R)) * self._array_cast(mat).T.conj() for R, mat in self.hop.items()
+            ), np.zeros((self.size, self.size), dtype=complex))
+        return KdotpModel(taylor_coefficients=taylor_coefficients)
 
     @classmethod
     def from_hdf5_file(cls, hdf5_file, **kwargs):
@@ -867,7 +916,8 @@ class Model(HDF5Enabled):
         if convention not in [1, 2]:
             raise ValueError("Invalid value '{}' for 'convention': must be either '1' or '2'".format(convention))
         k = np.array(k, ndmin=1)
-        H = sum(self._array_cast(hop) * np.exp(2j * np.pi * np.dot(R, k)) for R, hop in self.hop.items())
+        H = sum((self._array_cast(hop) * np.exp(2j * np.pi * np.dot(R, k)) for R, hop in self.hop.items()),
+                np.zeros((self.size, self.size), dtype=complex))
         H += H.conjugate().T
         if convention == 1:
             pos_exponential = np.array([[np.exp(2j * np.pi * np.dot(p, k)) for p in self.pos]])
@@ -1001,14 +1051,20 @@ class Model(HDF5Enabled):
         else:
             new_model = self
             for sym in symmetries:
-                new_model = 1 / 2 * (new_model + new_model._apply_operation(sym))
+                order = sym.get_order()
+                sym_pow = sym
+                tmp_model = new_model
+                for i in range(1, order):
+                    tmp_model += new_model._apply_operation(sym_pow)
+                    sym_pow @= sym
+                new_model = 1 / order * tmp_model
             return new_model
 
     def _apply_operation(self, symmetry_operation):
         # apply symmetry operation on sublattice positions
         sublattices = self._get_sublattices()
 
-        new_sublattice_pos = [np.dot(symmetry_operation.rotation_matrix, latt.pos) for latt in sublattices]
+        new_sublattice_pos = [symmetry_operation.real_space_operator.apply(latt.pos) for latt in sublattices]
 
         # match to a known sublattice position to determine the shift vector
         uc_shift = []
@@ -1046,7 +1102,7 @@ class Model(HDF5Enabled):
 
         # apply D(g) ... D(g)^-1 (since D(g) is unitary: D(g)^-1 == D(g)^H)
         for R in new_hop.keys():
-            sym_op = symmetry_operation.repr.matrix
+            sym_op = np.array(symmetry_operation.repr.matrix).astype(complex)
             if symmetry_operation.repr.has_cc:
                 new_hop[R] = np.conj(new_hop[R])
             new_hop[R] = np.dot(sym_op, np.dot(new_hop[R], np.conj(np.transpose(sym_op))))
@@ -1063,6 +1119,63 @@ class Model(HDF5Enabled):
         new_pos = self.pos[tuple(slice_idx), :]
         new_hop = {key: np.array(val)[np.ix_(slice_idx, slice_idx)] for key, val in self.hop.items()}
         return Model(**co.ChainMap(dict(hop=new_hop, pos=new_pos), self._input_kwargs))
+
+    @classmethod
+    def join_models(cls, *models):
+        """
+        Creates a tight-binding model which contains all orbitals of the given input models. The orbitals are ordered by model, such that the resulting Hamiltonian is block-diagonal.
+
+        :param models: Models which should be joined together.
+        :type models: tbmodels.Model
+        """
+        if not models:
+            raise ValueError('At least one model must be given.')
+
+        first_model = models[0]
+        # check dim
+        if not _check_compatibility._check_dim(*models):
+            raise ValueError('Model dimensions do not match.')
+        new_dim = first_model.dim
+
+        # check uc compatibility
+        if not _check_compatibility._check_uc(*models):
+            raise ValueError('Model unit cells do not match.')
+        new_uc = first_model.uc
+
+        # join positions (must either all be set, or all None)
+        pos_list = list(m.pos for m in models)
+        if any(pos is None for pos in pos_list):
+            if not all(pos is None for pos in pos_list):
+                raise ValueError('Either all or no positions must be set.')
+            new_pos = None
+        else:
+            new_pos = np.concatenate(pos_list)
+
+        # add occ (is set to None if any model has occ=None)
+        occ_list = list(m.occ for m in models)
+        if any(occ is None for occ in occ_list):
+            new_occ = None
+        else:
+            new_occ = sum(occ_list)
+
+        # combine hop
+        all_R = set()
+        for m in models:
+            all_R.update(m.hop.keys())
+
+        new_hop = dict()
+
+        def _get_mat(m, R):
+            hop_mat = m.hop[R]
+            if m._sparse:
+                return hop_mat.toarray()
+            return hop_mat
+
+        for R in all_R:
+            hop_list = [_get_mat(m, R) for m in models]
+            new_hop[R] = la.block_diag(*hop_list)
+
+        return cls(dim=new_dim, uc=new_uc, pos=new_pos, occ=new_occ, hop=new_hop, contains_cc=False)
 
     def __add__(self, model):
         """
@@ -1087,20 +1200,7 @@ class Model(HDF5Enabled):
             )
 
         # check if the unit cells match
-        uc_match = True
-        if self.uc is None or model.uc is None:
-            if model.uc is not self.uc:
-                uc_match = False
-        else:
-            tolerance = 1e-6
-            for v1, v2 in zip(self.uc, model.uc):
-                if not uc_match:
-                    break
-                for x1, x2 in zip(v1, v2):
-                    if abs(x1 - x2) > tolerance:
-                        uc_match = False
-                        break
-        if not uc_match:
+        if not _check_compatibility._check_uc(self, model):
             raise ValueError(
                 'Error when adding Models: unit cells don\'t match.\nModel 1:\n{0.uc}\n\nModel 2:\n{1.uc}'.format(
                     self, model
