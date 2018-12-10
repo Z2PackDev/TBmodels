@@ -1,3 +1,5 @@
+# © 2015-2018, ETH Zurich, Institut für Theoretische Physik
+# Author: Dominik Gresch <greschd@gmx.ch>
 """
 Utilities to check whether models are compatible, e.g. for adding.
 """

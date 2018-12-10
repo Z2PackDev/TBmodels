@@ -1,3 +1,6 @@
+.. © 2015-2018, ETH Zurich, Institut für Theoretische Physik
+.. Author: Dominik Gresch <greschd@gmx.ch>
+
 .. image:: images/tbmodels_logo.jpg
     :width: 250px
     :alt: TBmodels logo

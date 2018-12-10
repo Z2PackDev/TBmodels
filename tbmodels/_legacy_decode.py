@@ -1,3 +1,5 @@
+# © 2015-2018, ETH Zurich, Institut für Theoretische Physik
+# Author: Dominik Gresch <greschd@gmx.ch>
 """
 Defines decoding for the legacy (pre fsc.hdf5-io) HDF5 format.
 """

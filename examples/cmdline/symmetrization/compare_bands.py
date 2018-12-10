@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Author:  Georg Winkler, Dominik Gresch <greschd@gmx.ch>
+
+# © 2015-2018, ETH Zurich, Institut für Theoretische Physik
+# Authors: Georg Winkler, Dominik Gresch <greschd@gmx.ch>
 
 import tbmodels
 import numpy as np

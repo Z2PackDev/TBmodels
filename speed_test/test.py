@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#
-# Author:  Dominik Gresch <greschd@gmx.ch>
-# Date:    07.07.2016 00:46:23 CEST
-# File:    test.py
+
+# © 2015-2018, ETH Zurich, Institut für Theoretische Physik
+# Author: Dominik Gresch <greschd@gmx.ch>
 
 import itertools
 
