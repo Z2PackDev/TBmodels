@@ -57,6 +57,6 @@ setup(
         [console_scripts]
         tbmodels=tbmodels._cli:cli
     ''',
-    license='GPL',
+    license='Apache 2.0',
     packages=['tbmodels', 'tbmodels._ptools']
 )
