@@ -25,6 +25,13 @@ Helper functions
     :members:
     :imported-members:
 
+Saving and loading (HDF5)
+-------------------------
+
+.. automodule:: tbmodels.io
+    :members:
+    :imported-members:
+
 .. _cli_reference:
 
 Command line interface
