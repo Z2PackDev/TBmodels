@@ -5,8 +5,11 @@
 # Author: Dominik Gresch <greschd@gmx.ch>
 
 import pytest
+import tbmodels  # pylint: disable=unused-import
 
 import numpy as np
+
+from tbmodels._ptools.sparse_matrix import csr  # pylint: disable=unused-import
 
 from parameters import T_VALUES, KPT
 
