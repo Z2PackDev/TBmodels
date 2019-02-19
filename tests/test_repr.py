@@ -1,15 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# © 2015-2018, ETH Zurich, Institut für Theoretische Physik
+# (c) 2015-2018, ETH Zurich, Institut fuer Theoretische Physik
 # Author: Dominik Gresch <greschd@gmx.ch>
 
 import pytest
-import tbmodels
 
 import numpy as np
-
-from tbmodels._ptools.sparse_matrix import csr
 
 from parameters import T_VALUES, KPT
 

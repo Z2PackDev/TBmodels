@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# © 2015-2018, ETH Zurich, Institut für Theoretische Physik
+# (c) 2015-2018, ETH Zurich, Institut fuer Theoretische Physik
 # Author: Dominik Gresch <greschd@gmx.ch>
 
 T_VALUES = [(t1, t2) for t1 in [-0.1, 0.2, 0.3] for t2 in [-0.2, 0.5]]

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 #
 
-# © 2015-2018, ETH Zurich, Institut für Theoretische Physik
+# (c) 2015-2018, ETH Zurich, Institut fuer Theoretische Physik
 # Authors: Georg Winkler, Dominik Gresch <greschd@gmx.ch>
 
 import tbmodels

@@ -1,4 +1,6 @@
-# © 2015-2018, ETH Zurich, Institut für Theoretische Physik
+# -*- coding: utf-8 -*-
+#
+# (c) 2015-2018, ETH Zurich, Institut fuer Theoretische Physik
 # Author: Dominik Gresch <greschd@gmx.ch>
 """
 This module contains a helper function to create a list of hoppings from a given matrix (:meth:`matrix_to_hop`).

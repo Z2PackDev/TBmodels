@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# © 2015-2018, ETH Zurich, Institut für Theoretische Physik
+# (c) 2015-2018, ETH Zurich, Institut fuer Theoretische Physik
 # Author: Dominik Gresch <greschd@gmx.ch>
 
-import numpy as np
 import scipy.sparse as sp
 
 

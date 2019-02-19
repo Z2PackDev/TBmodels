@@ -1,4 +1,6 @@
-# © 2015-2018, ETH Zurich, Institut für Theoretische Physik
+# -*- coding: utf-8 -*-
+#
+# (c) 2015-2018, ETH Zurich, Institut fuer Theoretische Physik
 # Author: Dominik Gresch <greschd@gmx.ch>
 """
 Module defining k.p models. Note that this module should be considered temporary,
