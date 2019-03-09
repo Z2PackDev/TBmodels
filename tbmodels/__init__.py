@@ -6,7 +6,7 @@ r"""
 TBmodels is a tool for creating / loading and manipulating tight-binding models.
 """
 
-__version__ = '1.3.2a1'
+__version__ = '1.3.2'
 
 # import order is important due to circular imports
 from . import helpers
