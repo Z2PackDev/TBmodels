@@ -678,7 +678,7 @@ class Model(HDF5Enabled):
         lines = (l for l in lines if l)
         lines = (l.lower() for l in lines)
 
-        split_token = re.compile('[ :=]+')
+        split_token = re.compile('[\t :=]+')
 
         mapping = {}
         for l in lines:
