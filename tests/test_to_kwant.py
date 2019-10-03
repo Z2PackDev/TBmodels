@@ -8,8 +8,8 @@ import pytest
 import itertools
 
 import kwant
+from kwant import wraparound
 import tbmodels
-import wraparound
 import numpy as np
 import scipy.linalg as la
 
