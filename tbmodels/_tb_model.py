@@ -859,7 +859,7 @@ class Model(HDF5Enabled):
 
         for key in ['uc', 'occ', 'size', 'dim', 'pos', 'sparse']:
             if key in tb_model_group:
-                new_kwargs[key] = tb_model_group[key].value
+                new_kwargs[key] = tb_model_group[key][()]
 
         if 'hop' not in kwargs:
             for group in tb_model_group['hop'].values():
