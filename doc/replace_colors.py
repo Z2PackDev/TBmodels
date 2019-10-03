@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#
-# Author:  Dominik Gresch <greschd@gmx.ch>
-# Date:    09.10.2015 11:29:39 CEST
-# File:    replace_colors.py
+
+# (c) 2015-2018, ETH Zurich, Institut fuer Theoretische Physik
+# Author: Dominik Gresch <greschd@gmx.ch>
 
 import os
 import sys

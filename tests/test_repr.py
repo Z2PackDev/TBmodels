@@ -1,12 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# (c) 2015-2018, ETH Zurich, Institut fuer Theoretische Physik
+# Author: Dominik Gresch <greschd@gmx.ch>
+
 import pytest
-import tbmodels
+import tbmodels  # pylint: disable=unused-import
 
 import numpy as np
 
-from tbmodels._ptools.sparse_matrix import csr
+from tbmodels._ptools.sparse_matrix import csr  # pylint: disable=unused-import
 
 from parameters import T_VALUES, KPT
 

@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# (c) 2015-2018, ETH Zurich, Institut fuer Theoretische Physik
+# Author: Dominik Gresch <greschd@gmx.ch>
+
 import tempfile
 
 import pytest
 
 import tbmodels
-import numpy as np
 
 from parameters import T_VALUES, KPT
 

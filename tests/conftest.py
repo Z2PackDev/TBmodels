@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# (c) 2015-2018, ETH Zurich, Institut fuer Theoretische Physik
+# Author: Dominik Gresch <greschd@gmx.ch>
+
 import os
-import json
 import pytest
-import numbers
 import operator
 import itertools
-import contextlib
 from functools import partial
 from collections import ChainMap
-from collections.abc import Iterable
 try:
     from functools import singledispatch
 except ImportError:

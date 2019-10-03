@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+#
+# (c) 2015-2018, ETH Zurich, Institut fuer Theoretische Physik
+# Author: Dominik Gresch <greschd@gmx.ch>
+
 import re
 import os
 import copy
@@ -673,7 +678,7 @@ class Model(HDF5Enabled):
         lines = (l for l in lines if l)
         lines = (l.lower() for l in lines)
 
-        split_token = re.compile('[ :=]+')
+        split_token = re.compile('[\t :=]+')
 
         mapping = {}
         for l in lines:
@@ -801,7 +806,7 @@ class Model(HDF5Enabled):
         Construct a k.p model around a given k-point. This is done by explicitly
         evaluating the derivatives which make up the Taylor expansion of the k.p
         models.
-        
+
         This method can currently only construct models using
         `convention 2  <http://www.physics.rutgers.edu/pythtb/_downloads/pythtb-formalism.pdf>`_
         for the Hamiltonian.

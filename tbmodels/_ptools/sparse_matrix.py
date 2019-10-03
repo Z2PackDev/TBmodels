@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Author:  Dominik Gresch <greschd@gmx.ch>
-# Date:    06.10.2015 17:35:33 CEST
-# File:    sparse_matrix.py
+# (c) 2015-2018, ETH Zurich, Institut fuer Theoretische Physik
+# Author: Dominik Gresch <greschd@gmx.ch>
 
-import numpy as np
 import scipy.sparse as sp
 
 

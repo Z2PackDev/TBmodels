@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# (c) 2015-2018, ETH Zurich, Institut fuer Theoretische Physik
+# Author: Dominik Gresch <greschd@gmx.ch>
+
 import re
 try:
     from setuptools import setup
@@ -54,6 +57,6 @@ setup(
         [console_scripts]
         tbmodels=tbmodels._cli:cli
     ''',
-    license='GPL',
+    license='Apache 2.0',
     packages=['tbmodels', 'tbmodels._ptools']
 )
