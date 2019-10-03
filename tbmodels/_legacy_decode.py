@@ -32,4 +32,4 @@ def _decode_model(hdf5_handle):
 
 
 def _decode_val(hdf5_handle):
-    return hdf5_handle['val'].value
+    return hdf5_handle['val'][()]

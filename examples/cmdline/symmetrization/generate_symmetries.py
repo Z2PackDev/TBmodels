@@ -22,8 +22,10 @@ def spin_reps(prep):
     """
     # general representation of the D1/2 rotation about the axis (l,m,n) around the
     # angle phi
-    D12 = lambda l, m, n, phi: np.array([[np.cos(phi / 2.) - 1j * n * np.sin(phi / 2.), (-1j * l - m) * np.sin(phi / 2.)],
-                                         [(-1j * l + m) * np.sin(phi / 2.), np.cos(phi / 2.) + 1j * n * np.sin(phi / 2.)]])
+    D12 = lambda l, m, n, phi: np.array([[
+        np.cos(phi / 2.) - 1j * n * np.sin(phi / 2.), (-1j * l - m) * np.sin(phi / 2.)
+    ], [(-1j * l + m) * np.sin(phi / 2.),
+        np.cos(phi / 2.) + 1j * n * np.sin(phi / 2.)]])
 
     n = np.zeros(3)
     tr = np.trace(prep)

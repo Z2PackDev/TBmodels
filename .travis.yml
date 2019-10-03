@@ -21,7 +21,6 @@ before_install:
 
 install:
   - pip install -U .[dev]
-  - pip install git+https://gitlab.kwant-project.org/cwg/wraparound.git
 
 script:
   - if [ "$TEST_TYPE" == "compliance" ] ; then pre-commit run yapf --all-files ; fi
