@@ -57,7 +57,6 @@ class Model(HDF5Enabled):
     :param sparse:      Specifies whether the hopping matrices should be saved in sparse format.
     :type sparse:       bool
     """
-
     def __init__(
         self,
         *,
@@ -301,7 +300,6 @@ class Model(HDF5Enabled):
             """
             POD for hoppings
             """
-
             def __init__(self):
                 self.data = []
                 self.row_idx = []
@@ -827,9 +825,8 @@ class Model(HDF5Enabled):
                 continue
             taylor_coefficients[pow] = ((2j * np.pi)**curr_order / np.prod(factorial(pow, exact=True))) * sum((
                 np.prod(np.array(R)**np.array(pow)) * np.exp(2j * np.pi * np.dot(k, R)) * self._array_cast(mat) +
-                np.prod(
-                    (-np.array(R))**np.array(pow)
-                ) * np.exp(-2j * np.pi * np.dot(k, R)) * self._array_cast(mat).T.conj() for R, mat in self.hop.items()
+                np.prod((-np.array(R))**np.array(pow)) * np.exp(-2j * np.pi * np.dot(k, R)) *
+                self._array_cast(mat).T.conj() for R, mat in self.hop.items()
             ), np.zeros((self.size, self.size), dtype=complex))
         return KdotpModel(taylor_coefficients=taylor_coefficients)
 
