@@ -544,6 +544,9 @@ class Model(HDF5Enabled):
         :param ignore_orbital_order: Do not throw an error when the order of orbitals does not match what is expected from the Wannier90 output.
         :type ignore_orbital_order: bool
 
+        :param pos_kind: Determines how positions are assinged to orbitals. Valid options are `wannier` (use Wannier centres) or `nearest_atom` (map to nearest atomic position).
+        :type pos_kind: str
+
         :param kwargs:  :class:`.Model` keyword arguments.
         """
 
@@ -583,7 +586,7 @@ class Model(HDF5Enabled):
                         pos_cartesian.append(all_atom_pos[np.argmin(distances)])
                 else:
                     raise ValueError(
-                        "Invalid value '{}' for 'pos_kind', must be 'wannier' or 'atom_nearest'".format(pos_kind)
+                        "Invalid value '{}' for 'pos_kind', must be 'wannier' or 'nearest_atom'".format(pos_kind)
                     )
                 kwargs['pos'] = la.solve(kwargs['uc'].T, np.array(pos_cartesian).T).T
 
