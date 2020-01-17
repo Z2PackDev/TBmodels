@@ -23,7 +23,7 @@ with open('./tbmodels/__init__.py', 'r') as f:
 EXTRAS_REQUIRE = {
     'kwant': ['kwant'],
     'dev': [
-        'pytest', 'pytest-cov', 'yapf==0.28', 'pythtb', 'pre-commit', 'sphinx', 'sphinx-rtd-theme==0.2.4',
+        'pytest', 'pytest-cov', 'yapf==0.29', 'pythtb', 'pre-commit', 'sphinx', 'sphinx-rtd-theme==0.2.4',
         'ipython>=6.2', 'sphinx-click', 'prospector==1.1.7', 'pylint==2.3.1'
     ]
 }

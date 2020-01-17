@@ -57,5 +57,8 @@ playground
 # Atom ide-python
 .ropeproject
 
+# VSCode
+.vscode
+
 # Tox
 .tox

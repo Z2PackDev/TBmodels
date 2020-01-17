@@ -8,6 +8,19 @@ What's new
 
 The following is a short summary of the most important changes in new releases of TBmodels, starting *after* version 1.1.
 
+What's new in TBmodels 1.4 (development version)
+------------------------------------------------
+
+New features
+''''''''''''
+
+- Add ``--version`` option to the command-line interface, to print the current version.
+
+Bugfixes
+''''''''
+
+- The `nearest_atom` parsing uses a periodic image of the atom if that is closer to the original Wannier position. The previous behavior could lead to incorrect hopping matrices (wrong R) if the original Wannier position is outside the home unit cell.
+
 What's new in TBmodels 1.3
 --------------------------
 
