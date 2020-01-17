@@ -11,13 +11,13 @@ from collections.abc import Iterable
 from functools import singledispatch
 
 import click
-import bands_inspect as bi
-import symmetry_representation as sr
 
+from . import __version__ as tbmodels_version
 from . import Model
 
 
 @click.group()
+@click.version_option(version=tbmodels_version)
 def cli():
     pass
 
@@ -94,49 +94,47 @@ def symmetrize(input, output, symmetries, full_group):  # pylint: disable=redefi
     """
     Symmetrize tight-binding model with given symmetry group(s).
     """
+    import symmetry_representation as sr
     model = _read_input(input)
     click.echo("Reading symmetries from file '{}' ...".format(symmetries))
     sym = sr.io.load(symmetries)
-    model_sym = _symmetrize(sym, model, full_group)  # pylint: disable=assignment-from-no-return
-    _write_output(model_sym, output)
 
+    @singledispatch
+    def _symmetrize(sym, model, full_group):
+        """
+        Implementation for the symmetrization procedure. The singledispatch is used
+        to treat (nested) lists of symmetries or symmetry groups.
+        """
+        raise ValueError("Invalid type '{}' for _symmetrize".format(type(sym)))
 
-@singledispatch
-def _symmetrize(sym, model, full_group):  # pylint: disable=unused-argument
-    """
-    Implementation for the symmetrization procedure. The singledispatch is used
-    to treat (nested) lists of symmetries or symmetry groups.
-    """
-    raise ValueError("Invalid type '{}' for _symmetrize".format(type(sym)))
+    @_symmetrize.register(Iterable)
+    def _(sym, model, full_group):
+        for s in sym:
+            model = _symmetrize(s, model, full_group)
+        return model
 
-
-@_symmetrize.register(Iterable)
-def _(sym, model, full_group):
-    for s in sym:
-        model = _symmetrize(s, model, full_group)  # pylint: disable=assignment-from-no-return
-    return model
-
-
-@_symmetrize.register(sr.SymmetryGroup)
-def _(sym, model, full_group):  # pylint: disable=missing-docstring
-    symmetries = sym.symmetries
-    if full_group is None:
-        full_group = sym.full_group
-    click.echo(
-        "Symmetrizing model with {} symmetr{}, full_group={} ...".format(
-            len(symmetries), 'y' if len(symmetries) == 1 else 'ies', full_group
+    @_symmetrize.register(sr.SymmetryGroup)
+    def _(sym, model, full_group):
+        symmetries = sym.symmetries
+        if full_group is None:
+            full_group = sym.full_group
+        click.echo(
+            "Symmetrizing model with {} symmetr{}, full_group={} ...".format(
+                len(symmetries), 'y' if len(symmetries) == 1 else 'ies', full_group
+            )
         )
-    )
-    return model.symmetrize(symmetries=symmetries, full_group=full_group)
+        return model.symmetrize(symmetries=symmetries, full_group=full_group)
 
+    @_symmetrize.register(sr.SymmetryOperation)
+    def _(sym, model, full_group):
+        sym_group = sr.SymmetryGroup(
+            symmetries=[sym],
+            full_group=full_group or False  # catches 'None', does nothing for 'True' or 'False'
+        )
+        return _symmetrize(sym_group, model, full_group)
 
-@_symmetrize.register(sr.SymmetryOperation)
-def _(sym, model, full_group):  # pylint: disable=missing-docstring
-    sym_group = sr.SymmetryGroup(
-        symmetries=[sym],
-        full_group=full_group or False  # catches 'None', does nothing for 'True' or 'False'
-    )
-    return _symmetrize(sym_group, model, full_group)
+    model_sym = _symmetrize(sym, model, full_group)
+    _write_output(model_sym, output)
 
 
 @cli.command(short_help="Slice specific orbitals from model.")
@@ -171,6 +169,8 @@ def eigenvals(input, kpoints, output):  # pylint: disable=redefined-builtin
     """
     Calculate the energy eigenvalues for a given set of k-points (in reduced coordinates). The input and output is given in an HDF5 file.
     """
+    import bands_inspect as bi
+
     model = _read_input(input)
     click.echo("Reading kpoints from file '{}' ...".format(kpoints))
     kpts = bi.io.load(kpoints)
