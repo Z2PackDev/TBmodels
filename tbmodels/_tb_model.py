@@ -73,6 +73,7 @@ class Model(HDF5Enabled):
         if hop is None:
             hop = dict()
 
+        # ---- SPARSITY ----
         self.set_sparse(sparse)
 
         # ---- SIZE ----
@@ -95,10 +96,6 @@ class Model(HDF5Enabled):
 
         # ---- OCCUPATION NR ----
         self.occ = None if (occ is None) else int(occ)
-
-        # ---- SPARSITY ----
-        self._sparse = True
-        self.set_sparse(sparse)
 
     #---------------- INIT HELPER FUNCTIONS --------------------------------#
     def _init_size(self, size, on_site, hop, pos):
