@@ -3,18 +3,17 @@
 
 # (c) 2015-2018, ETH Zurich, Institut fuer Theoretische Physik
 # Author: Dominik Gresch <greschd@gmx.ch>
+"""Configuration file for pytest tests."""
+
+# pylint: disable=redefined-outer-name
 
 import os
-import pytest
 import operator
 import itertools
 from functools import partial
 from collections import ChainMap
-try:
-    from functools import singledispatch
-except ImportError:
-    from singledispatch import singledispatch
 
+import pytest
 import numpy as np
 
 import tbmodels
@@ -26,11 +25,11 @@ from tbmodels.io import save, load
 @pytest.fixture
 def test_name(request):
     """Returns module_name.function_name for a given test"""
-    return (request.module.__name__, request._parent_request._pyfuncitem.name)
+    return (request.module.__name__, request._parent_request._pyfuncitem.name)  # pylint: disable=protected-access
 
 
 @pytest.fixture
-def compare_data(request, test_name, scope="session"):
+def compare_data(request, test_name):
     """Returns a function which either saves some data to a file or (if that file exists already) compares it to pre-existing data using a given comparison function."""
     def inner(compare_fct, data, tag=None):
         dir_name, file_name = test_name
@@ -60,6 +59,9 @@ def compare_isclose(compare_data):
 
 @pytest.fixture
 def models_equal():
+    """
+    Check that two tight-binding models are equal.
+    """
     def inner(model1, model2, ignore_sparsity=False):
         assert model1.size == model2.size
         assert model1.dim == model2.dim
@@ -72,7 +74,7 @@ def models_equal():
             assert (np.array(model1.hop[k]) == np.array(model2.hop[k])).all()
         assert (model1.pos == model2.pos).all()
         if not ignore_sparsity:
-            assert model1._sparse == model2._sparse
+            assert model1._sparse == model2._sparse  # pylint: disable=protected-access
         return True
 
     return inner
@@ -80,9 +82,12 @@ def models_equal():
 
 @pytest.fixture
 def kdotp_models_equal():
+    """
+    Check that two k.p models are equal.
+    """
     def inner(model1, model2):
-        for pow in model1.taylor_coefficients.keys() | model1.taylor_coefficients.keys():
-            assert (np.array(model1.taylor_coefficients[pow]) == np.array(model2.taylor_coefficients[pow])).all()
+        for power in model1.taylor_coefficients.keys() | model1.taylor_coefficients.keys():
+            assert (np.array(model1.taylor_coefficients[power]) == np.array(model2.taylor_coefficients[power])).all()
         return True
 
     return inner
@@ -90,6 +95,9 @@ def kdotp_models_equal():
 
 @pytest.fixture
 def models_close():
+    """
+    Check that two tight-binding models are almost equal.
+    """
     def inner(model1, model2, ignore_sparsity=False):
         assert model1.size == model2.size
         assert model1.dim == model2.dim
@@ -108,7 +116,7 @@ def models_close():
         else:
             assert np.isclose(model1.pos, model2.pos).all()
         if not ignore_sparsity:
-            assert model1._sparse == model2._sparse
+            assert model1._sparse == model2._sparse  # pylint: disable=protected-access
         return True
 
     return inner
@@ -116,6 +124,9 @@ def models_close():
 
 @pytest.fixture
 def sample():
+    """
+    Get the absolute path of a file / directory in the 'samples' directory.
+    """
     def inner(name):
         return os.path.join(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'samples'), name)
 
@@ -125,15 +136,18 @@ def sample():
 #-----------------------------------------------------------------------#
 @pytest.fixture
 def get_model_clean():
+    """
+    Function that creates a simple tight-binding model
+    """
     def inner(t1, t2, sparsity_default=False, **kwargs):
         dim = kwargs.get('dim', 3)
         defaults = {}
         defaults['pos'] = [[0] * 2, [0.5] * 2]
         if dim < 2:
             raise ValueError('dimension must be at least 2')
-        elif dim > 2:
-            for p in defaults['pos']:
-                p.extend([0] * (dim - 2))
+        if dim > 2:
+            for position in defaults['pos']:
+                position.extend([0] * (dim - 2))
         defaults['occ'] = 1
         defaults['on_site'] = (1, -1)
         defaults['size'] = 2
@@ -154,9 +168,16 @@ def get_model_clean():
 
 @pytest.fixture(params=[True, False])
 def sparse(request):
+    """
+    Fixture to set the sparsity to either True or False.
+    """
     return request.param
 
 
 @pytest.fixture()  # params is for sparse / dense
 def get_model(get_model_clean, sparse):
+    """
+    Function that creates a simple tight-binding model, with default
+    sparsity determined by the 'sparse' fixture.
+    """
     return partial(get_model_clean, sparsity_default=sparse)
