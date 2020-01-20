@@ -137,7 +137,7 @@ def test_wannier_hr_wsvec_xyz(hr_name, wsvec_name, xyz_name, sample):
             [-1.382141, -0.797980, 0.529693],
         ]),
         'nearest_atom',
-    )]  # pylint: disable=invalid-name
+    )]
 )  # pylint: disable=too-many-arguments
 def test_wannier_all(
     compare_isclose, hr_name, wsvec_name, xyz_name, win_name, pos, uc, reciprocal_lattice, sample, pos_kind
