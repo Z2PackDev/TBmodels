@@ -3,7 +3,7 @@
 
 # (c) 2015-2018, ETH Zurich, Institut fuer Theoretische Physik
 # Author: Dominik Gresch <greschd@gmx.ch>
-"""Tests I/O using the Wannier90 *_hr.dat format."""
+"""Tests for writing files to *_hr.dat format."""
 
 import tempfile
 
