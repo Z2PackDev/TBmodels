@@ -26,6 +26,7 @@ def model_sparse(sample):
     return res
 
 
+@pytest.fixture
 def model(model_dense, model_sparse, sparse):  # pylint: disable=redefined-outer-name
     """Fixture to get a tight-binding model, both sparse and dense."""
     if sparse:
