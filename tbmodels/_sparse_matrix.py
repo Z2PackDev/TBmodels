@@ -3,23 +3,35 @@
 #
 # (c) 2015-2018, ETH Zurich, Institut fuer Theoretische Physik
 # Author: Dominik Gresch <greschd@gmx.ch>
+"""
+Helper module wrapping scipy.sparse matrix types to make them
+convertible directly to numpy arrays by implementing the __array__
+method.
+"""
 
 import scipy.sparse as sp
 
 
-class ArrayConvertible(object):
+class ArrayConvertible:
+    """
+    Base class for sparse matrix types that should be directly convertible
+    to numpy arrays.
+    """
     def __array__(self):
-        return self.toarray()
+        return self.toarray()  # pylint: disable=no-member
 
     # Because transpose / conjugate return scipy sparse arrays.
     def transpose(self):
-        return self.__class__(super(ArrayConvertible, self).transpose())
+        return self.__class__(super(ArrayConvertible, self).transpose())  # pylint: disable=no-member
 
     def conjugate(self):
-        return self.__class__(super(ArrayConvertible, self).conjugate())
+        return self.__class__(super(ArrayConvertible, self).conjugate())  # pylint: disable=no-member
 
 
-class csr(ArrayConvertible, sp.csr_matrix):
+class csr(ArrayConvertible, sp.csr_matrix):  # pylint: disable=invalid-name
+    """
+    Wrapper for CSR matrices to be array-convertible.
+    """
     def __repr__(self):
         res = (
             'csr((' + '[' + ', '.join(str(x)
@@ -35,9 +47,13 @@ class csr(ArrayConvertible, sp.csr_matrix):
         return self + other
 
 
-class coo(ArrayConvertible, sp.coo_matrix):
-    pass
+class coo(ArrayConvertible, sp.coo_matrix):  # pylint: disable=invalid-name
+    """
+    Wrapper for COO matrices to be array-convertible.
+    """
 
 
-class lil(ArrayConvertible, sp.lil_matrix):
-    pass
+class lil(ArrayConvertible, sp.lil_matrix):  # pylint: disable=invalid-name
+    """
+    Wrapper for LIL matrices to be array-convertible.
+    """
