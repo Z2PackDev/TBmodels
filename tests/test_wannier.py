@@ -12,7 +12,7 @@ import numpy as np
 
 import tbmodels
 
-KPT = [(0.1, 0.2, 0.7), (-0.3, 0.5, 0.2), (0., 0., 0.), (0.1, -0.9, -0.7)]
+from parameters import KPT
 
 
 @pytest.mark.parametrize('hr_name', ['hr_hamilton.dat', 'wannier90_hr.dat', 'wannier90_hr_v2.dat', 'silicon_hr.dat'])
