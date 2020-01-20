@@ -3,9 +3,11 @@
 
 # (c) 2015-2018, ETH Zurich, Institut fuer Theoretische Physik
 # Author: Dominik Gresch <greschd@gmx.ch>
+"""Tests for the 'parse' CLI command."""
+
+import tempfile
 
 import pytest
-import tempfile
 from click.testing import CliRunner
 
 import tbmodels
@@ -15,6 +17,7 @@ from tbmodels._cli import cli
 @pytest.mark.parametrize('pos_kind', ['wannier', 'nearest_atom'])
 @pytest.mark.parametrize('prefix', ['silicon', 'bi'])
 def test_cli_parse(models_equal, prefix, sample, pos_kind):
+    """Test the 'parse' command with different 'prefix' and 'pos_kind'."""
     runner = CliRunner()
     with tempfile.NamedTemporaryFile() as out_file:
         run = runner.invoke(
