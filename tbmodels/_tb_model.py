@@ -20,7 +20,7 @@ from fsc.export import export
 from fsc.hdf5_io import subscribe_hdf5, HDF5Enabled
 
 from . import _check_compatibility
-from ._ptools import sparse_matrix as sp
+from . import _sparse_matrix as sp
 from ._kdotp import KdotpModel
 
 

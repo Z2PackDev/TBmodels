@@ -11,7 +11,7 @@ import pytest
 import numpy as np  # pylint: disable=unused-import
 
 import tbmodels  # pylint: disable=unused-import
-from tbmodels._ptools.sparse_matrix import csr  # pylint: disable=unused-import
+from tbmodels._sparse_matrix import csr  # pylint: disable=unused-import
 
 from parameters import T_VALUES
 

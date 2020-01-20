@@ -21,15 +21,6 @@ MANIFEST
 *.tar.gz
 files*.txt
 
-# ignoring the _ptools git
-tbmodels/_ptools/.git
-tbmodels/_ptools/.gitignore
-
-# selectively choose _ptools
-tbmodels/_ptools/*
-!tbmodels/_ptools/__init__.py
-!tbmodels/_ptools/sparse_matrix.py
-
 # debug folder
 debug
 

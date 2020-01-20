@@ -1,6 +1,3 @@
 [run]
 include =
     ../tbmodels/*.py
-
-omit =
-    ../tbmodels/_ptools/*.py
