@@ -161,7 +161,6 @@ def test_wannier_all(
 
     compare_isclose(hamiltonian_list)
 
-    # pylint: disable=fixme
     # TODO: Improve test to remove this ugly hack: The 'silicon' .xyz file
     # has positions outside the UC, so the hoppings are mapped in such a
     # way that the two models are not equal.
