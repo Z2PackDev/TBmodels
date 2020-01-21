@@ -23,5 +23,5 @@ install:
   - pip install -U .[dev]
 
 script:
-  - if [ "$TEST_TYPE" == "compliance" ] ; then pre-commit run yapf --all-files ; fi
+  - if [ "$TEST_TYPE" == "compliance" ] ; then pre-commit run --all-files ; fi
   - if [ "$TEST_TYPE" == "test" ] ; then cd tests; py.test ; fi
