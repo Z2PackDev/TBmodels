@@ -19,7 +19,11 @@ New features
 Bugfixes
 ''''''''
 
-- The `nearest_atom` parsing uses a periodic image of the atom if that is closer to the original Wannier position. The previous behavior could lead to incorrect hopping matrices (wrong R) if the original Wannier position is outside the home unit cell.
+Deprecations and removals
+'''''''''''''''''''''''''
+
+- The ``from_hr`` and ``from_hr_file`` methods, deprecated since version 1.1, have been removed.
+
 
 What's new in TBmodels 1.3
 --------------------------

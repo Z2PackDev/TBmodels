@@ -11,7 +11,6 @@ import re
 import os
 import copy
 import time
-import warnings
 import itertools
 import contextlib
 import collections as co
@@ -322,57 +321,6 @@ class Model(HDF5Enabled):
             hop_dict[key] = sp.csr((val.data, (val.row_idx, val.col_idx)), dtype=complex, shape=(size, size))
 
         return cls(size=size, hop=hop_dict, **kwargs)
-
-    @classmethod
-    def from_hr(cls, hr_string, *, h_cutoff=0., **kwargs):
-        """
-        Create a :class:`.Model` instance from a string in Wannier90's ``hr.dat`` format.
-
-        :param hr_string:   Input string
-        :type hr_string:    str
-
-        :param h_cutoff:    Cutoff value for the hopping strength. Hoppings with a smaller absolute value are ignored.
-        :type h_cutoff:     float
-
-        :param kwargs:      :class:`.Model` keyword arguments.
-
-        .. warning :: When loading a :class:`.Model` from the ``hr.dat`` format, parameters such as the positions of the orbitals, unit cell shape and occupation number must be set explicitly.
-        .. note :: This interface is deprecated in favor of the :meth:`.from_wannier_files` interface.
-        """
-        return cls._from_hr_iterator(iter(hr_string.splitlines()), h_cutoff=h_cutoff, **kwargs)
-
-    @classmethod
-    def from_hr_file(cls, hr_file, *, h_cutoff=0., **kwargs):
-        """
-        Create a :class:`.Model` instance from a file in Wannier90's ``hr.dat`` format. The keyword arguments are the same as for :meth:`.from_hr`.
-
-        :param hr_file:     Path of the input file.
-        :type hr_file:      str
-
-        :param ignore_orbital_order: Do not throw an error when the order of orbitals does not match what is expected from the Wannier90 output.
-        :type ignore_orbital_order: bool
-
-        .. note :: This function is deprecated in favor of the :meth:`.from_wannier_files` interface.
-        """
-        with open(hr_file, 'r') as file_handle:
-            return cls._from_hr_iterator(file_handle, h_cutoff=h_cutoff, **kwargs)
-
-    @classmethod
-    def _from_hr_iterator(cls, hr_iterator, *, h_cutoff=0., **kwargs):
-        """
-        Helper method to construct a Model from an iterator over the
-        entries of a *_hr.dat file.
-        """
-        warnings.warn(
-            'The from_hr and from_hr_file functions are deprecated. Use from_wannier_files instead.',
-            DeprecationWarning,
-            stacklevel=2
-        )
-        num_wann, h_entries = cls._read_hr(hr_iterator)
-
-        h_entries = (hop for hop in h_entries if abs(hop[0]) > h_cutoff)
-
-        return cls.from_hop_list(size=num_wann, hop_list=h_entries, **kwargs)
 
     @staticmethod
     def _read_hr(iterator, ignore_orbital_order=False):
