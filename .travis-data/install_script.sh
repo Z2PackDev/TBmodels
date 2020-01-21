@@ -8,14 +8,11 @@ set -ev
 cd ${TRAVIS_BUILD_DIR}
 
 case "$INSTALL_TYPE" in
-    test)
-        pip install .[test]
+    dev)
+        pip install .[dev]
         ;;
-    test_sdist)
+    dev_sdist)
         python setup.py sdist
-        ls -1 dist/ | xargs -I % pip install dist/%[test]
-        ;;
-    precommit)
-        pip install .[precommit]
+        ls -1 dist/ | xargs -I % pip install dist/%[dev]
         ;;
 esac

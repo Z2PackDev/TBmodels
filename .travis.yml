@@ -8,15 +8,15 @@ python:
   - "3.8"
 env:
   - TEST_TYPE="tests"
-    INSTALL_TYPE="test"
+    INSTALL_TYPE="dev"
   - TEST_TYPE="tests"
-    INSTALL_TYPE="test_sdist"
+    INSTALL_TYPE="dev_sdist"
 jobs:
   include:
     - python: "3.7"
       env:
         - TEST_TYPE="precommit"
-          INSTALL_TYPE="precommit"
+          INSTALL_TYPE="dev"
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq liblapack3 liblapack-dev
