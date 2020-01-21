@@ -3,20 +3,24 @@
 
 # (c) 2015-2018, ETH Zurich, Institut fuer Theoretische Physik
 # Author: Dominik Gresch <greschd@gmx.ch>
+"""
+Tests for the 'eigenvals' command.
+"""
 
 import os
-
-import pytest
 import tempfile
+
 import numpy as np
 import bands_inspect as bi
 from click.testing import CliRunner
 
-import tbmodels
 from tbmodels._cli import cli
 
 
 def test_cli_eigenvals(sample):
+    """
+    Test the 'eigenvals' command.
+    """
     samples_dir = sample('cli_eigenvals')
     runner = CliRunner()
     with tempfile.NamedTemporaryFile() as out_file:

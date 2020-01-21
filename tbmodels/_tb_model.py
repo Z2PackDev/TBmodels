@@ -2,6 +2,10 @@
 #
 # (c) 2015-2018, ETH Zurich, Institut fuer Theoretische Physik
 # Author: Dominik Gresch <greschd@gmx.ch>
+# pylint: disable=too-many-lines,invalid-name
+"""
+Implements the Model class, which describes a tight-binding model.
+"""
 
 import re
 import os
@@ -20,7 +24,7 @@ from fsc.export import export
 from fsc.hdf5_io import subscribe_hdf5, HDF5Enabled
 
 from . import _check_compatibility
-from ._ptools import sparse_matrix as sp
+from . import _sparse_matrix as sp
 from ._kdotp import KdotpModel
 
 
@@ -73,6 +77,7 @@ class Model(HDF5Enabled):
         if hop is None:
             hop = dict()
 
+        # ---- SPARSITY ----
         self.set_sparse(sparse)
 
         # ---- SIZE ----
@@ -96,10 +101,6 @@ class Model(HDF5Enabled):
         # ---- OCCUPATION NR ----
         self.occ = None if (occ is None) else int(occ)
 
-        # ---- SPARSITY ----
-        self._sparse = True
-        self.set_sparse(sparse)
-
     #---------------- INIT HELPER FUNCTIONS --------------------------------#
     def _init_size(self, size, on_site, hop, pos):
         """
@@ -111,7 +112,7 @@ class Model(HDF5Enabled):
             self.size = len(on_site)
         elif pos is not None:
             self.size = len(pos)
-        elif len(hop) != 0:
+        elif hop:
             self.size = next(iter(hop.values())).shape[0]
         else:
             raise ValueError(
@@ -126,7 +127,7 @@ class Model(HDF5Enabled):
             self.dim = dim
         elif pos is not None:
             self.dim = len(pos[0])
-        elif len(hop.keys()) > 0:
+        elif hop:
             self.dim = len(next(iter(hop.keys())))
         else:
             raise ValueError(
@@ -154,10 +155,9 @@ class Model(HDF5Enabled):
                 raise ValueError(
                     "Invalid argument for 'pos': The number of positions must be the same as the size (number of orbitals) of the system."
                 )
-            else:
-                raise ValueError(
-                    "Invalid argument for 'pos': The length of each position must be the same as the dimensionality of the system."
-                )
+            raise ValueError(
+                "Invalid argument for 'pos': The length of each position must be the same as the dimensionality of the system."
+            )
 
         if contains_cc:
             hop = self._reduce_hop(hop)
@@ -296,7 +296,7 @@ class Model(HDF5Enabled):
             except KeyError:
                 raise ValueError('No on-site energies and no size given. The size of the system cannot be determined.')
 
-        class _hop(object):
+        class _hop:
             """
             POD for hoppings
             """
@@ -359,6 +359,10 @@ class Model(HDF5Enabled):
 
     @classmethod
     def _from_hr_iterator(cls, hr_iterator, *, h_cutoff=0., **kwargs):
+        """
+        Helper method to construct a Model from an iterator over the
+        entries of a *_hr.dat file.
+        """
         warnings.warn(
             'The from_hr and from_hr_file functions are deprecated. Use from_wannier_files instead.',
             DeprecationWarning,
@@ -511,7 +515,7 @@ class Model(HDF5Enabled):
         return cls.from_wannier_files(**co.ChainMap(kwargs, input_files))
 
     @classmethod
-    def from_wannier_files(
+    def from_wannier_files(  # pylint: disable=too-many-locals
         cls,
         *,
         hr_file,
@@ -603,7 +607,12 @@ class Model(HDF5Enabled):
 
                     def remap_hoppings(hop_entries):
                         for t, orbital_1, orbital_2, R in hop_entries:
-                            next(wsvec_generator)
+                            try:
+                                next(wsvec_generator)
+                            # Explicitly catching this because 'remap_hoppings'
+                            # is also a generator.
+                            except StopIteration as exc:
+                                raise ValueError("The 'wsvec_generator' stopped prematurely.") from exc
                             T_list = wsvec_generator.send((orbital_1, orbital_2, tuple(R)))
                             N = len(T_list)
                             for T in T_list:
@@ -617,6 +626,14 @@ class Model(HDF5Enabled):
 
     @staticmethod
     def _async_parse(iterator, chunksize=1):
+        """
+        Helper function to get values from a (key, value) iterator
+        out of order without having to exhaust the iterator from the start.
+        The desired key needs to be sent to this generator, and it
+        will go through the `iterator` until that key is found. Pairs
+        for which the key has not yet been requested are stored in a
+        temporary dictionary.
+        """
         mapping = dict()
         stopped = False
         while True:
@@ -642,14 +659,23 @@ class Model(HDF5Enabled):
 
     @staticmethod
     def _read_wsvec(iterator):
+        """
+        Generator that parses the content of the *_wsvec.dat file.
+        """
         # skip comment line
-        next(iterator)
+        try:
+            next(iterator)
+        except StopIteration as exc:
+            raise ValueError("The 'wsvec' iterator is empty.") from exc
         for first_line in iterator:
             *R, o1, o2 = (int(x) for x in first_line.split())
             # in our convention, orbital indices start at 0.
             key = (o1 - 1, o2 - 1, tuple(R))
-            N = int(next(iterator))
-            val = [tuple(int(x) for x in next(iterator).split()) for _ in range(N)]
+            try:
+                N = int(next(iterator))
+                val = [tuple(int(x) for x in next(iterator).split()) for _ in range(N)]
+            except StopIteration as exc:
+                raise ValueError('Incomplete wsvec iterator.') from exc
             yield key, val
 
     @staticmethod
@@ -674,6 +700,10 @@ class Model(HDF5Enabled):
 
     @staticmethod
     def _read_win(iterator):
+        """
+        Takes an iterator representing the Wannier90 .win file lines,
+        and returns a mapping of its content.
+        """
         lines = (l.split('!')[0] for l in iterator)
         lines = (l.strip() for l in lines)
         lines = (l for l in lines if l)
@@ -682,21 +712,21 @@ class Model(HDF5Enabled):
         split_token = re.compile('[\t :=]+')
 
         mapping = {}
-        for l in lines:
-            if l.startswith('begin'):
-                key = split_token.split(l[5:].strip(' :='), 1)[0]
+        for line in lines:
+            if line.startswith('begin'):
+                key = split_token.split(line[5:].strip(' :='), 1)[0]
                 val = []
                 while True:
-                    l = next(lines)
-                    if l.startswith('end'):
-                        end_key = split_token.split(l[3:].strip(' :='), 1)[0]
+                    line = next(lines)
+                    if line.startswith('end'):
+                        end_key = split_token.split(line[3:].strip(' :='), 1)[0]
                         assert end_key == key
                         break
                     else:
-                        val.append(l)
+                        val.append(line)
                 mapping[key] = val
             else:
-                key, val = split_token.split(l, 1)
+                key, val = split_token.split(line, 1)
                 mapping[key] = val
 
         # here we can continue parsing the individual keys as needed
@@ -735,7 +765,7 @@ class Model(HDF5Enabled):
         pos_abs = np.dot(np.array([sl.pos for sl in sublattices]), uc)
         return kwant.lattice.general(prim_vecs=uc, basis=pos_abs)
 
-    def add_hoppings_kwant(self, kwant_sys):
+    def add_hoppings_kwant(self, kwant_sys):  # pylint: disable=too-many-branches
         """
         Sets the on-site energies and hopping terms for an existing kwant system to those of the :class:`.Model`.
 
@@ -789,6 +819,10 @@ class Model(HDF5Enabled):
         return kwant_sys
 
     def _get_sublattices(self):
+        """
+        Helper function to group indices of orbitals which have the same
+        position into sublattices.
+        """
         Sublattice = co.namedtuple('Sublattice', ['pos', 'indices'])
         sublattices = []
         for i, p_orb in enumerate(self.pos):
@@ -822,19 +856,21 @@ class Model(HDF5Enabled):
         taylor_coefficients = dict()
         if order < 0:
             raise ValueError('The order for the k.p model must be positive.')
-        for pow in itertools.product(range(order + 1), repeat=self.dim):
-            curr_order = sum(pow)
+        for k_powers in itertools.product(range(order + 1), repeat=self.dim):
+            curr_order = sum(k_powers)
             if curr_order > order:
                 continue
-            taylor_coefficients[pow] = ((2j * np.pi)**curr_order / np.prod(factorial(pow, exact=True))) * sum((
-                np.prod(np.array(R)**np.array(pow)) * np.exp(2j * np.pi * np.dot(k, R)) * self._array_cast(mat) +
-                np.prod((-np.array(R))**np.array(pow)) * np.exp(-2j * np.pi * np.dot(k, R)) *
+            taylor_coefficients[k_powers] = (
+                (2j * np.pi)**curr_order / np.prod(factorial(k_powers, exact=True))
+            ) * sum((
+                np.prod(np.array(R)**np.array(k_powers)) * np.exp(2j * np.pi * np.dot(k, R)) * self._array_cast(mat) +
+                np.prod((-np.array(R))**np.array(k_powers)) * np.exp(-2j * np.pi * np.dot(k, R)) *
                 self._array_cast(mat).T.conj() for R, mat in self.hop.items()
             ), np.zeros((self.size, self.size), dtype=complex))
         return KdotpModel(taylor_coefficients=taylor_coefficients)
 
     @classmethod
-    def from_hdf5_file(cls, hdf5_file, **kwargs):
+    def from_hdf5_file(cls, hdf5_file, **kwargs):  # pylint: disable=arguments-differ
         """
         Returns a :class:`.Model` instance read from a file in HDF5 format.
 
@@ -847,7 +883,7 @@ class Model(HDF5Enabled):
             return cls.from_hdf5(f, **kwargs)
 
     @classmethod
-    def from_hdf5(cls, hdf5_handle, **kwargs):
+    def from_hdf5(cls, hdf5_handle, **kwargs):  # pylint: disable=arguments-differ
         # For compatibility with a development version which created a top-level
         # 'tb_model' attribute.
         try:
@@ -972,7 +1008,7 @@ class Model(HDF5Enabled):
 
         mat = np.zeros((self.size, self.size), dtype=complex)
         nonzero_idx = np.nonzero(R)[0]
-        if len(nonzero_idx) == 0:
+        if nonzero_idx.size == 0:
             mat[orbital_1, orbital_2] += overlap / 2.
             mat[orbital_2, orbital_1] += overlap.conjugate() / 2.
         elif R[nonzero_idx[0]] > 0:
@@ -1010,7 +1046,7 @@ class Model(HDF5Enabled):
         # check if the right sparsity is alredy set
         # when using from __init__, self._sparse is not set
         with contextlib.suppress(AttributeError):
-            if sparse == self._sparse:
+            if sparse == self._sparse:  # pylint: disable=access-member-before-definition
                 return
 
         self._sparse = sparse
@@ -1059,13 +1095,16 @@ class Model(HDF5Enabled):
                 order = sym.get_order()
                 sym_pow = sym
                 tmp_model = new_model
-                for i in range(1, order):
-                    tmp_model += new_model._apply_operation(sym_pow)
+                for _ in range(1, order):
+                    tmp_model += new_model._apply_operation(sym_pow)  # pylint: disable=protected-access
                     sym_pow @= sym
                 new_model = 1 / order * tmp_model
             return new_model
 
-    def _apply_operation(self, symmetry_operation):
+    def _apply_operation(self, symmetry_operation):  # pylint: disable=too-many-locals
+        """
+        Helper function to apply a symmetry operation to the model.
+        """
         # apply symmetry operation on sublattice positions
         sublattices = self._get_sublattices()
 
@@ -1081,7 +1120,7 @@ class Model(HDF5Enabled):
                 shift = nearest_R + T
                 if any(np.isclose(new_pos - shift, latt.pos).all() for latt in sublattices):
                     valid_shifts.append(tuple(shift))
-            if len(valid_shifts) == 0:
+            if not valid_shifts:
                 raise ValueError('New position {} does not match any known sublattice'.format(new_pos))
             if len(valid_shifts) > 1:
                 raise ValueError(
@@ -1138,12 +1177,12 @@ class Model(HDF5Enabled):
 
         first_model = models[0]
         # check dim
-        if not _check_compatibility._check_dim(*models):
+        if not _check_compatibility.check_dim(*models):
             raise ValueError('Model dimensions do not match.')
         new_dim = first_model.dim
 
         # check uc compatibility
-        if not _check_compatibility._check_uc(*models):
+        if not _check_compatibility.check_uc(*models):
             raise ValueError('Model unit cells do not match.')
         new_uc = first_model.uc
 
@@ -1170,14 +1209,8 @@ class Model(HDF5Enabled):
 
         new_hop = dict()
 
-        def _get_mat(m, R):
-            hop_mat = m.hop[R]
-            if m._sparse:
-                return hop_mat.toarray()
-            return hop_mat
-
         for R in all_R:
-            hop_list = [_get_mat(m, R) for m in models]
+            hop_list = [np.array(m.hop[R]) for m in models]
             new_hop[R] = la.block_diag(*hop_list)
 
         return cls(dim=new_dim, uc=new_uc, pos=new_pos, occ=new_occ, hop=new_hop, contains_cc=False)
@@ -1205,7 +1238,7 @@ class Model(HDF5Enabled):
             )
 
         # check if the unit cells match
-        if not _check_compatibility._check_uc(self, model):
+        if not _check_compatibility.check_uc(self, model):
             raise ValueError(
                 'Error when adding Models: unit cells don\'t match.\nModel 1:\n{0.uc}\n\nModel 2:\n{1.uc}'.format(
                     self, model

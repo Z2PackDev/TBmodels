@@ -7,11 +7,11 @@ Utilities to check whether models are compatible, e.g. for adding.
 """
 
 
-def _check_dim(*models):
+def check_dim(*models):
     return len({m.dim for m in models}) == 1
 
 
-def _check_uc(*models):
+def check_uc(*models):
     """
     Check if the unit cells of two models are approximately the same.
     """

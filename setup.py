@@ -5,16 +5,13 @@
 # Author: Dominik Gresch <greschd@gmx.ch>
 
 import re
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup
+from setuptools import setup, find_packages
 
 import sys
 if sys.version_info < (3, 5):
     raise 'must use Python version 3.5 or higher'
 
-README = """TBModels is a tool for reading, creating and modifying tight-binding models."""
+README = """TBmodels is a tool for reading, creating and modifying tight-binding models."""
 
 with open('./tbmodels/__init__.py', 'r') as f:
     MATCH_EXPR = "__version__[^'\"]+(['\"])([^'\"]+)"
@@ -38,7 +35,7 @@ setup(
     description='Reading, creating and modifying tight-binding models.',
     install_requires=[
         'numpy', 'scipy>=0.14', 'h5py', 'fsc.export', 'symmetry-representation>=0.2', 'click', 'bands-inspect',
-        'fsc.hdf5-io>=0.2.0'
+        'fsc.hdf5-io>=0.3.0'
     ],
     extras_require=EXTRAS_REQUIRE,
     long_description=README,
@@ -58,5 +55,5 @@ setup(
         tbmodels=tbmodels._cli:cli
     ''',
     license='Apache 2.0',
-    packages=['tbmodels', 'tbmodels._ptools']
+    packages=find_packages()
 )
