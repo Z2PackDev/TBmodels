@@ -8,8 +8,8 @@ import re
 from setuptools import setup, find_packages
 
 import sys
-if sys.version_info < (3, 5):
-    raise 'must use Python version 3.5 or higher'
+if sys.version_info < (3, 6):
+    raise 'must use Python version 3.6 or higher'
 
 with open('./README.md', 'r') as f:
     README = f.read()
@@ -34,7 +34,7 @@ setup(
     author='Dominik Gresch',
     author_email='greschd@gmx.ch',
     description="A tool for reading, creating and modifying tight-binding models.",
-    python_requires=">=3.5",
+    python_requires=">=3.6",
     install_requires=[
         'numpy', 'scipy>=0.14', 'h5py', 'fsc.export', 'symmetry-representation>=0.2', 'click', 'bands-inspect',
         'fsc.hdf5-io>=0.3.0'
@@ -47,7 +47,6 @@ setup(
         'Natural Language :: English',
         'Operating System :: Unix',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
