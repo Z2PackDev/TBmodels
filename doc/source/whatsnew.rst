@@ -16,6 +16,8 @@ New features
 
 - Add ``--version`` option to the command-line interface, to print the current version.
 
+- The ``KdotpModel`` has been promoted from an internal-only interface to the public ``tbmodels.kdotp`` submodule.
+
 Bugfixes
 ''''''''
 

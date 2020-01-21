@@ -13,18 +13,20 @@ import copy
 import time
 import itertools
 import contextlib
+import typing as ty
 import collections as co
 
 import h5py
 import numpy as np
 import scipy.linalg as la
 from scipy.special import factorial
+import symmetry_representation as sr
 from fsc.export import export
 from fsc.hdf5_io import subscribe_hdf5, HDF5Enabled
 
 from . import _check_compatibility
 from . import _sparse_matrix as sp
-from ._kdotp import KdotpModel
+from .kdotp import KdotpModel
 
 
 @export
@@ -33,50 +35,58 @@ class Model(HDF5Enabled):
     """
     A class describing a tight-binding model. It contains methods for modifying the model, evaluating the Hamiltonian or eigenvalues at specific k-points, and writing to and from different file formats.
 
-    :param on-site: On-site energy of the states. This is equivalent to having a hopping within the same state and the same unit cell (diagonal terms of the R=(0, 0, 0) hopping matrix). The length of the list must be the same as the number of states.
-    :type on-site:  list
-
-    :param hop:    Hopping matrices, as a dict containing the corresponding lattice vector R as a key.
-    :type hop:     dict
-
-    :param size:        Number of states. Defaults to the size of the hopping matrices, if such are given.
-    :type size:         int
-
-    :param dim:         Dimension of the tight-binding model. By default, the dimension is guessed from the other parameters if possible.
-    :type dim:          int
-
-    :param occ:         Number of occupied states.
-    :type occ:          int
-
-    :param pos:         Positions of the orbitals, in reduced coordinates. By default, all orbitals are set to be at the origin, i.e. at [0., 0., 0.].
-    :type pos:          array
-
-    :param uc:          Unit cell of the system. The unit cell vectors are given as rows in a ``dim`` x ``dim`` array
-    :type uc:           array
-
-    :param contains_cc: Specifies whether the hopping matrices and on-site energies are given fully (``contains_cc=True``), such that the complex conjugate should be added for each term to obtain the full model. The on-site energies are not affected by this.
-    :type contains_cc:  bool
-
-    :param sparse:      Specifies whether the hopping matrices should be saved in sparse format.
-    :type sparse:       bool
+    Parameters
+    ----------
+    on_site :
+        On-site energy of the states. This is equivalent to having a
+        hopping within the same state and the same unit cell (diagonal
+        terms of the R=(0, 0, 0) hopping matrix). The length of the list
+        must be the same as the number of states.
+    hop :
+        Hopping matrices, as a dict containing the corresponding lattice
+        vector R as a key.
+    size :
+        Number of states. Defaults to the size of the hopping matrices,
+        if such are given.
+    dim :
+        Dimension of the tight-binding model. By default, the dimension
+        is guessed from the other parameters if possible.
+    occ :
+        Number of occupied states.
+    pos :
+        Positions of the orbitals, in reduced coordinates. By default,
+        all orbitals are set to be at the origin, i.e. at [0., 0., 0.].
+    uc :
+        Unit cell of the system. The unit cell vectors are given as rows
+        in a ``dim`` x ``dim`` array
+    contains_cc :
+        Specifies whether the hopping matrices and on-site energies are
+        given fully (``contains_cc=True``), or the complex conjugate
+        should be added for each term to obtain the full model. The
+        ``on_site`` parameter is not affected by this.
+    sparse :
+        Specifies whether the hopping matrices should be saved in sparse
+        format.
     """
     def __init__(
         self,
         *,
-        on_site=None,
-        hop=None,
-        size=None,
-        dim=None,
-        occ=None,
-        pos=None,
-        uc=None,
-        contains_cc=True,
-        sparse=False
+        on_site: ty.Optional[ty.Collection[float]] = None,
+        hop: ty.Optional[ty.Mapping[ty.Tuple[int, ...], ty.Any]] = None,
+        size: ty.Optional[int] = None,
+        dim: ty.Optional[int] = None,
+        occ: ty.Optional[int] = None,
+        pos: ty.Optional[ty.Collection[ty.Collection[float]]] = None,
+        uc: ty.Optional[np.ndarray] = None,
+        contains_cc: bool = True,
+        sparse: bool = False
     ):
         if hop is None:
             hop = dict()
 
         # ---- SPARSITY ----
+        self._sparse: bool
+        self._matrix_type: ty.Callable[..., ty.Any]
         self.set_sparse(sparse)
 
         # ---- SIZE ----
@@ -272,22 +282,30 @@ class Model(HDF5Enabled):
 
     #---------------- CONSTRUCTORS / (DE)SERIALIZATION ----------------#
     @classmethod
-    def from_hop_list(cls, *, hop_list=(), size=None, **kwargs):
+    def from_hop_list(
+        cls,
+        *,
+        hop_list: ty.Iterable[ty.Collection[ty.Union[complex, int, ty.Collection[int]]]] = (),
+        size: ty.Optional[int] = None,
+        **kwargs
+    ) -> "Model":
         """
         Create a :class:`.Model` from a list of hopping terms.
 
+        Parameters
+        ----------
+        hop_list :
+            List of hopping terms. Each hopping term has the form
+            [t, orbital_1, orbital_2, R], where
 
-        :param hop_list: List of hopping terms. Each hopping term has the form [t, orbital_1, orbital_2, R], where
-
-            * ``t``: strength of the hopping
-            * ``orbital_1``: index of the first involved orbital
-            * ``orbital_2``: index of the second involved orbital
-            * ``R``: lattice vector of the unit cell containing the second orbital.
-
-        :param size:    Number of states. Defaults to the length of the on-site energies given, if such are given.
-        :type size:     int
-
-        :param kwargs:  :class:`.Model` keyword arguments.
+                * ``t``: strength of the hopping
+                * ``orbital_1``: index of the first involved orbital
+                * ``orbital_2``: index of the second involved orbital
+                * ``R``: lattice vector of the unit cell containing the second orbital.
+        size :
+            Number of states. Defaults to the length of the on-site energies given, if such are given.
+        kwargs :
+            Any :class:`.Model` keyword arguments.
         """
         if size is None:
             try:
@@ -310,8 +328,9 @@ class Model(HDF5Enabled):
                 self.col_idx.append(col_idx)
 
         # create data, row_idx, col_idx for setting up the CSR matrices
-        hop_list_dict = co.defaultdict(_hop)
-        for t, i, j, R in hop_list:
+        hop_list_dict: ty.Mapping[ty.Tuple[int, ...], _hop] = co.defaultdict(_hop)
+        R: ty.Collection[int]
+        for t, i, j, R in hop_list:  # type: ignore
             R_vec = tuple(R)
             hop_list_dict[R_vec].append(t, i, j)
 
@@ -359,25 +378,32 @@ class Model(HDF5Enabled):
 
         return num_wann, hop_list
 
-    def to_hr_file(self, hr_file):
+    def to_hr_file(self, hr_file: str) -> None:
         """
         Writes to a file, using Wannier90's ``*_hr.dat`` format.
 
-        :param hr_file:     Path of the output file
-        :type hr_file:      str
+        Parameters
+        ----------
+        hr_file :
+            Path of the output file
 
-        .. note :: The ``*_hr.dat`` format does not contain information about the position of the atoms or the shape of the unit cell. Consequently, this information is lost when saving the model in this format.
 
-        .. warning :: The ``*_hr.dat`` format does not preserve the full precision of the hopping strengths. This could lead to numerical errors.
+        .. note :: The ``*_hr.dat`` format does not contain information
+            about the position of the atoms or the shape of the unit
+            cell. Consequently, this information is lost when saving the
+            model in this format.
+
+        .. warning :: The ``*_hr.dat`` format does not preserve the full
+            precision of the hopping strengths. This could lead to
+            numerical errors.
         """
         with open(hr_file, 'w') as f:
             f.write(self.to_hr())
 
-    def to_hr(self):
+    def to_hr(self) -> str:
         """
-        Returns a string containing the model in Wannier90's ``*_hr.dat`` format.
-
-        :returns: str
+        Returns a string containing the model in Wannier90's
+        ``*_hr.dat`` format.
 
         .. note :: The ``*_hr.dat`` format does not contain information about the position of the atoms or the shape of the unit cell. Consequently, this information is lost when saving the model in this format.
 
@@ -435,17 +461,21 @@ class Model(HDF5Enabled):
         return lines
 
     @classmethod
-    def from_wannier_folder(cls, folder='.', prefix='wannier', **kwargs):
+    def from_wannier_folder(cls, folder: str = '.', prefix: str = 'wannier', **kwargs) -> "Model":
         """
-        Create a :class:`.Model` instance from Wannier90 output files, given the folder containing the files and file prefix.
+        Create a :class:`.Model` instance from Wannier90 output files,
+        given the folder containing the files and file prefix.
 
-        :param folder: Directory containing the Wannier90 output files.
-        :type folder: str
-
-        :param prefix: Prefix of the Wannier90 output files.
-        :type prefix: str
-
-        :param kwargs: Keyword arguments passed to :meth:`.from_wannier_files`. If input files are explicitly given, they take precedence over those found in the ``folder``.
+        Parameters
+        ----------
+        folder :
+            Directory containing the Wannier90 output files.
+        prefix :
+            Prefix of the Wannier90 output files.
+        kwargs :
+            Keyword arguments passed to :meth:`.from_wannier_files`. If
+            input files are explicitly given, they take precedence over
+            those found in the ``folder``.
         """
         common_path = os.path.join(folder, prefix)
         input_files = dict()
@@ -466,40 +496,46 @@ class Model(HDF5Enabled):
     def from_wannier_files(  # pylint: disable=too-many-locals
         cls,
         *,
-        hr_file,
-        wsvec_file=None,
-        xyz_file=None,
-        win_file=None,
-        h_cutoff=0.,
-        ignore_orbital_order=False,
-        pos_kind='wannier',
+        hr_file: str,
+        wsvec_file: ty.Optional[str] = None,
+        xyz_file: ty.Optional[str] = None,
+        win_file: ty.Optional[str] = None,
+        h_cutoff: float = 0.,
+        ignore_orbital_order: bool = False,
+        pos_kind: str = 'wannier',
         **kwargs
-    ):
+    ) -> "Model":
         """
         Create a :class:`.Model` instance from Wannier90 output files.
 
-        :param hr_file:     Path of the ``*_hr.dat`` file. Together with the ``*_wsvec.dat`` file, this determines the hopping terms.
-        :type hr_file:      str
-
-        :param wsvec_file: Path of the ``*_wsvec.dat`` file. This file determines the remapping of hopping terms when ``use_ws_distance`` is used in the Wannier90 calculation.
-        :type wsvec_file: str
-
-        :param xyz_file: Path of the ``*_centres.xyz`` file. This file is used to determine the positions of the orbitals, from the Wannier centers given by Wannier90.
-        :type xyz_file: str
-
-        :param win_file: Path of the ``*.win`` file. This file is used to determine the unit cell.
-        :type win_file: str
-
-        :param h_cutoff:    Cutoff value for the hopping strength. Hoppings with a smaller absolute value are ignored.
-        :type h_cutoff:     float
-
-        :param ignore_orbital_order: Do not throw an error when the order of orbitals does not match what is expected from the Wannier90 output.
-        :type ignore_orbital_order: bool
-
-        :param pos_kind: Determines how positions are assinged to orbitals. Valid options are `wannier` (use Wannier centres) or `nearest_atom` (map to nearest atomic position).
-        :type pos_kind: str
-
-        :param kwargs:  :class:`.Model` keyword arguments.
+        Parameters
+        ----------
+        hr_file :
+            Path of the ``*_hr.dat`` file. Together with the
+            ``*_wsvec.dat`` file, this determines the hopping terms.
+        wsvec_file :
+            Path of the ``*_wsvec.dat`` file. This file determines the
+            remapping of hopping terms when ``use_ws_distance`` is used
+            in the Wannier90 calculation.
+        xyz_file :
+            Path of the ``*_centres.xyz`` file. This file is used to
+            determine the positions of the orbitals, from the Wannier
+            centers given by Wannier90.
+        win_file :
+            Path of the ``*.win`` file. This file is used to determine
+            the unit cell.
+        h_cutoff :
+            Cutoff value for the hopping strength. Hoppings with a
+            smaller absolute value are ignored.
+        ignore_orbital_order :
+            Do not throw an error when the order of orbitals does not
+            match what is expected from the Wannier90 output.
+        pos_kind :
+            Determines how positions are assinged to orbitals. Valid
+            options are `wannier` (use Wannier centres) or
+            `nearest_atom` (map to nearest atomic position).
+        kwargs :
+            :class:`.Model` keyword arguments.
         """
 
         if win_file is not None:
@@ -781,7 +817,7 @@ class Model(HDF5Enabled):
                 sublattices.append(Sublattice(pos=p_orb, indices=[i]))
         return sublattices
 
-    def construct_kdotp(self, k, order):
+    def construct_kdotp(self, k: ty.Collection[float], order: int):
         """
         Construct a k.p model around a given k-point. This is done by explicitly
         evaluating the derivatives which make up the Taylor expansion of the k.p
@@ -791,16 +827,20 @@ class Model(HDF5Enabled):
         `convention 2  <http://www.physics.rutgers.edu/pythtb/_downloads/pythtb-formalism.pdf>`_
         for the Hamiltonian.
 
-        :param k: The k-point around which the k.p model is constructed.
-        :type k: list
-
-        :param order: The order (sum of powers) to which the Taylor expansion is
+        Parameters
+        ----------
+        k :
+            The k-point around which the k.p model is constructed.
+        order :
+            The order (sum of powers) to which the Taylor expansion is
             performed.
-        :type order: int
         """
+        # foo : ty.Collection[int] = (1, 2, 3)
+        # taylor_coefficients : ty.Dict[ty.Tuple[int, ...], ty.Any] = dict()
         taylor_coefficients = dict()
         if order < 0:
             raise ValueError('The order for the k.p model must be positive.')
+        k_powers: ty.Tuple[int, ...]
         for k_powers in itertools.product(range(order + 1), repeat=self.dim):
             curr_order = sum(k_powers)
             if curr_order > order:
@@ -815,27 +855,31 @@ class Model(HDF5Enabled):
         return KdotpModel(taylor_coefficients=taylor_coefficients)
 
     @classmethod
-    def from_hdf5_file(cls, hdf5_file, **kwargs):  # pylint: disable=arguments-differ
+    def from_hdf5_file(cls, hdf5_file: str, **kwargs) -> "Model":  # pylint: disable=arguments-differ
         """
-        Returns a :class:`.Model` instance read from a file in HDF5 format.
+        Returns a :class:`.Model` instance read from a file in HDF5
+        format.
 
-        :param hdf5_file: Path of the input file.
-        :type hdf5_file: str
-
-        :param kwargs: :class:`.Model` keyword arguments. Explicitly specified keywords take precedence over those given in the HDF5 file.
+        Parameters
+        ----------
+        hdf5_file :
+            Path of the input file.
+        kwargs :
+            :class:`.Model` keyword arguments. Explicitly specified
+            keywords take precedence over those given in the HDF5 file.
         """
         with h5py.File(hdf5_file, 'r') as f:
             return cls.from_hdf5(f, **kwargs)
 
     @classmethod
-    def from_hdf5(cls, hdf5_handle, **kwargs):  # pylint: disable=arguments-differ
+    def from_hdf5(cls, hdf5_handle, **kwargs) -> "Model":  # pylint: disable=arguments-differ
         # For compatibility with a development version which created a top-level
         # 'tb_model' attribute.
         try:
             tb_model_group = hdf5_handle['tb_model']
         except KeyError:
             tb_model_group = hdf5_handle
-        new_kwargs = {}
+        new_kwargs: ty.Dict[str, ty.Any] = {}
         new_kwargs['hop'] = {}
 
         for key in ['uc', 'occ', 'size', 'dim', 'pos', 'sparse']:
@@ -887,17 +931,19 @@ class Model(HDF5Enabled):
         """An array containing the reciprocal lattice vectors as rows."""
         return None if self.uc is None else 2 * np.pi * la.inv(self.uc).T
 
-    def hamilton(self, k, convention=2):
+    def hamilton(self, k: ty.Collection[float], convention: int = 2) -> np.ndarray:
         """
         Calculates the Hamilton matrix for a given k-point.
 
-        :param k:   k-point
-        :type k:    list
-
-        :param convention: Choice of convention to calculate the Hamilton matrix. See explanation in `the PythTB documentation  <http://www.physics.rutgers.edu/pythtb/_downloads/pythtb-formalism.pdf>`_ . Valid choices are 1 or 2.
-        :type convention: int
-
-        :returns:   2D numpy array
+        Parameters
+        ----------
+        k :
+            The k-point at which the Hamiltonian is evaluated.
+        convention :
+            Choice of convention to calculate the Hamilton matrix. See
+            explanation in `the PythTB documentation
+            <http://www.physics.rutgers.edu/pythtb/_downloads/pythtb-formalism.pdf>`_ .
+            Valid choices are 1 or 2.
         """
         if convention not in [1, 2]:
             raise ValueError("Invalid value '{}' for 'convention': must be either '1' or '2'".format(convention))
@@ -910,41 +956,53 @@ class Model(HDF5Enabled):
             H = pos_exponential.conjugate().transpose() * H * pos_exponential
         return H
 
-    def eigenval(self, k):
+    def eigenval(self, k: ty.Collection[float]) -> np.ndarray:
         """
-        Returns the eigenvalues at a given k point, using Convention II (see explanation in `the PythTB documentation  <http://www.physics.rutgers.edu/pythtb/_downloads/pythtb-formalism.pdf>`_ )
+        Returns the eigenvalues at a given k point.
 
-        :param k:   k-point
-        :type k:    list
-
-        :returns:   array of eigenvalues
+        Parameters
+        ----------
+        k :
+            The k-point at which the Hamiltonian is evaluated.
         """
         return la.eigvalsh(self.hamilton(k))
 
     #-------------------MODIFYING THE MODEL ----------------------------#
-    def add_hop(self, overlap, orbital_1, orbital_2, R):
+    def add_hop(self, overlap: complex, orbital_1: int, orbital_2: int, R: ty.Collection[int]):
         r"""
-        Adds a hopping term with a given overlap (hopping strength) from ``orbital_2`` (:math:`o_2`), which lies in the unit cell pointed to by ``R``, to ``orbital_1`` (:math:`o_1`) which is in the home unit cell. In other words, ``overlap`` is the matrix element :math:`\mathcal{H}_{o_1,o_2}(\mathbf{R}) = \langle o_1, \mathbf{0} | \mathcal{H} | o_2, \mathbf{R} \rangle`.
+        Adds a hopping term with a given overlap (hopping strength) from
+        ``orbital_2`` (:math:`o_2`), which lies in the unit cell pointed
+        to by ``R``, to ``orbital_1`` (:math:`o_1`) which is in the home
+        unit cell. In other words, ``overlap`` is the matrix element
+        :math:`\mathcal{H}_{o_1,o_2}(\mathbf{R}) = \langle o_1, \mathbf{0} | \mathcal{H} | o_2, \mathbf{R} \rangle`.
 
-        The complex conjugate of the hopping is added automatically. That is, the matrix element :math:`\langle o_2, \mathbf{R} | \mathcal{H} | o_1, \mathbf{0} \rangle` does not have to be added manually.
+        The complex conjugate of the hopping is added automatically.
+        That is, the matrix element
+        :math:`\langle o_2, \mathbf{R} | \mathcal{H} | o_1, \mathbf{0} \rangle`
+        does not have to be added manually.
 
         .. note::
-            This means that adding a hopping of overlap :math:`\epsilon` between an orbital and itself in the home unit cell increases the orbitals on-site energy by :math:`2 \epsilon`.
+            This means that adding a hopping of overlap :math:`\epsilon`
+            between an orbital and itself in the home unit cell
+            increases the orbitals on-site energy by :math:`2 \epsilon`.
 
-        :param overlap:    Strength of the hopping term (in energy units).
-        :type overlap:     numbers.Complex
 
-        :param orbital_1:   Index of the first orbital.
-        :type orbital_1:    int
-
-        :param orbital_2:   Index of the second orbital.
-        :type orbital_2:    int
-
-        :param R:           Lattice vector pointing to the unit cell where ``orbital_2`` lies.
-        :type R:            :py:class:`list` (:py:class:`numbers.Integral`)
+        Parameters
+        ----------
+        overlap :
+            Strength of the hopping term (in energy units).
+        orbital_1 :
+            Index of the first orbital.
+        orbital_2 :
+            Index of the second orbital.
+        R :
+            Lattice vector pointing to the unit cell where ``orbital_2``
+            lies.
 
         .. warning::
-            The positions given in the constructor of :class:`.Model` are automatically mapped into the home unit cell. This has to be taken into account when determining ``R``.
+            The positions given in the constructor of :class:`.Model`
+            are automatically mapped into the home unit cell. This has
+            to be taken into account when determining ``R``.
 
         """
         R = tuple(R)
@@ -963,12 +1021,15 @@ class Model(HDF5Enabled):
             mat[orbital_2, orbital_1] += overlap.conjugate()
         self.hop[R] += self._matrix_type(mat)
 
-    def add_on_site(self, on_site):
+    def add_on_site(self, on_site: ty.Collection[float]):
         """
-        Adds on-site energy to the orbitals. This adds to the existing on-site energy, and does not erase it.
+        Adds on-site energy to the orbitals. This adds to the existing
+        on-site energy, and does not erase it.
 
-        :param on_site:     On-site energies. This must be a sequence of real numbers, of the same length as the number of orbitals
-        :type on_site:      :py:class:`collections.abc.Sequence` (:py:class:`numbers.Real`)
+        Parameters
+        ----------
+        on_site :
+            On-site energies. This must be a sequence of real numbers, of the same length as the number of orbitals
         """
         if self.size != len(on_site):
             raise ValueError(
@@ -981,17 +1042,22 @@ class Model(HDF5Enabled):
         """Returns an empty matrix, either sparse or dense according to the current setting. The size is determined by the system's size"""
         return self._matrix_type(np.zeros((self.size, self.size), dtype=complex))
 
-    def set_sparse(self, sparse=True):
+    def set_sparse(self, sparse: bool = True):
         """
-        Defines whether sparse or dense matrices should be used to represent the system, and changes the system accordingly if needed.
+        Defines whether sparse or dense matrices should be used to
+        represent the system, and changes the system accordingly if
+        needed.
 
-        :param sparse:  Flag to determine whether the system is set to be sparse (``True``) or dense (``False``).
-        :type sparse:   bool
+        Parameters
+        ----------
+        sparse :
+            Flag to determine whether the system is set to be sparse
+            (``True``) or dense (``False``).
         """
         # check if the right sparsity is alredy set
         # when using from __init__, self._sparse is not set
         with contextlib.suppress(AttributeError):
-            if sparse == self._sparse:  # pylint: disable=access-member-before-definition
+            if sparse == self._sparse:
                 return
 
         self._sparse = sparse
@@ -1021,15 +1087,20 @@ class Model(HDF5Enabled):
     def _input_kwargs(self):
         return dict(hop=self.hop, pos=self.pos, occ=self.occ, uc=self.uc, contains_cc=False, sparse=self._sparse)
 
-    def symmetrize(self, symmetries, full_group=False):
+    def symmetrize(self, symmetries: ty.Sequence[sr.SymmetryOperation], full_group: bool = False) -> "Model":
         """
-        Returns a model which is symmetrized w.r.t. the given symmetries. This is done by performing a group average over the symmetry group.
+        Returns a model which is symmetrized w.r.t. the given
+        symmetries. This is done by performing a group average over the
+        symmetry group.
 
-        :param symmetries: Symmetries which the symmetrized model should respect.
-        :type symmetries: list(:py:class:`symmetry_representation.SymmetryOperation`)
-
-        :param full_group: Specifies whether the given symmetries represent the full symmetry group, or only a subset from which the full symmetry group is generated.
-        :type full_group: bool
+        Parameters
+        ----------
+        symmetries :
+            Symmetries which the symmetrized model should respect.
+        full_group :
+            Specifies whether the given symmetries represent the full
+            symmetry group, or only a subset from which the full
+            symmetry group is generated.
         """
         if full_group:
             new_model = self._apply_operation(symmetries[0])
@@ -1046,7 +1117,7 @@ class Model(HDF5Enabled):
                 new_model = 1 / order * tmp_model
             return new_model
 
-    def _apply_operation(self, symmetry_operation):  # pylint: disable=too-many-locals
+    def _apply_operation(self, symmetry_operation) -> "Model":  # pylint: disable=too-many-locals
         """
         Helper function to apply a symmetry operation to the model.
         """
@@ -1074,7 +1145,8 @@ class Model(HDF5Enabled):
             uc_shift.append(valid_shifts[0])
 
         # setting up the indices to slice the hopping matrices
-        hop_shifts_idx = co.defaultdict(lambda: ([], []))
+        hop_shifts_idx: ty.Dict[ty.Tuple[int, ...], ty.Tuple[ty.List[int],
+                                                             ty.List[int]]] = co.defaultdict(lambda: ([], []))
         for (i, Ti), (j, Tj) in itertools.product(enumerate(uc_shift), repeat=2):
             shift = tuple(np.array(Tj) - np.array(Ti))
             for idx1, idx2 in itertools.product(sublattices[i].indices, sublattices[j].indices):
@@ -1082,7 +1154,7 @@ class Model(HDF5Enabled):
                 hop_shifts_idx[shift][1].append(idx2)
 
         # create hoppings with shifted R (by uc_shift[j] - uc_shift[i])
-        new_hop = co.defaultdict(self._empty_matrix)
+        new_hop: ty.Dict[ty.Tuple[int, ...], ty.Any] = co.defaultdict(self._empty_matrix)
         for R, mat in self.hop.items():
             R_transformed = np.array(np.rint(np.dot(symmetry_operation.rotation_matrix, R)), dtype=int)
             for shift, (idx1, idx2) in hop_shifts_idx.items():
@@ -1098,24 +1170,31 @@ class Model(HDF5Enabled):
 
         return Model(**co.ChainMap(dict(hop=new_hop), self._input_kwargs))
 
-    def slice_orbitals(self, slice_idx):
+    def slice_orbitals(self, slice_idx: ty.List[int]) -> "Model":
         """
-        Returns a new model with only the orbitals as given in the ``slice_idx``. This can also be used to re-order the orbitals.
+        Returns a new model with only the orbitals as given in the
+        ``slice_idx``. This can also be used to re-order the orbitals.
 
-        :param slice_idx: Orbital indices that will be in the resulting model.
-        :type slice_idx: :py:class:`list` ( :py:class:`int` )
+        Parameters
+        ----------
+        slice_idx :
+            Orbital indices that will be in the resulting model.
         """
         new_pos = self.pos[tuple(slice_idx), :]
         new_hop = {key: np.array(val)[np.ix_(slice_idx, slice_idx)] for key, val in self.hop.items()}
         return Model(**co.ChainMap(dict(hop=new_hop, pos=new_pos), self._input_kwargs))
 
     @classmethod
-    def join_models(cls, *models):
+    def join_models(cls, *models: "Model") -> "Model":
         """
-        Creates a tight-binding model which contains all orbitals of the given input models. The orbitals are ordered by model, such that the resulting Hamiltonian is block-diagonal.
+        Creates a tight-binding model which contains all orbitals of the
+        given input models. The orbitals are ordered by model, such that
+        the resulting Hamiltonian is block-diagonal.
 
-        :param models: Models which should be joined together.
-        :type models: tbmodels.Model
+        Parameters
+        ----------
+        models :
+            Models which should be joined together.
         """
         if not models:
             raise ValueError('At least one model must be given.')
@@ -1148,7 +1227,7 @@ class Model(HDF5Enabled):
             new_occ = sum(occ_list)
 
         # combine hop
-        all_R = set()
+        all_R: ty.Set[ty.Tuple[int, ...]] = set()
         for m in models:
             all_R.update(m.hop.keys())
 
@@ -1160,7 +1239,7 @@ class Model(HDF5Enabled):
 
         return cls(dim=new_dim, uc=new_uc, pos=new_pos, occ=new_occ, hop=new_hop, contains_cc=False)
 
-    def __add__(self, model):
+    def __add__(self, model: "Model") -> "Model":
         """
         Adds two models together by adding their hopping terms.
         """
@@ -1214,19 +1293,19 @@ class Model(HDF5Enabled):
         # -------------------
         return Model(**co.ChainMap(dict(hop=new_hop), self._input_kwargs))
 
-    def __sub__(self, model):
+    def __sub__(self, model: "Model") -> "Model":
         """
         Substracts one model from another by substracting all hopping terms.
         """
         return self + -model
 
-    def __neg__(self):
+    def __neg__(self) -> "Model":
         """
         Changes the sign of all hopping terms.
         """
         return -1 * self
 
-    def __mul__(self, x):
+    def __mul__(self, x: float) -> "Model":
         """
         Multiplies hopping terms by x.
         """
@@ -1236,13 +1315,13 @@ class Model(HDF5Enabled):
 
         return Model(**co.ChainMap(dict(hop=new_hop), self._input_kwargs))
 
-    def __rmul__(self, x):
+    def __rmul__(self, x: float) -> "Model":
         """
         Multiplies hopping terms by x.
         """
         return self.__mul__(x)
 
-    def __truediv__(self, x):
+    def __truediv__(self, x: float) -> "Model":
         """
         Divides hopping terms by x.
         """

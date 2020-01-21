@@ -3,13 +3,10 @@
 # (c) 2015-2018, ETH Zurich, Institut fuer Theoretische Physik
 # Author: Dominik Gresch <greschd@gmx.ch>
 """
-Module defining k.p models. Note that this module should be considered temporary,
-and should not be relied on having a fixed import position. Since it does not
-treat tight-binding models, it might be moved to a separate package.
+Defines the :class:`.KdotpModel` class for k.p models.
 """
 
 import typing as ty
-import numbers
 
 import numpy as np
 import scipy.linalg as la
@@ -24,23 +21,20 @@ class KdotpModel(SimpleHDF5Mapping):
     """
     A class describing a k.p model.
 
-    .. note:: This feature is experimental, and may be moved to a separate
-        package in the future.
+    Parameters
+    ----------
+    taylor_coefficients:
+        A mapping containing the taylor coefficients of the k.p model.
+        The keys are tuples which describe the power of the k-vector
+        components, and the values are the corresponding matrices.
 
-    :param taylor_coefficients: A mapping containing the taylor coefficients of
-        the k.p model. The keys are tuples which describe the power of the
-        k-vector components, and the values are the corresponding matrices.
         Example:
             (1, 0, 2): [[1, 0], [0, -1]]
             describes k_x * k_z**2 * sigma_z
-    :type taylor_coefficients: dict
     """
     HDF5_ATTRIBUTES = ['taylor_coefficients']
 
-    def __init__(
-        self, taylor_coefficients: ty.Mapping[ty.Collection[numbers.Integral],
-                                              ty.Collection[ty.Collection[numbers.Complex]]]
-    ) -> None:
+    def __init__(self, taylor_coefficients: ty.Mapping[ty.Tuple[int, ...], ty.Any]) -> None:
         for mat in taylor_coefficients.values():
             if not np.allclose(mat, np.array(mat).T.conj()):
                 raise ValueError('The provided Taylor coefficient {} is not hermitian'.format(mat))
@@ -49,8 +43,8 @@ class KdotpModel(SimpleHDF5Mapping):
             for key, mat in taylor_coefficients.items()
         }
 
-    def hamilton(self, k: ty.Collection[numbers.Real]) -> np.ndarray:
+    def hamilton(self, k: ty.Collection[float]) -> np.ndarray:
         return sum(np.prod(np.array(k)**np.array(k_powers)) * mat for k_powers, mat in self.taylor_coefficients.items())
 
-    def eigenval(self, k: ty.Collection[numbers.Real]) -> np.ndarray:
+    def eigenval(self, k: ty.Collection[float]) -> np.ndarray:
         return la.eigvalsh(self.hamilton(k))

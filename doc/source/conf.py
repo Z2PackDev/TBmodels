@@ -37,7 +37,7 @@ import tbmodels
 # ones.
 extensions = [
     'sphinx.ext.autodoc', 'sphinx.ext.mathjax', 'sphinx.ext.intersphinx', 'sphinx.ext.viewcode', 'sphinx_click.ext',
-    'IPython.sphinxext.ipython_console_highlighting', 'IPython.sphinxext.ipython_directive'
+    'sphinx.ext.napoleon', 'IPython.sphinxext.ipython_console_highlighting', 'IPython.sphinxext.ipython_directive'
 ]
 
 intersphinx_mapping = {

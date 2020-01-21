@@ -61,7 +61,7 @@ def test_hdf5_load_method(hdf5_sample):  # pylint: disable=redefined-outer-name
 
 def test_hdf5_kdotp(kdotp_models_equal):
     """Test that k.p models can be saved / loaded to HDF5."""
-    kp_model = tbmodels._kdotp.KdotpModel({(1, 0): [[0.1, 0.2j], [-0.2j, 0.3]], (0, 0): np.eye(2)})  # pylint: disable=protected-access
+    kp_model = tbmodels.kdotp.KdotpModel({(1, 0): [[0.1, 0.2j], [-0.2j, 0.3]], (0, 0): np.eye(2)})
     with tempfile.NamedTemporaryFile() as tmpf:
         tbmodels.io.save(kp_model, tmpf.name)
         model2 = tbmodels.io.load(tmpf.name)

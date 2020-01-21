@@ -22,16 +22,18 @@ def matrix_to_hop(
     r"""
     Turns a square matrix into a series of hopping terms.
 
-    :param mat: The matrix to be converted.
-
-    :param orbitals:    Indices of the orbitals that make up the basis w.r.t. which the matrix is defined. By default (``orbitals=None``), the first ``len(mat)`` orbitals are used.
-    :type orbitals:     list
-
-    :param R:   Lattice vector for all the hopping terms.
-    :type R:    list
-
-    :param multiplier:  Multiplicative constant for the hopping strength.
-    :type multiplier: numbers.Complex
+    Parameters
+    ----------
+    mat :
+        The matrix to be converted.
+    orbitals :
+        Indices of the orbitals that make up the basis w.r.t. which the
+        matrix is defined. By default (``orbitals=None``), the first
+        ``len(mat)`` orbitals are used.
+    R :
+        Lattice vector for all the hopping terms.
+    multiplier :
+        Multiplicative constant for the hopping strength.
     """
     if orbitals is None:
         orbitals = list(range(len(mat)))
