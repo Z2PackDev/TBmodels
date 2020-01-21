@@ -19,5 +19,3 @@ case "$INSTALL_TYPE" in
         pip install .[precommit]
         ;;
 esac
-
-reentry scan
