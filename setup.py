@@ -11,7 +11,8 @@ import sys
 if sys.version_info < (3, 5):
     raise 'must use Python version 3.5 or higher'
 
-README = """TBmodels is a tool for reading, creating and modifying tight-binding models."""
+with open('./README.md', 'r') as f:
+    README = f.read()
 
 with open('./tbmodels/__init__.py', 'r') as f:
     MATCH_EXPR = "__version__[^'\"]+(['\"])([^'\"]+)"
@@ -32,7 +33,7 @@ setup(
     url='http://z2pack.ethz.ch/tbmodels',
     author='Dominik Gresch',
     author_email='greschd@gmx.ch',
-    description='Reading, creating and modifying tight-binding models.',
+    description="A tool for reading, creating and modifying tight-binding models.",
     python_requires=">=3.5",
     install_requires=[
         'numpy', 'scipy>=0.14', 'h5py', 'fsc.export', 'symmetry-representation>=0.2', 'click', 'bands-inspect',
@@ -40,6 +41,7 @@ setup(
     ],
     extras_require=EXTRAS_REQUIRE,
     long_description=README,
+    long_description_content_type="text/markdown",
     classifiers=[  # yapf:disable
         'License :: OSI Approved :: Apache Software License',
         'Natural Language :: English',
