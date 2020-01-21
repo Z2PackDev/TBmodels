@@ -2,9 +2,7 @@
 #
 # (c) 2015-2018, ETH Zurich, Institut fuer Theoretische Physik
 # Author: Dominik Gresch <greschd@gmx.ch>
-"""
-Defines the tbmodels command-line interface.
-"""
+"""Defines the tbmodels command-line interface."""
 
 import os
 from collections.abc import Iterable
@@ -91,9 +89,7 @@ def parse(folder, prefix, output, pos_kind):
     """
 )
 def symmetrize(input, output, symmetries, full_group):  # pylint: disable=redefined-builtin
-    """
-    Symmetrize tight-binding model with given symmetry group(s).
-    """
+    """Symmetrize tight-binding model with given symmetry group(s)."""
     import symmetry_representation as sr  # pylint: disable=import-outside-toplevel
     model = _read_input(input)
     click.echo("Reading symmetries from file '{}' ...".format(symmetries))
