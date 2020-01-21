@@ -19,12 +19,12 @@ with open('./tbmodels/__init__.py', 'r') as f:
 
 EXTRAS_REQUIRE = {
     'kwant': ['kwant'],
-    'dev': [
-        'pytest', 'pytest-cov', 'yapf==0.29', 'pythtb', 'pre-commit', 'sphinx', 'sphinx-rtd-theme==0.2.4',
-        'ipython>=6.2', 'sphinx-click', 'prospector==1.1.7', 'pylint==2.3.1'
-    ]
+    'test': ['pytest', 'pytest-cov', 'pythtb'],
+    'doc': ['sphinx', 'sphinx-rtd-theme==0.2.4', 'ipython>=6.2', 'sphinx-click'],
+    'precommit': ['yapf==0.29', 'pre-commit', 'prospector==1.1.7', 'pylint==2.3.1'],
 }
-EXTRAS_REQUIRE['dev'] += EXTRAS_REQUIRE['kwant']
+EXTRAS_REQUIRE['test'] += EXTRAS_REQUIRE['kwant']
+EXTRAS_REQUIRE['dev'] = EXTRAS_REQUIRE['test'] + EXTRAS_REQUIRE['doc'] + EXTRAS_REQUIRE['precommit']
 
 setup(
     name='tbmodels',
