@@ -172,19 +172,6 @@ def test_wannier_all(
     assert np.allclose(model.reciprocal_lattice, reciprocal_lattice)
 
 
-@pytest.mark.parametrize('hr_name', ['hr_hamilton.dat', 'wannier90_hr.dat', 'wannier90_hr_v2.dat'])
-def test_wannier_hr_equal(models_equal, hr_name, sample):
-    """
-    Check that the 'from_wannier_files' and 'from_hr_file' methods
-    produce the same result.
-    """
-    hr_file = sample(hr_name)
-    with pytest.deprecated_call():
-        model1 = tbmodels.Model.from_hr_file(hr_file, occ=28)
-    model2 = tbmodels.Model.from_wannier_files(hr_file=hr_file, occ=28)
-    models_equal(model1, model2)
-
-
 @pytest.mark.parametrize('hr_name', ['wannier90_inconsistent.dat', 'wannier90_inconsistent_v2.dat'])
 def test_inconsistent(hr_name, sample):
     """

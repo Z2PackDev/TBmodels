@@ -29,8 +29,7 @@ def test_consistency(hr_name, sample):
     original file.
     """
     hr_file = sample(hr_name)
-    with pytest.deprecated_call():
-        model = tbmodels.Model.from_hr_file(hr_file, occ=28, sparse=True)
+    model = tbmodels.Model.from_wannier_files(hr_file=hr_file, occ=28, sparse=True)
     lines_new = model.to_hr().split('\n')
     with open(hr_file, 'r') as f:
         lines_old = [line.rstrip(' \r\n') for line in f.readlines()]
@@ -47,26 +46,10 @@ def test_consistency_file(hr_name, models_equal, sparse, sample):
     to a model after a save / load round-trip to the same format.
     """
     hr_file = sample(hr_name)
-    with pytest.deprecated_call():
-        model1 = tbmodels.Model.from_hr_file(hr_file, sparse=sparse)
+    model1 = tbmodels.Model.from_wannier_files(hr_file=hr_file, sparse=sparse)
     with tempfile.NamedTemporaryFile() as tmpf:
         model1.to_hr_file(tmpf.name)
-        with pytest.deprecated_call():
-            model2 = tbmodels.Model.from_hr_file(tmpf.name, sparse=sparse)
-    models_equal(model1, model2)
-
-
-@pytest.mark.parametrize('hr_name', ['hr_hamilton.dat'])
-def test_consistency_str(hr_name, models_equal, sparse, sample):
-    """
-    Test that a model loaded directly from a *_hr.dat file is equal to
-    a model after a save / load round trip to a string in hr format.
-    """
-    hr_file = sample(hr_name)
-    with pytest.deprecated_call():
-        model1 = tbmodels.Model.from_hr_file(hr_file, sparse=sparse)
-    with pytest.deprecated_call():
-        model2 = tbmodels.Model.from_hr(model1.to_hr(), sparse=sparse)
+        model2 = tbmodels.Model.from_wannier_files(hr_file=tmpf.name, sparse=sparse)
     models_equal(model1, model2)
 
 
@@ -79,8 +62,7 @@ def test_consistency_no_hcutoff(hr_name, sample):
     value).
     """
     hr_file = sample(hr_name)
-    with pytest.deprecated_call():
-        model = tbmodels.Model.from_hr_file(hr_file, occ=28, h_cutoff=-1, sparse=True)
+    model = tbmodels.Model.from_wannier_files(hr_file=hr_file, occ=28, h_cutoff=-1, sparse=True)
     lines_new = model.to_hr().split('\n')
     with open(hr_file, 'r') as f:
         lines_old = [line.rstrip(' \r\n') for line in f.readlines()]
