@@ -9,4 +9,9 @@ repos:
   hooks:
   - id: prospector
     language: system
-    exclude: '^(doc/)|(examples/)|(playground/)|(speed_test/)'
+    exclude: '^(doc/)|(examples/)|(playground/)'
+- repo: https://github.com/pre-commit/mirrors-mypy
+  rev: v0.761
+  hooks:
+  - id: mypy
+    exclude: '^(doc/)|(examples/)|(playground/)'
