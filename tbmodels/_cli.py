@@ -94,7 +94,7 @@ def symmetrize(input, output, symmetries, full_group):  # pylint: disable=redefi
     """
     Symmetrize tight-binding model with given symmetry group(s).
     """
-    import symmetry_representation as sr
+    import symmetry_representation as sr  # pylint: disable=import-outside-toplevel
     model = _read_input(input)
     click.echo("Reading symmetries from file '{}' ...".format(symmetries))
     sym = sr.io.load(symmetries)
@@ -169,7 +169,7 @@ def eigenvals(input, kpoints, output):  # pylint: disable=redefined-builtin
     """
     Calculate the energy eigenvalues for a given set of k-points (in reduced coordinates). The input and output is given in an HDF5 file.
     """
-    import bands_inspect as bi
+    import bands_inspect as bi  # pylint: disable=import-outside-toplevel
 
     model = _read_input(input)
     click.echo("Reading kpoints from file '{}' ...".format(kpoints))

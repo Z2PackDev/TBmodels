@@ -8,6 +8,9 @@ and should not be relied on having a fixed import position. Since it does not
 treat tight-binding models, it might be moved to a separate package.
 """
 
+import typing as ty
+import numbers
+
 import numpy as np
 import scipy.linalg as la
 
@@ -34,7 +37,10 @@ class KdotpModel(SimpleHDF5Mapping):
     """
     HDF5_ATTRIBUTES = ['taylor_coefficients']
 
-    def __init__(self, taylor_coefficients):
+    def __init__(
+        self, taylor_coefficients: ty.Mapping[ty.Collection[numbers.Integral],
+                                              ty.Collection[ty.Collection[numbers.Complex]]]
+    ) -> None:
         for mat in taylor_coefficients.values():
             if not np.allclose(mat, np.array(mat).T.conj()):
                 raise ValueError('The provided Taylor coefficient {} is not hermitian'.format(mat))
@@ -43,8 +49,8 @@ class KdotpModel(SimpleHDF5Mapping):
             for key, mat in taylor_coefficients.items()
         }
 
-    def hamilton(self, k):
-        return sum(np.prod(np.array(k)**np.array(pow)) * mat for pow, mat in self.taylor_coefficients.items())
+    def hamilton(self, k: ty.Collection[numbers.Real]) -> np.ndarray:
+        return sum(np.prod(np.array(k)**np.array(k_powers)) * mat for k_powers, mat in self.taylor_coefficients.items())
 
-    def eigenval(self, k):
+    def eigenval(self, k: ty.Collection[numbers.Real]) -> np.ndarray:
         return la.eigvalsh(self.hamilton(k))

@@ -722,8 +722,7 @@ class Model(HDF5Enabled):
                         end_key = split_token.split(line[3:].strip(' :='), 1)[0]
                         assert end_key == key
                         break
-                    else:
-                        val.append(line)
+                    val.append(line)
                 mapping[key] = val
             else:
                 key, val = split_token.split(line, 1)
@@ -758,20 +757,20 @@ class Model(HDF5Enabled):
 
         .. note :: The TBmodels - Kwant interface is experimental. Use it with caution.
         """
-        import kwant
+        import kwant  # pylint: disable=import-outside-toplevel
         sublattices = self._get_sublattices()
         uc = self.uc if self.uc is not None else np.eye(self.dim)
         # get sublattice positions in cartesian coordinates
         pos_abs = np.dot(np.array([sl.pos for sl in sublattices]), uc)
         return kwant.lattice.general(prim_vecs=uc, basis=pos_abs)
 
-    def add_hoppings_kwant(self, kwant_sys):  # pylint: disable=too-many-branches
+    def add_hoppings_kwant(self, kwant_sys):
         """
         Sets the on-site energies and hopping terms for an existing kwant system to those of the :class:`.Model`.
 
         .. note :: The TBmodels - Kwant interface is experimental. Use it with caution.
         """
-        import kwant
+        import kwant  # pylint: disable=import-outside-toplevel
         sublattices = self._get_sublattices()
         kwant_sublattices = self.to_kwant_lattice().sublattices
 
@@ -796,9 +795,8 @@ class Model(HDF5Enabled):
                 if i == j:
                     # handled above
                     continue
-                else:
-                    kwant_sys[kwant.builder.HoppingKind(self._zero_vec, kwant_sublattices[i], kwant_sublattices[j])
-                              ] = on_site_mat[np.ix_(s1.indices, s2.indices)]
+                kwant_sys[kwant.builder.HoppingKind(self._zero_vec, kwant_sublattices[i],
+                                                    kwant_sublattices[j])] = on_site_mat[np.ix_(s1.indices, s2.indices)]
 
         # R != 0 terms
         for R, mat in self.hop.items():
@@ -806,16 +804,15 @@ class Model(HDF5Enabled):
             # special case R = 0 handled already
             if R == self._zero_vec:
                 continue
-            else:
-                minus_R = tuple(-np.array(R))
-                for i, s1 in enumerate(sublattices):
-                    for j, s2 in enumerate(sublattices):
-                        sub_matrix = mat[np.ix_(s1.indices, s2.indices)]
-                        # TODO: check "signs"
-                        kwant_sys[kwant.builder.HoppingKind(minus_R, kwant_sublattices[i],
-                                                            kwant_sublattices[j])] = sub_matrix
-                        kwant_sys[kwant.builder.HoppingKind(R, kwant_sublattices[j],
-                                                            kwant_sublattices[i])] = np.transpose(np.conj(sub_matrix))
+            minus_R = tuple(-np.array(R))
+            for i, s1 in enumerate(sublattices):
+                for j, s2 in enumerate(sublattices):
+                    sub_matrix = mat[np.ix_(s1.indices, s2.indices)]
+                    # TODO: check "signs"
+                    kwant_sys[kwant.builder.HoppingKind(minus_R, kwant_sublattices[i],
+                                                        kwant_sublattices[j])] = sub_matrix
+                    kwant_sys[kwant.builder.HoppingKind(R, kwant_sublattices[j],
+                                                        kwant_sublattices[i])] = np.transpose(np.conj(sub_matrix))
         return kwant_sys
 
     def _get_sublattices(self):
