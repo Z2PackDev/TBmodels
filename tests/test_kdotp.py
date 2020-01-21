@@ -11,7 +11,7 @@ import pytest
 import numpy as np
 
 import tbmodels
-from tbmodels._kdotp import KdotpModel
+from tbmodels.kdotp import KdotpModel
 from parameters import KPT
 
 

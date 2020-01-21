@@ -12,6 +12,6 @@ __version__ = '1.4.0.dev0'
 from . import helpers
 from ._tb_model import Model
 
-from . import _kdotp
+from . import kdotp
 
 from . import io
