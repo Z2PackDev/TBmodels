@@ -34,9 +34,7 @@ class KdotpModel(SimpleHDF5Mapping):
     """
     HDF5_ATTRIBUTES = ['taylor_coefficients']
 
-    def __init__(
-        self, taylor_coefficients: ty.Mapping[ty.Collection[int], ty.Collection[ty.Collection[complex]]]
-    ) -> None:
+    def __init__(self, taylor_coefficients: ty.Mapping[ty.Tuple[int, ...], ty.Any]) -> None:
         for mat in taylor_coefficients.values():
             if not np.allclose(mat, np.array(mat).T.conj()):
                 raise ValueError('The provided Taylor coefficient {} is not hermitian'.format(mat))
