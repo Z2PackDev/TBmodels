@@ -10,14 +10,6 @@ prune playground
 # Documentation is provided online
 prune doc
 
-# selectively include ptools
-prune tbmodels/_ptools
-include tbmodels/_ptools/__init__.py
-# include tbmodels/_ptools/parse_dict.py
-# include tbmodels/_ptools/string_tools.py
-# include tbmodels/_ptools/csv_parser.py
-include tbmodels/_ptools/sparse_matrix.py
-
 # installation related
 exclude MANIFEST.in
 

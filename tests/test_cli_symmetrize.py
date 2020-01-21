@@ -3,9 +3,12 @@
 
 # (c) 2015-2018, ETH Zurich, Institut fuer Theoretische Physik
 # Author: Dominik Gresch <greschd@gmx.ch>
+"""
+Tests for the 'symmetrize' CLI command.
+"""
 
-import pytest
 import tempfile
+
 from click.testing import CliRunner
 
 import tbmodels
@@ -13,6 +16,9 @@ from tbmodels._cli import cli
 
 
 def test_cli_symmetrize(models_close, sample):
+    """
+    Test the 'symmetrize' command.
+    """
     runner = CliRunner()
     with tempfile.NamedTemporaryFile() as out_file:
         run = runner.invoke(
