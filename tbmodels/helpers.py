@@ -6,12 +6,19 @@
 This module contains a helper function to create a list of hoppings from a given matrix (:meth:`matrix_to_hop`).
 """
 
+import typing as ty
+
 import numpy as np
 from fsc.export import export
 
 
 @export
-def matrix_to_hop(mat, orbitals=None, R=(0, 0, 0), multiplier=1.):
+def matrix_to_hop(
+    mat: ty.Collection[ty.Collection[complex]],
+    orbitals: ty.Optional[ty.Sequence[int]] = None,
+    R: ty.Collection[int] = (0, 0, 0),
+    multiplier: float = 1.
+) -> ty.List[ty.List[ty.Union[complex, int, np.ndarray]]]:
     r"""
     Turns a square matrix into a series of hopping terms.
 
