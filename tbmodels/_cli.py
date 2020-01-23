@@ -52,7 +52,13 @@ def _write_output(model, output):
     default='.',
     help='Directory containing the Wannier90 output files.'
 )
-@click.option('--prefix', '-p', type=str, default='wannier', help='Common prefix of the Wannier90 output files.')
+@click.option(
+    '--prefix',
+    '-p',
+    type=str,
+    default='wannier',
+    help='Common prefix of the Wannier90 output files.'
+)
 @click.option(
     '--pos-kind',
     type=click.Choice(['wannier', 'nearest_atom']),
@@ -65,7 +71,9 @@ def parse(folder, prefix, output, pos_kind):
     Parse Wannier90 output files and create an HDF5 file containing the tight-binding model.
     """
     click.echo("Parsing output files '{}*' ...".format(os.path.join(folder, prefix)))
-    model = Model.from_wannier_folder(folder=folder, prefix=prefix, ignore_orbital_order=True, pos_kind=pos_kind)
+    model = Model.from_wannier_folder(
+        folder=folder, prefix=prefix, ignore_orbital_order=True, pos_kind=pos_kind
+    )
     _write_output(model, output)
 
 
@@ -174,7 +182,9 @@ def eigenvals(input, kpoints, output):  # pylint: disable=redefined-builtin
         kpts = kpts.kpoints
 
     click.echo("Calculating energy eigenvalues ...")
-    eigenvalues = bi.eigenvals.EigenvalsData.from_eigenval_function(kpoints=kpts, eigenval_function=model.eigenval)
+    eigenvalues = bi.eigenvals.EigenvalsData.from_eigenval_function(
+        kpoints=kpts, eigenval_function=model.eigenval
+    )
 
     click.echo("Writing kpoints and energy eigenvalues to file '{}' ...".format(output))
     bi.io.save(eigenvalues, output)

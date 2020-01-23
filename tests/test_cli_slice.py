@@ -48,4 +48,7 @@ def test_cli_slice_invalid(sample):
     input_file = sample('InAs_nosym.hdf5')
     with tempfile.NamedTemporaryFile() as out_file:
         with pytest.raises(IndexError):
-            runner.invoke(cli, ['slice', '-o', out_file.name, '-i', input_file, '0', '200'], catch_exceptions=False)
+            runner.invoke(
+                cli, ['slice', '-o', out_file.name, '-i', input_file, '0', '200'],
+                catch_exceptions=False
+            )

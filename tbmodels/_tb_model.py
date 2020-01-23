@@ -28,6 +28,8 @@ from . import _check_compatibility
 from . import _sparse_matrix as sp
 from .kdotp import KdotpModel
 
+HoppingType = ty.Dict[ty.Tuple[int, ...], ty.Any]
+
 
 @export
 @subscribe_hdf5('tbmodels.model', check_on_load=False)
@@ -71,12 +73,12 @@ class Model(HDF5Enabled):
     def __init__(
         self,
         *,
-        on_site: ty.Optional[ty.Collection[float]] = None,
-        hop: ty.Optional[ty.Mapping[ty.Tuple[int, ...], ty.Any]] = None,
+        on_site: ty.Optional[ty.Sequence[float]] = None,
+        hop: ty.Optional[HoppingType] = None,
         size: ty.Optional[int] = None,
         dim: ty.Optional[int] = None,
         occ: ty.Optional[int] = None,
-        pos: ty.Optional[ty.Collection[ty.Collection[float]]] = None,
+        pos: ty.Optional[ty.Sequence[ty.Sequence[float]]] = None,
         uc: ty.Optional[np.ndarray] = None,
         contains_cc: bool = True,
         sparse: bool = False
@@ -151,7 +153,10 @@ class Model(HDF5Enabled):
         """
         # The double-constructor is needed to avoid a double-constructor in the sparse to-array
         # but still allow for the dtype argument.
-        hop = {tuple(key): self._matrix_type(self._matrix_type(value), dtype=complex) for key, value in hop.items()}
+        hop = {
+            tuple(key): self._matrix_type(self._matrix_type(value), dtype=complex)
+            for key, value in hop.items()
+        }
 
         # positions
         if pos is None:
@@ -182,9 +187,8 @@ class Model(HDF5Enabled):
         if on_site is not None:
             if len(on_site) != self.size:
                 raise ValueError(
-                    'The number of on-site energies {0} does not match the size of the system {1}'.format(
-                        len(on_site), self.size
-                    )
+                    'The number of on-site energies {0} does not match the size of the system {1}'.
+                    format(len(on_site), self.size)
                 )
             self.hop[self._zero_vec] += 0.5 * self._matrix_type(np.diag(on_site))
 
@@ -218,7 +222,9 @@ class Model(HDF5Enabled):
         """
         # Consistency checks
         for R, mat in hop.items():
-            if la.norm(mat - hop.get(tuple(-x for x in R), np.zeros(mat.shape)).T.conjugate()) > 1e-12:
+            if la.norm(
+                mat - hop.get(tuple(-x for x in R), np.zeros(mat.shape)).T.conjugate()
+            ) > 1e-12:
                 raise ValueError(
                     'The provided hoppings do not correspond to a hermitian Hamiltonian. hoppings[-R] = hoppings[R].H is not fulfilled.'
                 )
@@ -263,7 +269,9 @@ class Model(HDF5Enabled):
         for h_mat in self.hop.values():
             if not h_mat.shape == (self.size, self.size):
                 raise ValueError(
-                    'Hopping matrix of shape {0} found, should be ({1},{1}).'.format(h_mat.shape, self.size)
+                    'Hopping matrix of shape {0} found, should be ({1},{1}).'.format(
+                        h_mat.shape, self.size
+                    )
                 )
 
     def _check_dim(self):
@@ -271,7 +279,8 @@ class Model(HDF5Enabled):
         for key in self.hop.keys():
             if len(key) != self.dim:
                 raise ValueError(
-                    'The length of R = {0} does not match the dimensionality of the system ({1})'.format(key, self.dim)
+                    'The length of R = {0} does not match the dimensionality of the system ({1})'.
+                    format(key, self.dim)
                 )
         if self.uc is not None:
             if self.uc.shape != (self.dim, self.dim):
@@ -285,7 +294,7 @@ class Model(HDF5Enabled):
     def from_hop_list(
         cls,
         *,
-        hop_list: ty.Iterable[ty.Collection[ty.Union[complex, int, ty.Collection[int]]]] = (),
+        hop_list: ty.Iterable[ty.Tuple[complex, int, int, ty.Tuple[int, ...]]] = (),
         size: ty.Optional[int] = None,
         **kwargs
     ) -> "Model":
@@ -311,7 +320,9 @@ class Model(HDF5Enabled):
             try:
                 size = len(kwargs['on_site'])
             except KeyError:
-                raise ValueError('No on-site energies and no size given. The size of the system cannot be determined.')
+                raise ValueError(
+                    'No on-site energies and no size given. The size of the system cannot be determined.'
+                )
 
         class _hop:
             """
@@ -329,15 +340,17 @@ class Model(HDF5Enabled):
 
         # create data, row_idx, col_idx for setting up the CSR matrices
         hop_list_dict: ty.Mapping[ty.Tuple[int, ...], _hop] = co.defaultdict(_hop)
-        R: ty.Collection[int]
-        for t, i, j, R in hop_list:  # type: ignore
+        R: ty.Tuple[int, ...]
+        for t, i, j, R in hop_list:
             R_vec = tuple(R)
             hop_list_dict[R_vec].append(t, i, j)
 
         # creating CSR matrices
         hop_dict = dict()
         for key, val in hop_list_dict.items():
-            hop_dict[key] = sp.csr((val.data, (val.row_idx, val.col_idx)), dtype=complex, shape=(size, size))
+            hop_dict[key] = sp.csr((val.data, (val.row_idx, val.col_idx)),
+                                   dtype=complex,
+                                   shape=(size, size))
 
         return cls(size=size, hop=hop_dict, **kwargs)
 
@@ -367,10 +380,11 @@ class Model(HDF5Enabled):
             orbital_b = int(entry[4]) - 1
             # test consistency of orbital numbers
             if not ignore_orbital_order:
-                if not (orbital_a == i % num_wann) and (orbital_b == (i % num_wann_square) // num_wann):
+                if not (orbital_a == i %
+                        num_wann) and (orbital_b == (i % num_wann_square) // num_wann):
                     raise ValueError("Inconsistent orbital numbers in line '{}'".format(line))
-            return [(float(entry[5]) + 1j * float(entry[6])) / (deg_pts[i // num_wann_square]), orbital_a, orbital_b,
-                    [int(x) for x in entry[:3]]]
+            return [(float(entry[5]) + 1j * float(entry[6])) / (deg_pts[i // num_wann_square]),
+                    orbital_a, orbital_b, [int(x) for x in entry[:3]]]
 
         # skip random empty lines
         lines_nonempty = (l for l in iterator if l.strip())
@@ -434,7 +448,8 @@ class Model(HDF5Enabled):
         if self._zero_vec in self.hop.keys():
             lines.extend(
                 self._mat_to_hr(
-                    self._zero_vec, self.hop[self._zero_vec] + self.hop[self._zero_vec].conjugate().transpose()
+                    self._zero_vec,
+                    self.hop[self._zero_vec] + self.hop[self._zero_vec].conjugate().transpose()
                 )
             )
         # positive
@@ -454,9 +469,8 @@ class Model(HDF5Enabled):
         for j, column in enumerate(mat):
             for i, t in enumerate(column):
                 lines.append(
-                    '{0[0]:>5}{0[1]:>5}{0[2]:>5}{1:>5}{2:>5}{3.real:>22.14f}{3.imag:>22.14f}'.format(
-                        R, i + 1, j + 1, t
-                    )
+                    '{0[0]:>5}{0[1]:>5}{0[2]:>5}{1:>5}{2:>5}{3.real:>22.14f}{3.imag:>22.14f}'.
+                    format(R, i + 1, j + 1, t)
                 )
         return lines
 
@@ -567,14 +581,16 @@ class Model(HDF5Enabled):
                         p_reduced = la.solve(kwargs['uc'].T, np.array(p).T).T
                         T_base = np.floor(p_reduced)
                         all_atom_pos = np.array([
-                            kwargs['uc'].T @ (T_base + T_shift) + atom_pos for atom_pos in atom_pos_cartesian
+                            kwargs['uc'].T @ (T_base + T_shift) + atom_pos
+                            for atom_pos in atom_pos_cartesian
                             for T_shift in itertools.product([-1, 0, 1], repeat=3)
                         ])
                         distances = la.norm(p - all_atom_pos, axis=-1)
                         pos_cartesian.append(all_atom_pos[np.argmin(distances)])
                 else:
                     raise ValueError(
-                        "Invalid value '{}' for 'pos_kind', must be 'wannier' or 'nearest_atom'".format(pos_kind)
+                        "Invalid value '{}' for 'pos_kind', must be 'wannier' or 'nearest_atom'".
+                        format(pos_kind)
                     )
                 kwargs['pos'] = la.solve(kwargs['uc'].T, np.array(pos_cartesian).T).T
 
@@ -596,12 +612,16 @@ class Model(HDF5Enabled):
                             # Explicitly catching this because 'remap_hoppings'
                             # is also a generator.
                             except StopIteration as exc:
-                                raise ValueError("The 'wsvec_generator' stopped prematurely.") from exc
+                                raise ValueError(
+                                    "The 'wsvec_generator' stopped prematurely."
+                                ) from exc
                             T_list = wsvec_generator.send((orbital_1, orbital_2, tuple(R)))
                             N = len(T_list)
                             for T in T_list:
                                 # not using numpy here increases performance
-                                yield (t / N, orbital_1, orbital_2, tuple(r + t for r, t in zip(R, T)))
+                                yield (
+                                    t / N, orbital_1, orbital_2, tuple(r + t for r, t in zip(R, T))
+                                )
 
                     hop_entries = remap_hoppings(hop_entries)
                     return cls.from_hop_list(size=num_wann, hop_list=hop_entries, **kwargs)
@@ -779,8 +799,9 @@ class Model(HDF5Enabled):
                 if i == j:
                     # handled above
                     continue
-                kwant_sys[kwant.builder.HoppingKind(self._zero_vec, kwant_sublattices[i],
-                                                    kwant_sublattices[j])] = on_site_mat[np.ix_(s1.indices, s2.indices)]
+                kwant_sys[kwant.builder.HoppingKind(
+                    self._zero_vec, kwant_sublattices[i], kwant_sublattices[j]
+                )] = on_site_mat[np.ix_(s1.indices, s2.indices)]
 
         # R != 0 terms
         for R, mat in self.hop.items():
@@ -793,10 +814,12 @@ class Model(HDF5Enabled):
                 for j, s2 in enumerate(sublattices):
                     sub_matrix = mat[np.ix_(s1.indices, s2.indices)]
                     # TODO: check "signs"
-                    kwant_sys[kwant.builder.HoppingKind(minus_R, kwant_sublattices[i],
-                                                        kwant_sublattices[j])] = sub_matrix
-                    kwant_sys[kwant.builder.HoppingKind(R, kwant_sublattices[j],
-                                                        kwant_sublattices[i])] = np.transpose(np.conj(sub_matrix))
+                    kwant_sys[kwant.builder.HoppingKind(
+                        minus_R, kwant_sublattices[i], kwant_sublattices[j]
+                    )] = sub_matrix
+                    kwant_sys[
+                        kwant.builder.HoppingKind(R, kwant_sublattices[j], kwant_sublattices[i])
+                    ] = np.transpose(np.conj(sub_matrix))
         return kwant_sys
 
     def _get_sublattices(self):
@@ -817,7 +840,7 @@ class Model(HDF5Enabled):
                 sublattices.append(Sublattice(pos=p_orb, indices=[i]))
         return sublattices
 
-    def construct_kdotp(self, k: ty.Collection[float], order: int):
+    def construct_kdotp(self, k: ty.Sequence[float], order: int):
         """
         Construct a k.p model around a given k-point. This is done by explicitly
         evaluating the derivatives which make up the Taylor expansion of the k.p
@@ -835,8 +858,6 @@ class Model(HDF5Enabled):
             The order (sum of powers) to which the Taylor expansion is
             performed.
         """
-        # foo : ty.Collection[int] = (1, 2, 3)
-        # taylor_coefficients : ty.Dict[ty.Tuple[int, ...], ty.Any] = dict()
         taylor_coefficients = dict()
         if order < 0:
             raise ValueError('The order for the k.p model must be positive.')
@@ -848,9 +869,10 @@ class Model(HDF5Enabled):
             taylor_coefficients[k_powers] = (
                 (2j * np.pi)**curr_order / np.prod(factorial(k_powers, exact=True))
             ) * sum((
-                np.prod(np.array(R)**np.array(k_powers)) * np.exp(2j * np.pi * np.dot(k, R)) * self._array_cast(mat) +
-                np.prod((-np.array(R))**np.array(k_powers)) * np.exp(-2j * np.pi * np.dot(k, R)) *
-                self._array_cast(mat).T.conj() for R, mat in self.hop.items()
+                np.prod(np.array(R)**np.array(k_powers)) * np.exp(2j * np.pi * np.dot(k, R)) *
+                self._array_cast(mat) + np.prod((-np.array(R))**np.array(k_powers)) *
+                np.exp(-2j * np.pi * np.dot(k, R)) * self._array_cast(mat).T.conj()
+                for R, mat in self.hop.items()
             ), np.zeros((self.size, self.size), dtype=complex))
         return KdotpModel(taylor_coefficients=taylor_coefficients)
 
@@ -890,8 +912,9 @@ class Model(HDF5Enabled):
             for group in tb_model_group['hop'].values():
                 R = tuple(group['R'])
                 if new_kwargs['sparse']:
-                    new_kwargs['hop'][R] = sp.csr((group['data'], group['indices'], group['indptr']),
-                                                  shape=group['shape'])
+                    new_kwargs['hop'][R] = sp.csr(
+                        (group['data'], group['indices'], group['indptr']), shape=group['shape']
+                    )
                 else:
                     new_kwargs['hop'][R] = np.array(group['mat'])
             new_kwargs['contains_cc'] = False
@@ -920,9 +943,8 @@ class Model(HDF5Enabled):
 
     def __repr__(self):
         return ' '.join(
-            'tbmodels.Model(hop={1}, pos={0.pos!r}, uc={0.uc!r}, occ={0.occ}, contains_cc=False)'.format(
-                self, dict(self.hop)
-            ).replace('\n', ' ').replace('array', 'np.array').split()
+            'tbmodels.Model(hop={1}, pos={0.pos!r}, uc={0.uc!r}, occ={0.occ}, contains_cc=False)'.
+            format(self, dict(self.hop)).replace('\n', ' ').replace('array', 'np.array').split()
         )
 
     #---------------- BASIC FUNCTIONALITY ----------------------------------#
@@ -931,7 +953,7 @@ class Model(HDF5Enabled):
         """An array containing the reciprocal lattice vectors as rows."""
         return None if self.uc is None else 2 * np.pi * la.inv(self.uc).T
 
-    def hamilton(self, k: ty.Collection[float], convention: int = 2) -> np.ndarray:
+    def hamilton(self, k: ty.Sequence[float], convention: int = 2) -> np.ndarray:
         """
         Calculates the Hamilton matrix for a given k-point.
 
@@ -946,17 +968,20 @@ class Model(HDF5Enabled):
             Valid choices are 1 or 2.
         """
         if convention not in [1, 2]:
-            raise ValueError("Invalid value '{}' for 'convention': must be either '1' or '2'".format(convention))
+            raise ValueError(
+                "Invalid value '{}' for 'convention': must be either '1' or '2'".format(convention)
+            )
         k = np.array(k, ndmin=1)
-        H = sum((self._array_cast(hop) * np.exp(2j * np.pi * np.dot(R, k)) for R, hop in self.hop.items()),
-                np.zeros((self.size, self.size), dtype=complex))
+        H = sum((
+            self._array_cast(hop) * np.exp(2j * np.pi * np.dot(R, k)) for R, hop in self.hop.items()
+        ), np.zeros((self.size, self.size), dtype=complex))
         H += H.conjugate().T
         if convention == 1:
             pos_exponential = np.array([[np.exp(2j * np.pi * np.dot(p, k)) for p in self.pos]])
             H = pos_exponential.conjugate().transpose() * H * pos_exponential
         return H
 
-    def eigenval(self, k: ty.Collection[float]) -> np.ndarray:
+    def eigenval(self, k: ty.Sequence[float]) -> np.ndarray:
         """
         Returns the eigenvalues at a given k point.
 
@@ -968,7 +993,7 @@ class Model(HDF5Enabled):
         return la.eigvalsh(self.hamilton(k))
 
     #-------------------MODIFYING THE MODEL ----------------------------#
-    def add_hop(self, overlap: complex, orbital_1: int, orbital_2: int, R: ty.Collection[int]):
+    def add_hop(self, overlap: complex, orbital_1: int, orbital_2: int, R: ty.Sequence[int]):
         r"""
         Adds a hopping term with a given overlap (hopping strength) from
         ``orbital_2`` (:math:`o_2`), which lies in the unit cell pointed
@@ -1007,7 +1032,11 @@ class Model(HDF5Enabled):
         """
         R = tuple(R)
         if len(R) != self.dim:
-            raise ValueError('Dimension of R ({}) does not match the model dimension ({})'.format(len(R), self.dim))
+            raise ValueError(
+                'Dimension of R ({}) does not match the model dimension ({})'.format(
+                    len(R), self.dim
+                )
+            )
 
         mat = np.zeros((self.size, self.size), dtype=complex)
         nonzero_idx = np.nonzero(R)[0]
@@ -1021,7 +1050,7 @@ class Model(HDF5Enabled):
             mat[orbital_2, orbital_1] += overlap.conjugate()
         self.hop[R] += self._matrix_type(mat)
 
-    def add_on_site(self, on_site: ty.Collection[float]):
+    def add_on_site(self, on_site: ty.Sequence[float]):
         """
         Adds on-site energy to the orbitals. This adds to the existing
         on-site energy, and does not erase it.
@@ -1033,7 +1062,9 @@ class Model(HDF5Enabled):
         """
         if self.size != len(on_site):
             raise ValueError(
-                'The number of on-site energy terms should be {}, but is {}.'.format(self.size, len(on_site))
+                'The number of on-site energy terms should be {}, but is {}.'.format(
+                    self.size, len(on_site)
+                )
             )
         for orbital, energy in enumerate(on_site):
             self.add_hop(energy / 2., orbital, orbital, self._zero_vec)
@@ -1085,9 +1116,18 @@ class Model(HDF5Enabled):
     #---- arithmetic operations ----#
     @property
     def _input_kwargs(self):
-        return dict(hop=self.hop, pos=self.pos, occ=self.occ, uc=self.uc, contains_cc=False, sparse=self._sparse)
+        return dict(
+            hop=self.hop,
+            pos=self.pos,
+            occ=self.occ,
+            uc=self.uc,
+            contains_cc=False,
+            sparse=self._sparse
+        )
 
-    def symmetrize(self, symmetries: ty.Sequence[sr.SymmetryOperation], full_group: bool = False) -> "Model":
+    def symmetrize(
+        self, symmetries: ty.Sequence[sr.SymmetryOperation], full_group: bool = False
+    ) -> "Model":
         """
         Returns a model which is symmetrized w.r.t. the given
         symmetries. This is done by performing a group average over the
@@ -1104,7 +1144,8 @@ class Model(HDF5Enabled):
         """
         if full_group:
             new_model = self._apply_operation(symmetries[0])
-            return 1 / len(symmetries) * sum((self._apply_operation(s) for s in symmetries[1:]), new_model)
+            return 1 / len(symmetries) * sum((self._apply_operation(s)
+                                              for s in symmetries[1:]), new_model)
         else:
             new_model = self
             for sym in symmetries:
@@ -1124,7 +1165,9 @@ class Model(HDF5Enabled):
         # apply symmetry operation on sublattice positions
         sublattices = self._get_sublattices()
 
-        new_sublattice_pos = [symmetry_operation.real_space_operator.apply(latt.pos) for latt in sublattices]
+        new_sublattice_pos = [
+            symmetry_operation.real_space_operator.apply(latt.pos) for latt in sublattices
+        ]
 
         # match to a known sublattice position to determine the shift vector
         uc_shift = []
@@ -1137,16 +1180,20 @@ class Model(HDF5Enabled):
                 if any(np.isclose(new_pos - shift, latt.pos).all() for latt in sublattices):
                     valid_shifts.append(tuple(shift))
             if not valid_shifts:
-                raise ValueError('New position {} does not match any known sublattice'.format(new_pos))
+                raise ValueError(
+                    'New position {} does not match any known sublattice'.format(new_pos)
+                )
             if len(valid_shifts) > 1:
                 raise ValueError(
-                    'Ambiguity error: New position {} matches more than one known sublattice'.format(new_pos)
+                    'Ambiguity error: New position {} matches more than one known sublattice'.
+                    format(new_pos)
                 )
             uc_shift.append(valid_shifts[0])
 
         # setting up the indices to slice the hopping matrices
-        hop_shifts_idx: ty.Dict[ty.Tuple[int, ...], ty.Tuple[ty.List[int],
-                                                             ty.List[int]]] = co.defaultdict(lambda: ([], []))
+        hop_shifts_idx: ty.Dict[ty.Tuple[int, ...],
+                                ty.Tuple[ty.List[int],
+                                         ty.List[int]]] = co.defaultdict(lambda: ([], []))
         for (i, Ti), (j, Tj) in itertools.product(enumerate(uc_shift), repeat=2):
             shift = tuple(np.array(Tj) - np.array(Ti))
             for idx1, idx2 in itertools.product(sublattices[i].indices, sublattices[j].indices):
@@ -1154,9 +1201,11 @@ class Model(HDF5Enabled):
                 hop_shifts_idx[shift][1].append(idx2)
 
         # create hoppings with shifted R (by uc_shift[j] - uc_shift[i])
-        new_hop: ty.Dict[ty.Tuple[int, ...], ty.Any] = co.defaultdict(self._empty_matrix)
+        new_hop: HoppingType = co.defaultdict(self._empty_matrix)
         for R, mat in self.hop.items():
-            R_transformed = np.array(np.rint(np.dot(symmetry_operation.rotation_matrix, R)), dtype=int)
+            R_transformed = np.array(
+                np.rint(np.dot(symmetry_operation.rotation_matrix, R)), dtype=int
+            )
             for shift, (idx1, idx2) in hop_shifts_idx.items():
                 new_R = tuple(np.array(R_transformed) + np.array(shift))
                 new_hop[new_R][idx1, idx2] += mat[idx1, idx2]
@@ -1181,7 +1230,10 @@ class Model(HDF5Enabled):
             Orbital indices that will be in the resulting model.
         """
         new_pos = self.pos[tuple(slice_idx), :]
-        new_hop = {key: np.array(val)[np.ix_(slice_idx, slice_idx)] for key, val in self.hop.items()}
+        new_hop = {
+            key: np.array(val)[np.ix_(slice_idx, slice_idx)]
+            for key, val in self.hop.items()
+        }
         return Model(**co.ChainMap(dict(hop=new_hop, pos=new_pos), self._input_kwargs))
 
     @classmethod
@@ -1239,6 +1291,88 @@ class Model(HDF5Enabled):
 
         return cls(dim=new_dim, uc=new_uc, pos=new_pos, occ=new_occ, hop=new_hop, contains_cc=False)
 
+    def supercell(self, size: ty.Sequence[int]) -> "Model":  # pylint: disable=too-many-locals
+        """Generate a model for a supercell of the current unit cell.
+
+        Parameters
+        ----------
+        size :
+            The size of the supercell, given as integer multiples of the
+            current lattice vectors
+        """
+        size_array = np.array(size).astype(dtype=int, casting='safe')
+        if size_array.shape != (self.dim, ):
+            raise ValueError(
+                "The given 'size' has incorrect shape {}, should be {}.".format(
+                    size_array.shape, (self.dim, )
+                )
+            )
+        volume_multiplier = np.prod(size_array)
+        new_occ = None if self.occ is None else volume_multiplier * self.occ
+        if self.uc is None:
+            new_uc = None
+        else:
+            new_uc = (self.uc.T * size_array).T
+
+        # the new positions, normalized to the supercell
+        new_pos: ty.List[np.ndarray] = []
+        reduced_pos = np.array([p / size_array for p in self.pos])
+        uc_offsets = list(itertools.product(*[range(n) for n in size_array]))
+        for current_uc_offset in uc_offsets:
+            new_pos.extend(reduced_pos + (current_uc_offset / size_array))
+
+        new_size = self.size * volume_multiplier
+        new_hop: HoppingType = co.defaultdict(lambda: np.zeros((new_size, new_size), dtype=complex))
+
+        # full index of an orbital in unit cell at uc_pos
+        def full_idx(uc_pos, orbital_idx):
+            """
+            Computes the full index of an orbital in a given unit cell.
+            """
+            uc_idx = uc_pos[0]
+            for p, s in zip(uc_pos[1:], size[1:]):
+                uc_idx *= s
+                uc_idx += p
+            return int(np.round(uc_idx * self.size + orbital_idx))
+
+        for uc1_pos in itertools.product(*[range(n) for n in size_array]):
+            uc1_pos = np.array(uc1_pos, dtype=int)
+            for R, hop_mat in self.hop.items():
+                hop_mat = self._array_cast(hop_mat)
+                for i1, row in enumerate(hop_mat):
+                    for i2, t in enumerate(row):
+                        # new index of orbital 0
+                        new_i1 = full_idx(uc1_pos, i1)
+                        # position of the uc of orbital 2, not mapped inside supercell
+                        full_uc2_pos = uc1_pos + np.array(R)
+                        # R in terms of supercells
+                        new_R = np.array(np.floor(full_uc2_pos / size_array), dtype=int)
+                        # mapped into the supercell
+                        uc2_pos = full_uc2_pos % size_array
+                        new_i2 = full_idx(uc2_pos, i2)
+                        new_hop[tuple(new_R)][new_i1, new_i2] += t
+        return Model(
+            **co.ChainMap(
+                dict(hop=new_hop, occ=new_occ, uc=new_uc, size=new_size, pos=new_pos),
+                self._input_kwargs
+            )
+        )
+
+    # def _get_new_hoppings(
+    #     self, *, orbital_mapping: ty.Mapping[ty.Tuple[ty.Tuple[int, ...], ty.Tuple[int, ...]],
+    #                                          ty.List[ty.Tuple[int, int, int, int]]], new_size: int
+    # ) -> HoppingType:
+    #     new_hoppings: HoppingType = co.defaultdict(
+    #         lambda: np.zeros((new_size, new_size), dtype=complex)
+    #     )
+    #     for (old_R, new_R), indices in orbital_mapping.items():
+    #         old_ind1, new_ind1, old_ind2, new_ind2 = np.array(indices).T
+    #         new_hoppings[new_R][
+    #             np.ix_(new_ind1),
+    #             np.ix_(new_ind2)] += (self.hop[old_R][np.ix_(old_ind1),
+    #                                                   np.ix_(old_ind2)])
+    #     return new_hoppings
+
     def __add__(self, model: "Model") -> "Model":
         """
         Adds two models together by adding their hopping terms.
@@ -1250,7 +1384,9 @@ class Model(HDF5Enabled):
         # check if the occupation number matches
         if self.occ != model.occ:
             raise ValueError(
-                'Error when adding Models: occupation numbers ({0}, {1}) don\'t match'.format(self.occ, model.occ)
+                'Error when adding Models: occupation numbers ({0}, {1}) don\'t match'.format(
+                    self.occ, model.occ
+                )
             )
 
         # check if the size of the hopping matrices match
@@ -1264,9 +1400,8 @@ class Model(HDF5Enabled):
         # check if the unit cells match
         if not _check_compatibility.check_uc(self, model):
             raise ValueError(
-                'Error when adding Models: unit cells don\'t match.\nModel 1:\n{0.uc}\n\nModel 2:\n{1.uc}'.format(
-                    self, model
-                )
+                'Error when adding Models: unit cells don\'t match.\nModel 1:\n{0.uc}\n\nModel 2:\n{1.uc}'
+                .format(self, model)
             )
 
         # check if the positions match
@@ -1281,9 +1416,8 @@ class Model(HDF5Enabled):
                     break
         if not pos_match:
             raise ValueError(
-                'Error when adding Models: positions don\'t match.\nModel 1:\n{0.pos}\n\nModel 2:\n{1.pos}'.format(
-                    self, model
-                )
+                'Error when adding Models: positions don\'t match.\nModel 1:\n{0.pos}\n\nModel 2:\n{1.pos}'
+                .format(self, model)
             )
 
         # ---- MAIN PART ----

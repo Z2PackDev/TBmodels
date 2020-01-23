@@ -22,10 +22,11 @@ def test_cli_symmetrize(models_close, sample):
     runner = CliRunner()
     with tempfile.NamedTemporaryFile() as out_file:
         run = runner.invoke(
-            cli,
-            ['symmetrize', '-o', out_file.name, '-s',
-             sample('InAs_symmetries.hdf5'), '-i',
-             sample('InAs_nosym.hdf5')],
+            cli, [
+                'symmetrize', '-o', out_file.name, '-s',
+                sample('InAs_symmetries.hdf5'), '-i',
+                sample('InAs_nosym.hdf5')
+            ],
             catch_exceptions=False
         )
         print(run.output)
