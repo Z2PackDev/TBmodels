@@ -21,11 +21,12 @@ def test_simple(t1, get_model, k, compare_data, models_equal, compare_isclose):
     compare_data(models_equal, model)
 
 
-@pytest.mark.parametrize('t1', T_VALUES)
-def test_invalid_dim(t1, get_model):
+def test_invalid_dim(get_model):
     """
-    Check that an error is raised when the dimension does not match
-    the hopping matrix keys.
+    Check that an error is raised when the reciprocal lattice vector
+    does not match the dimension.
     """
+    model = get_model(0.1, 0.2)
+    model.add_hop(1j, 0, 1, (0, 1, 2))
     with pytest.raises(ValueError):
-        get_model(*t1, dim=2)
+        model.add_hop(1j, 0, 1, (0, 1))
