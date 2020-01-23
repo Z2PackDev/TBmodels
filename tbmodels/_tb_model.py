@@ -1317,61 +1317,52 @@ class Model(HDF5Enabled):
         # the new positions, normalized to the supercell
         new_pos: ty.List[np.ndarray] = []
         reduced_pos = np.array([p / size_array for p in self.pos])
-        uc_offsets = list(itertools.product(*[range(n) for n in size_array]))
+        uc_offsets = list(
+            np.array(offset) for offset in itertools.product(*[range(n) for n in size_array])
+        )
         for current_uc_offset in uc_offsets:
             new_pos.extend(reduced_pos + (current_uc_offset / size_array))
 
         new_size = self.size * volume_multiplier
         new_hop: HoppingType = co.defaultdict(lambda: np.zeros((new_size, new_size), dtype=complex))
 
-        # full index of an orbital in unit cell at uc_pos
-        def full_idx(uc_pos, orbital_idx):
-            """
-            Computes the full index of an orbital in a given unit cell.
-            """
-            uc_idx = uc_pos[0]
-            for p, s in zip(uc_pos[1:], size[1:]):
-                uc_idx *= s
-                uc_idx += p
-            return int(np.round(uc_idx * self.size + orbital_idx))
+        # Can be used to get the orbital offset of a given unit cell
+        # by taking the inner product with the unit cell position.
+        uc_idx_multiplier = np.array([
+            np.prod(size[i:], dtype=int) for i in range(1,
+                                                        len(size) + 1)
+        ]) * self.size
 
-        for uc1_pos in itertools.product(*[range(n) for n in size_array]):
-            uc1_pos = np.array(uc1_pos, dtype=int)
+        for uc1_idx, uc1_pos in enumerate(uc_offsets):
+            uc1_idx_offset = uc1_idx * self.size
+
             for R, hop_mat in self.hop.items():
                 hop_mat = self._array_cast(hop_mat)
-                for i1, row in enumerate(hop_mat):
-                    for i2, t in enumerate(row):
-                        # new index of orbital 0
-                        new_i1 = full_idx(uc1_pos, i1)
-                        # position of the uc of orbital 2, not mapped inside supercell
-                        full_uc2_pos = uc1_pos + np.array(R)
-                        # R in terms of supercells
-                        new_R = np.array(np.floor(full_uc2_pos / size_array), dtype=int)
-                        # mapped into the supercell
-                        uc2_pos = full_uc2_pos % size_array
-                        new_i2 = full_idx(uc2_pos, i2)
-                        new_hop[tuple(new_R)][new_i1, new_i2] += t
+
+                # position of the uc of orbital 2, not mapped inside supercell
+                full_uc2_pos = uc1_pos + R
+                # mapped into the supercell
+                uc2_pos = full_uc2_pos % size_array
+                uc2_idx_offset = np.inner(uc_idx_multiplier, uc2_pos)
+
+                # R in terms of supercells
+                new_R = np.array(np.floor(full_uc2_pos / size_array), dtype=int)
+
+                new_hop[tuple(new_R)][uc1_idx_offset:uc1_idx_offset + self.size,
+                                      uc2_idx_offset:uc2_idx_offset + self.size] += hop_mat
+
         return Model(
             **co.ChainMap(
-                dict(hop=new_hop, occ=new_occ, uc=new_uc, size=new_size, pos=new_pos),
-                self._input_kwargs
+                dict(
+                    hop=new_hop,
+                    occ=new_occ,
+                    uc=new_uc,
+                    size=new_size,
+                    pos=new_pos,
+                    contains_cc=False
+                ), self._input_kwargs
             )
         )
-
-    # def _get_new_hoppings(
-    #     self, *, orbital_mapping: ty.Mapping[ty.Tuple[ty.Tuple[int, ...], ty.Tuple[int, ...]],
-    #                                          ty.List[ty.Tuple[int, int, int, int]]], new_size: int
-    # ) -> HoppingType:
-    #     new_hoppings: HoppingType = co.defaultdict(
-    #         lambda: np.zeros((new_size, new_size), dtype=complex)
-    #     )
-    #     for (old_R, new_R), indices in orbital_mapping.items():
-    #         old_ind1, new_ind1, old_ind2, new_ind2 = np.array(indices).T
-    #         new_hoppings[new_R][
-    #             np.ix_(new_ind1),
-    #             np.ix_(new_ind2)] += (self.hop[old_R][np.ix_(old_ind1),
-    #                                                   np.ix_(old_ind2)])
-    #     return new_hoppings
 
     def __add__(self, model: "Model") -> "Model":
         """

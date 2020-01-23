@@ -21,12 +21,12 @@ def get_equivalent_k(k, supercell_size):
 
 @pytest.mark.parametrize('t_values', T_VALUES)
 @pytest.mark.parametrize('supercell_size', [(1, 1, 1), (2, 1, 1), (2, 3, 2)])
-def test_supercell_simple(get_model, t_values, supercell_size):
+def test_supercell_simple(get_model, t_values, supercell_size, sparse):
     """
     Test that the eigenvalues from a supercell model match the folded
     eigenvalues of the base model, for a simple model.
     """
-    model = get_model(*t_values)
+    model = get_model(*t_values, sparse=sparse)
     supercell_model = model.supercell(size=supercell_size)
     for k in KPT:
         ev_supercell = supercell_model.eigenval(k)
