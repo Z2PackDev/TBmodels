@@ -1426,6 +1426,7 @@ class Model(HDF5Enabled):
             )
         if self.uc is None or self.pos is None:
             raise ValueError("Unit cell and positions must be specified for model folding.")
+
         positions_cartesian = (self.uc.T @ self.pos.T).T
         pos_cartesian_relative = positions_cartesian - unit_cell_offset
         new_uc = np.array(new_unit_cell)
@@ -1443,6 +1444,16 @@ class Model(HDF5Enabled):
                 )
         new_pos = pos_reduced_new[np.ix_(in_uc_indices)]
         in_uc_labels = np.array(orbital_labels)[np.ix_(in_uc_indices)]
+        # TODO: check that the old orbital labels are exactly N times
+        # the new orbital labels
+        new_occ: ty.Optional[int]
+        if self.occ is not None:
+            new_occ_float = self.occ / (len(self.pos) / len(in_uc_labels))
+            new_occ = int(np.round(new_occ_float))
+            if not np.isclose(new_occ, new_occ_float):
+                new_occ = None
+        else:
+            new_occ = None
 
         offset_stencil = np.array(list(itertools.product(*[range(-1, 2) for _ in range(self.dim)])))
 
@@ -1458,7 +1469,6 @@ class Model(HDF5Enabled):
             min_dist_idx = np.argmin(distances)
             min_dist = distances[min_dist_idx]
             min_offset = offset_stencil[np.argmin(distances)]
-
             return min_dist, min_offset
 
         def get_matching_idx_and_offset(pos_reduced, orbital_label):
@@ -1485,6 +1495,9 @@ class Model(HDF5Enabled):
         for input_R, input_mat in self.hop.items():
             R_reduced_to_new_uc = la.solve(new_uc.T, (self.uc.T @ input_R))
             input_mat = self._array_cast(input_mat)
+            # Construct the new hoppings from the full set of current
+            # hoppings, because +R and -R do not necessarily map to the
+            # same new current_offset.
             for effective_R, effective_input_mat in [
                 (R_reduced_to_new_uc, input_mat),
                 (-R_reduced_to_new_uc, input_mat.conjugate().transpose())
@@ -1502,8 +1515,14 @@ class Model(HDF5Enabled):
 
         return Model(
             **co.ChainMap(
-                dict(hop=new_hop, size=new_size, pos=new_pos, uc=new_uc, contains_cc=check_cc),
-                self._input_kwargs
+                dict(
+                    hop=new_hop,
+                    size=new_size,
+                    pos=new_pos,
+                    uc=new_uc,
+                    contains_cc=check_cc,
+                    occ=new_occ
+                ), self._input_kwargs
             )
         )
 
