@@ -27,6 +27,9 @@ from fsc.hdf5_io import subscribe_hdf5, HDF5Enabled
 from . import _check_compatibility
 from . import _sparse_matrix as sp
 from .kdotp import KdotpModel
+from ._types import EqualComparable
+
+__all__ = ('Model', )
 
 HoppingType = ty.Dict[ty.Tuple[int, ...], ty.Any]
 
@@ -221,13 +224,21 @@ class Model(HDF5Enabled):
         Reduce the full hoppings representation (with cc) to the reduced one (without cc, zero-terms halved).
         """
         # Consistency checks
+        failed_R = []
         for R, mat in hop.items():
-            if la.norm(
+            diff_norm = la.norm(
                 mat - hop.get(tuple(-x for x in R), np.zeros(mat.shape)).T.conjugate()
-            ) > 1e-12:
-                raise ValueError(
-                    'The provided hoppings do not correspond to a hermitian Hamiltonian. hoppings[-R] = hoppings[R].H is not fulfilled.'
+            )
+            if diff_norm > 1e-12:
+                failed_R.append((R, diff_norm))
+        if failed_R:
+            raise ValueError(
+                'The provided hoppings do not correspond to a hermitian Hamiltonian. hoppings[-R] = hoppings[R].H is not fulfilled for the following values:\n'
+                + '\n'.join(
+                    f'R={R}, delta_norm={diff_norm}'
+                    for R, diff_norm in sorted(failed_R, key=lambda val: -val[1])
                 )
+            )
 
         res = dict()
         for R, mat in hop.items():
@@ -241,11 +252,11 @@ class Model(HDF5Enabled):
                 res[R] = 0.5 * mat
         return res
 
-    def _map_hop_positive_R(self, hop):
+    def _map_hop_positive_R(self, hop: HoppingType) -> HoppingType:
         """
         Maps hoppings with a negative first non-zero index in R to their positive counterpart.
         """
-        new_hop = co.defaultdict(self._empty_matrix)
+        new_hop: HoppingType = co.defaultdict(self._empty_matrix)
         for R, mat in hop.items():
             try:
                 if R[np.nonzero(R)[0][0]] > 0:
@@ -1361,6 +1372,139 @@ class Model(HDF5Enabled):
                     pos=new_pos,
                     contains_cc=False
                 ), self._input_kwargs
+            )
+        )
+
+    def fold_model(  # pylint: disable=too-many-locals # noqa:C001
+        self,
+        *,
+        new_unit_cell: ty.Sequence[ty.Sequence[float]],
+        unit_cell_offset: ty.Sequence[float] = (0, 0, 0),
+        position_tolerance: float = 1e-3,
+        orbital_labels: ty.Sequence[EqualComparable],
+        target_indices: ty.Optional[ty.Sequence[int]] = None,
+        check_cc: bool = True
+    ) -> "Model":
+        """
+        Returns a model with a smaller unit cell. Orbitals which are related
+        by a lattice vector of the new unit cell are "folded" into a single
+        orbital.
+        This is the inverse operation of the supercell construction.
+
+        Parameters
+        ----------
+        new_unit_cell :
+            The unit cell of the new model. Note that this unit cell must
+            lie completely within the old unit cell.
+        unit_cell_offset :
+            Position (in cartesian coordinates) at which the new unit cell
+            is based.
+        position_tolerance :
+            Tolerance used when determining if a position mapped into the
+            new unit cell is the same as an existing orbital position.
+        orbital_labels :
+            A list of labels for the orbitals of the current model. This
+            is needed to distinguish between orbitals of the same position
+            when mapping them to the new orbitals.
+        target_indices :
+            Optional list of indices (in the current model) of the orbitals
+            which lie within the new unit cell. This can be used as a
+            check that the new orbitals are the expected ones.
+        check_cc :
+            Flag to determine whether the hoppings should be checked for
+            being perfect complex conjugates. This check can fail if the
+            model does not have exact translation symmetry w.r.t. the new
+            unit cell. If set to false, hoppings are averaged to be
+            complex conjugates.
+
+        .. note :: This function is currently experimental, and its interface
+            may still change without warning.
+        """
+        if len(orbital_labels) != self.size:
+            raise ValueError(
+                f"The lenght of the 'orbital_labels' input ({len(orbital_labels)}) "
+                f"does not match the size of the model ({self.size})."
+            )
+        if self.uc is None or self.pos is None:
+            raise ValueError("Unit cell and positions must be specified for model folding.")
+        positions_cartesian = (self.uc.T @ self.pos.T).T
+        pos_cartesian_relative = positions_cartesian - unit_cell_offset
+        new_uc = np.array(new_unit_cell)
+        pos_reduced_new = la.solve(new_uc.T, pos_cartesian_relative.T).T
+
+        # TODO: Check that the new UC is inside the old one, or also check
+        # periodic images (w.r.t old UC) of the initial positions.
+        in_uc_indices = np.argwhere(
+            np.all(np.logical_and(pos_reduced_new >= 0, pos_reduced_new < 1), axis=-1)
+        ).flatten()
+        if target_indices is not None:
+            if not np.all(target_indices == in_uc_indices):
+                raise ValueError(
+                    f'The indices for atoms in the given unit cell ({in_uc_indices}) do not match the target indices ({target_indices}).'
+                )
+        new_pos = pos_reduced_new[np.ix_(in_uc_indices)]
+        in_uc_labels = np.array(orbital_labels)[np.ix_(in_uc_indices)]
+
+        offset_stencil = np.array(list(itertools.product(*[range(-1, 2) for _ in range(self.dim)])))
+
+        def get_min_distance_and_offset(pos1, pos2):
+            """
+            pos1 and pos2 both reduced, within [0, 1)
+            offset in reduced, added to pos2
+            """
+
+            diff = (pos2 - pos1)
+            total_diffs = offset_stencil + diff
+            distances = la.norm(new_uc.T @ total_diffs.T, axis=0)
+            min_dist_idx = np.argmin(distances)
+            min_dist = distances[min_dist_idx]
+            min_offset = offset_stencil[np.argmin(distances)]
+
+            return min_dist, min_offset
+
+        def get_matching_idx_and_offset(pos_reduced, orbital_label):
+            res_idx = []
+            main_offset = np.array(np.floor(pos_reduced), dtype=int)
+            pos_relative = pos_reduced % 1
+            assert np.allclose(main_offset + pos_relative, pos_reduced)
+            for i, (pos, target_label) in enumerate(zip(new_pos, in_uc_labels)):
+                if orbital_label == target_label:
+                    dist, curr_offset = get_min_distance_and_offset(pos1=pos, pos2=pos_relative)
+
+                    if dist < position_tolerance:
+                        res_idx.append((i, main_offset - curr_offset))
+
+            if len(res_idx) == 1:
+                return res_idx[0]
+            elif len(res_idx) > 1:
+                raise ValueError(f'More than one matching index found: {res_idx}.')
+            else:
+                return None, None
+
+        new_size = len(in_uc_labels)
+        new_hop: HoppingType = co.defaultdict(lambda: np.zeros((new_size, new_size), dtype=complex))
+        for input_R, input_mat in self.hop.items():
+            R_reduced_to_new_uc = la.solve(new_uc.T, (self.uc.T @ input_R))
+            input_mat = self._array_cast(input_mat)
+            for effective_R, effective_input_mat in [
+                (R_reduced_to_new_uc, input_mat),
+                (-R_reduced_to_new_uc, input_mat.conjugate().transpose())
+            ]:
+                if not check_cc:
+                    effective_input_mat = effective_input_mat / 2
+                for orbital_2_idx in range(self.size):
+                    full_reduced_pos_2 = effective_R + pos_reduced_new[orbital_2_idx]
+                    new_2_idx, current_offset = get_matching_idx_and_offset(
+                        full_reduced_pos_2, orbital_labels[orbital_2_idx]
+                    )
+                    if new_2_idx is not None:
+                        new_hop[tuple(current_offset)][:, new_2_idx] += effective_input_mat[
+                            in_uc_indices, orbital_2_idx]
+
+        return Model(
+            **co.ChainMap(
+                dict(hop=new_hop, size=new_size, pos=new_pos, uc=new_uc, contains_cc=check_cc),
+                self._input_kwargs
             )
         )
 
