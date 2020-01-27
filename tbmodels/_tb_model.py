@@ -27,7 +27,6 @@ from fsc.hdf5_io import subscribe_hdf5, HDF5Enabled
 from . import _check_compatibility
 from . import _sparse_matrix as sp
 from .kdotp import KdotpModel
-from ._types import EqualComparable
 
 __all__ = ('Model', )
 
@@ -1381,7 +1380,7 @@ class Model(HDF5Enabled):
         new_unit_cell: ty.Sequence[ty.Sequence[float]],
         unit_cell_offset: ty.Sequence[float] = (0, 0, 0),
         position_tolerance: float = 1e-3,
-        orbital_labels: ty.Sequence[EqualComparable],
+        orbital_labels: ty.Sequence[ty.Any],
         target_indices: ty.Optional[ty.Sequence[int]] = None,
         check_cc: bool = True
     ) -> "Model":
