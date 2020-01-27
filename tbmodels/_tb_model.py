@@ -1380,9 +1380,12 @@ class Model(HDF5Enabled):
         new_unit_cell: ty.Sequence[ty.Sequence[float]],
         unit_cell_offset: ty.Sequence[float] = (0, 0, 0),
         position_tolerance: float = 1e-3,
-        orbital_labels: ty.Sequence[ty.Any],
+        orbital_labels: ty.Sequence[ty.Hashable],
         target_indices: ty.Optional[ty.Sequence[int]] = None,
-        check_cc: bool = True
+        check_cc: bool = True,
+        check_uc_volume: bool = True,
+        uc_volume_tolerance: float = 1e-6,
+        check_orbital_ratio: bool = True,
     ) -> "Model":
         """
         Returns a model with a smaller unit cell. Orbitals which are related
@@ -1415,6 +1418,17 @@ class Model(HDF5Enabled):
             model does not have exact translation symmetry w.r.t. the new
             unit cell. If set to false, hoppings are averaged to be
             complex conjugates.
+        check_uc_volume :
+            Flag to determine if the unit cell volume should decrease
+            by the same factor as the number of orbitals.
+        uc_volume_tolerance :
+            Absolute tolerance when checking if the unit cell volume change
+            is consistent with the change in number of orbitals.
+        check_orbital_ratio :
+            Flag to determine if the ratio of individual orbital labels
+            should be checked to be the same as the initial ratio. If
+            this is set to False, the resulting model will always
+            have ``occ=None``.
 
         .. note :: This function is currently experimental, and its interface
             may still change without warning.
@@ -1442,16 +1456,46 @@ class Model(HDF5Enabled):
                 raise ValueError(
                     f'The indices for atoms in the given unit cell ({in_uc_indices}) do not match the target indices ({target_indices}).'
                 )
+
+        # Check that all orbitals are present in the correct number
+        total_orbital_ratio = len(self.pos) / len(in_uc_indices)
+        if check_orbital_ratio:
+            orbital_counts_initial = co.Counter(orbital_labels)
+            orbital_counts_new = co.Counter(np.array(orbital_labels)[np.ix_(in_uc_indices)])
+
+            for label, count_initial in orbital_counts_initial.items():
+                count_new = orbital_counts_new.get(label, 0)
+                if not np.isclose(1 / total_orbital_ratio, count_new / count_initial):
+                    raise ValueError(
+                        "The individual orbital numbers inside the new unit cell "
+                        "are not consistent with the change in total orbital number:\n"
+                        f"Total: {len(in_uc_indices)}/{len(self.pos)}\n" + "\n".join(
+                            f"Orbital '{key}': { orbital_counts_new.get(key, 0)}/{orbital_counts_initial[key]}"
+                            for key in orbital_counts_initial.keys()
+                        )
+                    )
+        if check_uc_volume:
+            uc_volume_change_factor = la.det(self.uc) / la.det(new_uc)
+            if not np.isclose(
+                uc_volume_change_factor, total_orbital_ratio, atol=uc_volume_tolerance
+            ):
+                raise ValueError(
+                    f"The unit cell volume decreased by a factor {uc_volume_change_factor}, "
+                    "which is inconsistent with the decrease in the number of "
+                    f"orbitals (factor {total_orbital_ratio})."
+                )
+
         new_pos = pos_reduced_new[np.ix_(in_uc_indices)]
         in_uc_labels = np.array(orbital_labels)[np.ix_(in_uc_indices)]
-        # TODO: check that the old orbital labels are exactly N times
-        # the new orbital labels
+
         new_occ: ty.Optional[int]
-        if self.occ is not None:
-            new_occ_float = self.occ / (len(self.pos) / len(in_uc_labels))
+        if check_orbital_ratio and self.occ is not None:
+            new_occ_float = self.occ / total_orbital_ratio
             new_occ = int(np.round(new_occ_float))
             if not np.isclose(new_occ, new_occ_float):
-                new_occ = None
+                raise ValueError(
+                    f"The occupation number {new_occ_float} of the resulting model is fractional."
+                )
         else:
             new_occ = None
 
