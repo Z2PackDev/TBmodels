@@ -28,7 +28,7 @@ show:
 	firefox $(HTMLBUILDDIR)/index.html
 
 clean:
-	rm -rf $(HTMLBUILDDIR)
+	rm -rf $(HTMLBUILDDIR) $(BUILDDIR)
 
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(HTMLBUILDDIR)
