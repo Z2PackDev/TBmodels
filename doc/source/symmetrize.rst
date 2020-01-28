@@ -22,6 +22,7 @@ The model is located in the ``examples`` directory of the TBmodels source. You w
     In [0]: import os
        ...: import pathlib
        ...: EXAMPLES_DIR = pathlib.Path(os.path.dirname(tbmodels.__file__)).parent / 'examples'
+       ...: EXAMPLES_DIR
 
 .. ipython::
 
