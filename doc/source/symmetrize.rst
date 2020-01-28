@@ -21,6 +21,10 @@ We start by loading the initial model:
        ...:     '../examples/symmetrization/nonsymmorphic_Si/data/model_nosym.hdf5'
        ...: )
 
+.. ipython::
+
+    In [0]: import os; os.listdir('.')
+
 
 Setting up orbitals
 -------------------
