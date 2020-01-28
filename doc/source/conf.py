@@ -17,14 +17,8 @@
 # serve to show the default.
 
 import os
-import sys
 import time
-import sphinx_rtd_theme
 
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.insert(0, os.path.abspath('../../'))
 import tbmodels
 
 # -- General configuration ------------------------------------------------
@@ -65,10 +59,7 @@ master_doc = 'index'
 # General information about the project.
 project = u'TBmodels'
 year = time.localtime().tm_year
-if year == 2016:
-    copyright = '2016, Dominik Gresch'
-else:
-    copyright = '2016-{}, Dominik Gresch'.format(year)
+copyright = '2016-{}, Dominik Gresch'.format(year)
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -114,6 +105,7 @@ exclude_patterns = ['doc.rst']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
+highlight_language = 'python3'
 
 # A list of ignored prefixes for module index sorting.
 #modindex_common_prefix = []
@@ -123,11 +115,16 @@ pygments_style = 'sphinx'
 
 # -- Options for HTML output ----------------------------------------------
 
-# The theme to use for HTML and HTML Help pages.  See the documentation for
-# a list of builtin themes.
-#~ html_theme = 'basicstrap'
-html_theme = 'sphinx_rtd_theme'
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+
+if not on_rtd:  # only import and set the theme if we're building docs locally
+    try:
+        import sphinx_rtd_theme
+        html_theme = 'sphinx_rtd_theme'
+        html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+    except ImportError:
+        # No sphinx_rtd_theme installed
+        pass
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -150,7 +147,7 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-html_logo = "images/tbmodels_logo_reduced.svg"
+html_logo = "images/tbmodels_logo_blue_reduced.svg"
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32

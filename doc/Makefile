@@ -28,11 +28,10 @@ show:
 	firefox $(HTMLBUILDDIR)/index.html
 
 clean:
-	rm -rf $(HTMLBUILDDIR)
+	rm -rf $(HTMLBUILDDIR) $(BUILDDIR)
 
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(HTMLBUILDDIR)
-	python replace_colors.py $(HTMLBUILDDIR)
 	@echo
 	@echo "Build finished. The HTML pages are in $(HTMLBUILDDIR)."
 
