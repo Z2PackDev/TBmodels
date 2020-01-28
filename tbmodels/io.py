@@ -6,6 +6,8 @@
 Defines functions for saving and loading in HDF5 format.
 """
 
+import copy
+
 import h5py
 import fsc.hdf5_io
 from fsc.export import export
@@ -14,13 +16,14 @@ from . import _legacy_decode
 
 __all__ = ['save']
 
-save = fsc.hdf5_io.save  # pylint: disable=invalid-name
+save = copy.deepcopy(fsc.hdf5_io.save)  # pylint: disable=invalid-name
+save.__doc__ = "Save TBmodels objects to a HDF5 file. Compatible with all types registered through :py:mod:`fsc.hdf5_io`."
 
 
 @export
 def load(file_path):
     """
-    Load TBmodels objects from an HDF5 file.
+    Load TBmodels objects from an HDF5 file. Compatible with all types registered through :py:mod:`fsc.hdf5_io`.
     """
     try:
         return fsc.hdf5_io.load(file_path)

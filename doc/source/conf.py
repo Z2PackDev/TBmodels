@@ -37,7 +37,8 @@ extensions = [
 
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
-    'symmetry-representation': ('http://z2pack.ethz.ch/symmetry-representation/', None)
+    'symmetry-representation': ('http://z2pack.ethz.ch/symmetry-representation/', None),
+    'fsc.hdf5-io': ('http://frescolinogroup.github.io/frescolino/pyhdf5io/0.5/', None),
 }
 
 nitpick_ignore = [('py:class', 'array')]

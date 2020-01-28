@@ -1034,8 +1034,9 @@ class Model(HDF5Enabled):
             Lattice vector pointing to the unit cell where ``orbital_2``
             lies.
 
+
         .. warning::
-            The positions given in the constructor of :class:`.Model`
+            The positions given in the constructor of :class:`Model`
             are automatically mapped into the home unit cell. This has
             to be taken into account when determining ``R``.
 
@@ -1393,6 +1394,9 @@ class Model(HDF5Enabled):
         orbital.
         This is the inverse operation of the supercell construction.
 
+        .. note :: This function is currently experimental, and its interface
+            may still change without warning.
+
         Parameters
         ----------
         new_unit_cell :
@@ -1429,9 +1433,6 @@ class Model(HDF5Enabled):
             should be checked to be the same as the initial ratio. If
             this is set to False, the resulting model will always
             have ``occ=None``.
-
-        .. note :: This function is currently experimental, and its interface
-            may still change without warning.
         """
         if len(orbital_labels) != self.size:
             raise ValueError(
