@@ -2,4 +2,4 @@
 based_on_style = pep8
 coalesce_brackets = true
 dedent_closing_brackets = true
-column_limit = 120
+column_limit = 100

@@ -80,7 +80,9 @@ if __name__ == '__main__':
     assert np.allclose(time_reversal.repr.matrix, np.kron([[0, -1j], [1j, 0]], np.eye(7)))
 
     structure = mg.Structure(
-        lattice=model_nosym.uc, species=['In', 'As'], coords=np.array([[0, 0, 0], [0.25, 0.25, 0.25]])
+        lattice=model_nosym.uc,
+        species=['In', 'As'],
+        coords=np.array([[0, 0, 0], [0.25, 0.25, 0.25]])
     )
 
     # get real-space representations

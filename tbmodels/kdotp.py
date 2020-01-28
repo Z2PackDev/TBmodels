@@ -43,8 +43,11 @@ class KdotpModel(SimpleHDF5Mapping):
             for key, mat in taylor_coefficients.items()
         }
 
-    def hamilton(self, k: ty.Collection[float]) -> np.ndarray:
-        return sum(np.prod(np.array(k)**np.array(k_powers)) * mat for k_powers, mat in self.taylor_coefficients.items())
+    def hamilton(self, k: ty.Sequence[float]) -> np.ndarray:
+        return sum(
+            np.prod(np.array(k)**np.array(k_powers)) * mat
+            for k_powers, mat in self.taylor_coefficients.items()
+        )
 
-    def eigenval(self, k: ty.Collection[float]) -> np.ndarray:
+    def eigenval(self, k: ty.Sequence[float]) -> np.ndarray:
         return la.eigvalsh(self.hamilton(k))

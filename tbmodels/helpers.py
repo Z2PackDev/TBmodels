@@ -14,9 +14,9 @@ from fsc.export import export
 
 @export
 def matrix_to_hop(
-    mat: ty.Collection[ty.Collection[complex]],
+    mat: ty.Sequence[ty.Sequence[complex]],
     orbitals: ty.Optional[ty.Sequence[int]] = None,
-    R: ty.Collection[int] = (0, 0, 0),
+    R: ty.Sequence[int] = (0, 0, 0),
     multiplier: float = 1.
 ) -> ty.List[ty.List[ty.Union[complex, int, np.ndarray]]]:
     r"""

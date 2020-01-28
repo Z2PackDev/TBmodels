@@ -51,12 +51,15 @@ if __name__ == '__main__':
     model_nosym = tb.Model.from_hdf5_file('data/model_nosym.hdf5')
 
     structure = mg.Structure(
-        lattice=model_nosym.uc, species=['Si', 'Si'], coords=np.array([[0.5, 0.5, 0.5], [0.75, 0.75, 0.75]])
+        lattice=model_nosym.uc,
+        species=['Si', 'Si'],
+        coords=np.array([[0.5, 0.5, 0.5], [0.75, 0.75, 0.75]])
     )
 
     orbitals = [
-        sr.Orbital(position=coord, function_string=fct, spin=spin) for spin in (sr.SPIN_UP, sr.SPIN_DOWN)
-        for coord in ([0.5, 0.5, 0.5], [0.75, 0.75, 0.75]) for fct in sr.WANNIER_ORBITALS['sp3']
+        sr.Orbital(position=coord, function_string=fct, spin=spin)
+        for spin in (sr.SPIN_UP, sr.SPIN_DOWN) for coord in ([0.5, 0.5, 0.5], [0.75, 0.75, 0.75])
+        for fct in sr.WANNIER_ORBITALS['sp3']
     ]
 
     time_reversal = sr.get_time_reversal(orbitals=orbitals, numeric=True)

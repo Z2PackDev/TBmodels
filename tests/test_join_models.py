@@ -47,5 +47,6 @@ def test_join_models(model, num_models):  # pylint: disable=redefined-outer-name
 def test_join_mixed_sparsity(model_dense, model_sparse, models_close):  # pylint: disable=redefined-outer-name
     """Test joining dense and sparse models."""
     assert models_close(
-        tbmodels.Model.join_models(model_sparse, model_dense), tbmodels.Model.join_models(model_dense, model_sparse)
+        tbmodels.Model.join_models(model_sparse, model_dense),
+        tbmodels.Model.join_models(model_dense, model_sparse)
     )

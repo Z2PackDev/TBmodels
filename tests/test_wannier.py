@@ -15,7 +15,9 @@ import tbmodels
 from parameters import KPT
 
 
-@pytest.mark.parametrize('hr_name', ['hr_hamilton.dat', 'wannier90_hr.dat', 'wannier90_hr_v2.dat', 'silicon_hr.dat'])
+@pytest.mark.parametrize(
+    'hr_name', ['hr_hamilton.dat', 'wannier90_hr.dat', 'wannier90_hr_v2.dat', 'silicon_hr.dat']
+)
 def test_wannier_hr_only(compare_isclose, hr_name, sample):
     """
     Test loading a model from the *_hr.dat file only.
@@ -34,15 +36,18 @@ def test_wannier_hr_wsvec(compare_isclose, hr_name, wsvec_name, sample):
     """
     Test loading a tight-binding model from *_hr.dat and *_wsvec.dat files.
     """
-    model = tbmodels.Model.from_wannier_files(hr_file=sample(hr_name), wsvec_file=sample(wsvec_name))
+    model = tbmodels.Model.from_wannier_files(
+        hr_file=sample(hr_name), wsvec_file=sample(wsvec_name)
+    )
     hamiltonian_list = np.array([model.hamilton(k) for k in KPT])
 
     compare_isclose(hamiltonian_list)
 
 
 @pytest.mark.parametrize(
-    'hr_name, wsvec_name, xyz_name', [('silicon_hr.dat', 'silicon_wsvec.dat', 'silicon_centres.xyz'),
-                                      ('bi_hr.dat', 'bi_wsvec.dat', 'bi_centres.xyz')]
+    'hr_name, wsvec_name, xyz_name',
+    [('silicon_hr.dat', 'silicon_wsvec.dat', 'silicon_centres.xyz'),
+     ('bi_hr.dat', 'bi_wsvec.dat', 'bi_centres.xyz')]
 )
 def test_wannier_hr_wsvec_xyz(hr_name, wsvec_name, xyz_name, sample):
     """
@@ -140,7 +145,8 @@ def test_wannier_hr_wsvec_xyz(hr_name, wsvec_name, xyz_name, sample):
     )]
 )  # pylint: disable=too-many-arguments
 def test_wannier_all(
-    compare_isclose, hr_name, wsvec_name, xyz_name, win_name, pos, uc, reciprocal_lattice, sample, pos_kind
+    compare_isclose, hr_name, wsvec_name, xyz_name, win_name, pos, uc, reciprocal_lattice, sample,
+    pos_kind
 ):
     """
     Test loading tight-binding models from all Wannier files.
@@ -156,7 +162,9 @@ def test_wannier_all(
         win_file=win_file,
         pos_kind=pos_kind,
     )
-    model2 = tbmodels.Model.from_wannier_files(hr_file=hr_file, wsvec_file=wsvec_file, win_file=win_file)
+    model2 = tbmodels.Model.from_wannier_files(
+        hr_file=hr_file, wsvec_file=wsvec_file, win_file=win_file
+    )
     hamiltonian_list = np.array([model.hamilton(k) for k in KPT])
 
     compare_isclose(hamiltonian_list)
@@ -194,4 +202,6 @@ def test_emptylines(sample):
 def test_error(sample):
     """Check that passing the wrong number of positions raises an error."""
     with pytest.raises(ValueError):
-        tbmodels.Model.from_wannier_files(hr_file=sample('hr_hamilton.dat'), occ=28, pos=[[1., 1., 1.]])
+        tbmodels.Model.from_wannier_files(
+            hr_file=sample('hr_hamilton.dat'), occ=28, pos=[[1., 1., 1.]]
+        )

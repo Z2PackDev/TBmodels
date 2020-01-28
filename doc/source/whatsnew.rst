@@ -18,8 +18,12 @@ New features
 
 - The ``KdotpModel`` has been promoted from an internal-only interface to the public ``tbmodels.kdotp`` submodule.
 
-Bugfixes
-''''''''
+- The ``supercell`` method can be used to obtain a supercell tight-binding model.
+
+Experimental features
+'''''''''''''''''''''
+
+- The ``fold_model`` method creates a tight-binding model for a smaller unit cell from a supercell model.
 
 Deprecations and removals
 '''''''''''''''''''''''''

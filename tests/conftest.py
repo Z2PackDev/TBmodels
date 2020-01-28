@@ -87,7 +87,10 @@ def kdotp_models_equal():
     """
     def inner(model1, model2):
         for power in model1.taylor_coefficients.keys() | model1.taylor_coefficients.keys():
-            assert (np.array(model1.taylor_coefficients[power]) == np.array(model2.taylor_coefficients[power])).all()
+            assert (
+                np.array(model1.taylor_coefficients[power]
+                         ) == np.array(model2.taylor_coefficients[power])
+            ).all()
         return True
 
     return inner
@@ -128,7 +131,9 @@ def sample():
     Get the absolute path of a file / directory in the 'samples' directory.
     """
     def inner(name):
-        return os.path.join(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'samples'), name)
+        return os.path.join(
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), 'samples'), name
+        )
 
     return inner
 
@@ -155,10 +160,14 @@ def get_model_clean():
         defaults['sparse'] = sparsity_default
         model = tbmodels.Model(**ChainMap(kwargs, defaults))
 
-        for phase, R in zip([1, -1j, 1j, -1], itertools.product([0, -1], [0, -1], [0])):
+        for phase, r_part in zip([1, -1j, 1j, -1], itertools.product([0, -1], [0, -1])):
+            R = list(r_part)
+            R.extend([0] * (dim - 2))
             model.add_hop(t1 * phase, 0, 1, R)
 
-        for R in ((r[0], r[1], 0) for r in itertools.permutations([0, 1])):
+        for r_part in itertools.permutations([0, 1]):
+            R = list(r_part)
+            R.extend([0] * (dim - 2))
             model.add_hop(t2, 0, 0, R)
             model.add_hop(-t2, 1, 1, R)
         return model

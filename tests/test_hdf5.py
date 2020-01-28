@@ -12,7 +12,12 @@ import numpy as np
 
 import tbmodels
 
-KWARGS = [dict(), dict(pos=None, dim=3), dict(uc=3 * np.eye(3)), dict(pos=np.zeros((2, 3)), uc=np.eye(3))]
+KWARGS = [
+    dict(),
+    dict(pos=None, dim=3),
+    dict(uc=3 * np.eye(3)),
+    dict(pos=np.zeros((2, 3)), uc=np.eye(3))
+]
 
 
 @pytest.mark.parametrize('kwargs', KWARGS)

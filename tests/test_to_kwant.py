@@ -48,7 +48,9 @@ def test_simple(t, get_model):
     # the Hamiltonian doesn't match because the sites might be re-ordered -> test eigenval instead
     for k in KPT:
         np.testing.assert_allclose(
-            model.eigenval(k), la.eigvalsh(sys.hamiltonian_submatrix(params=to_kwant_params(k))), atol=1e-8
+            model.eigenval(k),
+            la.eigvalsh(sys.hamiltonian_submatrix(params=to_kwant_params(k))),
+            atol=1e-8
         )
 
 
@@ -73,9 +75,13 @@ def test_realistic(hr_name, sample):
     # since there is only one 'site' we can also test the Hamiltonian
     for k in KPT:
         np.testing.assert_allclose(
-            model.eigenval(k), la.eigvalsh(sys.hamiltonian_submatrix(params=to_kwant_params(k))), atol=1e-8
+            model.eigenval(k),
+            la.eigvalsh(sys.hamiltonian_submatrix(params=to_kwant_params(k))),
+            atol=1e-8
         )
-        np.testing.assert_allclose(model.hamilton(k), sys.hamiltonian_submatrix(params=to_kwant_params(k)), atol=1e-8)
+        np.testing.assert_allclose(
+            model.hamilton(k), sys.hamiltonian_submatrix(params=to_kwant_params(k)), atol=1e-8
+        )
 
 
 def test_unequal_orbital_number():
@@ -106,5 +112,7 @@ def test_unequal_orbital_number():
     for k in KPT:
         k = k[:2]
         np.testing.assert_allclose(
-            model.eigenval(k), la.eigvalsh(sys.hamiltonian_submatrix(params=to_kwant_params(k))), atol=1e-8
+            model.eigenval(k),
+            la.eigvalsh(sys.hamiltonian_submatrix(params=to_kwant_params(k))),
+            atol=1e-8
         )
