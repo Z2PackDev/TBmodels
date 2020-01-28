@@ -21,10 +21,6 @@ import sys
 import time
 import sphinx_rtd_theme
 
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.insert(0, os.path.abspath('../../'))
 import tbmodels
 
 # -- General configuration ------------------------------------------------
@@ -64,10 +60,7 @@ master_doc = 'index'
 # General information about the project.
 project = u'TBmodels'
 year = time.localtime().tm_year
-if year == 2016:
-    copyright = '2016, Dominik Gresch'
-else:
-    copyright = '2016-{}, Dominik Gresch'.format(year)
+copyright = '2016-{}, Dominik Gresch'.format(year)
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -113,6 +106,7 @@ exclude_patterns = ['doc.rst']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
+highlight_language = 'python3'
 
 # A list of ignored prefixes for module index sorting.
 #modindex_common_prefix = []
