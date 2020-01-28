@@ -25,10 +25,10 @@ The model is located in the ``examples`` directory of the TBmodels source. You w
 
 .. ipython::
 
-    In [0]: if 'READTHEDOCS' in os.environ:
+    In [0]: # if 'READTHEDOCS' in os.environ:
+       ...: if True:
        ...:     print(os.listdir('.'))
        ...:     print(os.listdir('..'))
-
 
 .. ipython::
 
