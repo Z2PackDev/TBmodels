@@ -19,4 +19,6 @@ def test_slice(t, get_model, slice_idx):
     model_sliced = model.slice_orbitals(slice_idx)
     assert np.isclose([model.pos[i] for i in slice_idx], model_sliced.pos).all()
     for k in KPT:
-        assert np.isclose(model.hamilton(k)[np.ix_(slice_idx, slice_idx)], model_sliced.hamilton(k)).all()
+        assert np.isclose(
+            model.hamilton(k)[np.ix_(slice_idx, slice_idx)], model_sliced.hamilton(k)
+        ).all()
