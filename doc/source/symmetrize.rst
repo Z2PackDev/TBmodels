@@ -27,7 +27,7 @@ The model is located in the ``examples`` directory of the TBmodels source. You w
     :suppress:
 
     In [0]: if os.environ.get('READTHEDOCS', None) == 'True':
-       ...:     EXAMPLES_DIR = pathlib.Path('../examples')
+       ...:     EXAMPLES_DIR = pathlib.Path('../../examples')
 
 .. ipython::
 
