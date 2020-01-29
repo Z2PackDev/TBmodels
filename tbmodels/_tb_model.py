@@ -963,14 +963,21 @@ class Model(HDF5Enabled):
         """An array containing the reciprocal lattice vectors as rows."""
         return None if self.uc is None else 2 * np.pi * la.inv(self.uc).T
 
-    def hamilton(self, k: ty.Sequence[float], convention: int = 2) -> np.ndarray:
+    def hamilton(
+        self,
+        k: ty.Union[ty.Sequence[float], ty.Sequence[ty.Sequence[float]]],
+        convention: int = 2
+    ) -> np.ndarray:
         """
-        Calculates the Hamilton matrix for a given k-point.
+        Calculates the Hamilton matrix for a given k-point or list of
+        k-points.
 
         Parameters
         ----------
         k :
-            The k-point at which the Hamiltonian is evaluated.
+            The k-point at which the Hamiltonian is evaluated. If a list
+            of k-points is given, the result will be the corresponding
+            list of Hamiltonians.
         convention :
             Choice of convention to calculate the Hamilton matrix. See
             explanation in `the PythTB documentation
@@ -981,26 +988,45 @@ class Model(HDF5Enabled):
             raise ValueError(
                 "Invalid value '{}' for 'convention': must be either '1' or '2'".format(convention)
             )
-        k = np.array(k, ndmin=1)
+        k_array = np.array(k, ndmin=1)
+        if k_array.ndim == 1:
+            single_point = True
+            k_array = k_array.reshape((1, -1))
+        else:
+            single_point = False
+
         H = sum((
-            self._array_cast(hop) * np.exp(2j * np.pi * np.dot(R, k)) for R, hop in self.hop.items()
-        ), np.zeros((self.size, self.size), dtype=complex))
-        H += H.conjugate().T
+            self._array_cast(hop)[np.newaxis, :, :] *
+            np.exp(2j * np.pi * np.dot(k_array, R)).reshape((-1, 1, 1))
+            for R, hop in self.hop.items()
+        ), np.zeros((k_array.shape[0], self.size, self.size), dtype=complex))
+        H += H.conjugate().transpose((0, 2, 1))
         if convention == 1:
-            pos_exponential = np.array([[np.exp(2j * np.pi * np.dot(p, k)) for p in self.pos]])
-            H = pos_exponential.conjugate().transpose() * H * pos_exponential
+            pos_exponential = np.array([[np.exp(2j * np.pi * np.dot(k_array, p))
+                                         for p in self.pos]]).transpose((2, 0, 1))
+            H = pos_exponential.conjugate().transpose((0, 2, 1)) * H * pos_exponential
+
+        if single_point:
+            return H[0]
         return H
 
-    def eigenval(self, k: ty.Sequence[float]) -> np.ndarray:
+    def eigenval(
+        self, k: ty.Union[ty.Sequence[float], ty.Sequence[ty.Sequence[float]]]
+    ) -> ty.Union[np.ndarray, ty.List[np.ndarray]]:
         """
-        Returns the eigenvalues at a given k point.
+        Returns the eigenvalues at a given k point, or list of k-points.
 
         Parameters
         ----------
         k :
-            The k-point at which the Hamiltonian is evaluated.
+            The k-point at which the Hamiltonian is evaluated. If a list
+            of k-points is given, a corresponding list of eigenvalue
+            arrays is returned.
         """
-        return la.eigvalsh(self.hamilton(k))
+        hamiltonians = self.hamilton(k)
+        if hamiltonians.ndim == 3:
+            return [la.eigvalsh(ham) for ham in hamiltonians]
+        return la.eigvalsh(hamiltonians)
 
     #-------------------MODIFYING THE MODEL ----------------------------#
     def add_hop(self, overlap: complex, orbital_1: int, orbital_2: int, R: ty.Sequence[int]):

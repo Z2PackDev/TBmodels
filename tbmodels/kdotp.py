@@ -43,11 +43,49 @@ class KdotpModel(SimpleHDF5Mapping):
             for key, mat in taylor_coefficients.items()
         }
 
-    def hamilton(self, k: ty.Sequence[float]) -> np.ndarray:
-        return sum(
-            np.prod(np.array(k)**np.array(k_powers)) * mat
+    def hamilton(
+        self, k: ty.Union[ty.Sequence[float], ty.Sequence[ty.Sequence[float]]]
+    ) -> np.ndarray:
+        """
+        Calculates the Hamilton matrix for a given k-point or list of
+        k-points.
+
+        Parameters
+        ----------
+        k :
+            The k-point at which the Hamiltonian is evaluated. If a list
+            of k-points is given, the result will be the corresponding
+            list of Hamiltonians.
+        """
+        k_array = np.array(k, ndmin=1)
+        if k_array.ndim == 1:
+            single_point = True
+            k_array = k_array.reshape((1, -1))
+        else:
+            single_point = False
+
+        ham: np.ndarray = sum(
+            np.prod(k_array**k_powers, axis=-1).reshape(-1, 1, 1) * mat[np.newaxis, :, :]
             for k_powers, mat in self.taylor_coefficients.items()
         )
+        if single_point:
+            return ham[0]
+        return ham
 
-    def eigenval(self, k: ty.Sequence[float]) -> np.ndarray:
-        return la.eigvalsh(self.hamilton(k))
+    def eigenval(
+        self, k: ty.Union[ty.Sequence[float], ty.Sequence[ty.Sequence[float]]]
+    ) -> ty.Union[np.ndarray, ty.List[np.ndarray]]:
+        """
+        Returns the eigenvalues at a given k point, or list of k-points.
+
+        Parameters
+        ----------
+        k :
+            The k-point at which the Hamiltonian is evaluated. If a list
+            of k-points is given, a corresponding list of eigenvalue
+            arrays is returned.
+        """
+        hamiltonians = self.hamilton(k)
+        if hamiltonians.ndim == 3:
+            return [la.eigvalsh(ham) for ham in hamiltonians]
+        return la.eigvalsh(hamiltonians)
