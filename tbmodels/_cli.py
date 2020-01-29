@@ -183,7 +183,7 @@ def eigenvals(input, kpoints, output):  # pylint: disable=redefined-builtin
 
     click.echo("Calculating energy eigenvalues ...")
     eigenvalues = bi.eigenvals.EigenvalsData.from_eigenval_function(
-        kpoints=kpts, eigenval_function=model.eigenval
+        kpoints=kpts, eigenval_function=model.eigenval, listable=True
     )
 
     click.echo("Writing kpoints and energy eigenvalues to file '{}' ...".format(output))

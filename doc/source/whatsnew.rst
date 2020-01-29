@@ -20,6 +20,8 @@ New features
 
 - The ``supercell`` method can be used to obtain a supercell tight-binding model.
 
+- The ``hamilton`` and ``eigenval`` methods now also accept a list of k-points as input, returning a sequence of results in that case. This improves performance when evaluating many k-points.
+
 Experimental features
 '''''''''''''''''''''
 
