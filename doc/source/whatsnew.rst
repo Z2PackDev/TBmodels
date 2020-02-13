@@ -22,6 +22,8 @@ New features
 
 - The ``hamilton`` and ``eigenval`` methods now also accept a list of k-points as input, returning a sequence of results in that case. This improves performance when evaluating many k-points.
 
+- Add ``remove_small_hop`` and ``remove_long_range_hop`` methods to cut hoppings with small value or long distance, respectively. Both these methods operate in-place on the existing model.
+
 Experimental features
 '''''''''''''''''''''
 
