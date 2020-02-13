@@ -1106,6 +1106,58 @@ class Model(HDF5Enabled):
         for orbital, energy in enumerate(on_site):
             self.add_hop(energy / 2., orbital, orbital, self._zero_vec)
 
+    def remove_small_hop(self, cutoff: float) -> None:
+        """Remove hoppings which are smaller than the given cutoff value.
+
+        Parameters
+        ----------
+        cutoff :
+            Cutoff value below which a hopping is removed.
+        """
+        # Cast to list because the dictionary is modified in the loop.
+        for R, hop_mat in list(self.hop.items()):
+            curr_cutoff = cutoff
+            if R == self._zero_vec:
+                curr_cutoff /= 2
+
+            hop_mat_arr = self._array_cast(hop_mat)
+            hop_mat_arr[np.abs(hop_mat_arr) < curr_cutoff] = 0.
+
+            if not np.any(hop_mat_arr):
+                del self.hop[R]
+            else:
+                self.hop[R] = self._matrix_type(hop_mat_arr)
+
+    def remove_long_range_hop(self, *, cutoff_distance_cartesian: float) -> None:
+        """Remove hoppings whose range is longer than the given cutoff.
+
+        Parameters
+        ----------
+        cutoff_distance_cartesian :
+            Cartesian distance between the two orbitals above which the
+            hoppings are removed.
+        """
+        if self.uc is None or self.pos is None:
+            raise ValueError(
+                "Both the unit cell and positions must be specified to "
+                "determine the cartesian distance between orbitals."
+            )
+        pos_cart = (self.uc.T @ self.pos.T).T
+        pos_offset_cart = pos_cart.reshape(1, -1, self.dim) - pos_cart.reshape(-1, 1, self.dim)
+
+        # Cast to list because the dictionary is modified in the loop.
+        for R, hop_mat in list(self.hop.items()):
+            R_cart = self.uc.T @ R
+            distances = la.norm(R_cart + pos_offset_cart, axis=-1)
+
+            hop_mat_arr = self._array_cast(hop_mat)
+            hop_mat_arr[distances > cutoff_distance_cartesian] = 0.
+
+            if not np.any(hop_mat_arr):
+                del self.hop[R]
+            else:
+                self.hop[R] = self._matrix_type(hop_mat_arr)
+
     def _empty_matrix(self):
         """Returns an empty matrix, either sparse or dense according to the current setting. The size is determined by the system's size"""
         return self._matrix_type(np.zeros((self.size, self.size), dtype=complex))
