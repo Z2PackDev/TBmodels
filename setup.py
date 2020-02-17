@@ -31,7 +31,7 @@ EXTRAS_REQUIRE['dev'] += EXTRAS_REQUIRE['kwant']
 setup(
     name='tbmodels',
     version=VERSION,
-    url='http://z2pack.ethz.ch/tbmodels',
+    url='http://tbmodels.greschd.ch',
     author='Dominik Gresch',
     author_email='greschd@gmx.ch',
     description="A tool for reading, creating and modifying tight-binding models.",
