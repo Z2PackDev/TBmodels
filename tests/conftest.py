@@ -24,17 +24,20 @@ from tbmodels.io import save, load
 
 @pytest.fixture
 def test_name(request):
-    """Returns module_name.function_name for a given test"""
+    """Returns (module_name, function_name[args]) for a given test"""
     return (request.module.__name__, request._parent_request._pyfuncitem.name)  # pylint: disable=protected-access
 
 
 @pytest.fixture
-def compare_data(request, test_name):
+def compare_data(test_name):
     """Returns a function which either saves some data to a file or (if that file exists already) compares it to pre-existing data using a given comparison function."""
     def inner(compare_fct, data, tag=None):
         dir_name, file_name = test_name
         file_name += tag or ''
-        cache_dir = str(request.config.cache.makedir(dir_name))
+        cache_dir = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), 'regression_data', dir_name
+        )
+        os.makedirs(cache_dir, exist_ok=True)
         file_name_full = os.path.join(cache_dir, file_name)
         try:
             val = load(file_name_full)
