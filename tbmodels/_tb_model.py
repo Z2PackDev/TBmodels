@@ -20,9 +20,10 @@ import h5py
 import numpy as np
 import scipy.linalg as la
 from scipy.special import factorial
-import symmetry_representation as sr
 from fsc.export import export
 from fsc.hdf5_io import subscribe_hdf5, HDF5Enabled
+if ty.TYPE_CHECKING:
+    import symmetry_representation  # pylint: disable=unused-import
 
 from . import _check_compatibility
 from . import _sparse_matrix as sp
@@ -1215,7 +1216,9 @@ class Model(HDF5Enabled):
         )
 
     def symmetrize(
-        self, symmetries: ty.Sequence[sr.SymmetryOperation], full_group: bool = False
+        self,
+        symmetries: ty.Sequence['symmetry_representation.SymmetryOperation'],
+        full_group: bool = False
     ) -> "Model":
         """
         Returns a model which is symmetrized w.r.t. the given
