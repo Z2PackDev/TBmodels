@@ -995,12 +995,20 @@ class Model(HDF5Enabled):
             k_array = k_array.reshape((1, -1))
         else:
             single_point = False
-
-        H = sum((
-            self._array_cast(hop)[np.newaxis, :, :] *
-            np.exp(2j * np.pi * np.dot(k_array, R)).reshape((-1, 1, 1))
-            for R, hop in self.hop.items()
-        ), np.zeros((k_array.shape[0], self.size, self.size), dtype=complex))
+        H = np.zeros((k_array.shape[0], self.size, self.size), dtype=complex)
+        tmp_array = np.empty_like(H)
+        for R, hop in self.hop.items():
+            # When the hopping matrices are very large, allocating new
+            # arrays for the result of this multiplication (which is
+            # of size len(k_array) * self.size**2) becomes expensive.
+            # To avoid this, we reuse the same temporary array - even
+            # if this is _slightly_ slower for single k-point calculations.
+            np.multiply(
+                np.exp(2j * np.pi * np.dot(k_array, R)).reshape((-1, 1, 1)),
+                self._array_cast(hop)[np.newaxis, :, :],
+                out=tmp_array
+            )
+            H += tmp_array
         H += H.conjugate().transpose((0, 2, 1))
         if convention == 1:
             pos_exponential = np.array([[np.exp(2j * np.pi * np.dot(k_array, p))
