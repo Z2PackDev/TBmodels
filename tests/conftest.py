@@ -193,3 +193,30 @@ def get_model(get_model_clean, sparse):
     sparsity determined by the 'sparse' fixture.
     """
     return partial(get_model_clean, sparsity_default=sparse)
+
+
+@pytest.fixture(params=[None, 'as_input', 'sparse', 'dense'])
+def cli_sparsity(request):
+    return request.param
+
+
+@pytest.fixture
+def cli_sparsity_arguments(cli_sparsity):
+    if cli_sparsity is None:
+        return []
+    return ['--sparsity', cli_sparsity]
+
+
+@pytest.fixture
+def modify_reference_model_sparsity(cli_sparsity):
+    """
+    Modify the sparsity of the given reference model in-place to match
+    the value given in the sparsity argument.
+    """
+    def _modify_model(model):
+        if cli_sparsity == 'dense':
+            model.set_sparse(False)
+        elif cli_sparsity == 'sparse':
+            model.set_sparse(True)
+
+    return _modify_model
