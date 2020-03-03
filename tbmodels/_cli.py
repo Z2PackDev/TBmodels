@@ -5,6 +5,7 @@
 """Defines the tbmodels command-line interface."""
 
 import os
+import enum
 from collections.abc import Iterable
 from functools import singledispatch
 
@@ -24,6 +25,21 @@ def _output_option(**kwargs):
     return click.option('--output', '-o', type=click.Path(dir_okay=False), **kwargs)
 
 
+class _SparsityChoices(enum.Enum):
+    SPARSE = 'sparse'
+    DENSE = 'dense'
+    AS_INPUT = 'as_input'
+
+
+def _sparsity_option():
+    return click.option(
+        '--sparsity',
+        default=_SparsityChoices.AS_INPUT.value,
+        type=click.Choice([choice.value for choice in _SparsityChoices]),
+        help='Write the model in sparse format. By default, the format of the input model is used.'
+    )
+
+
 _input_option = click.option(  # pylint: disable=invalid-name
     '--input',
     '-i',
@@ -38,7 +54,17 @@ def _read_input(input):  # pylint: disable=redefined-builtin
     return Model.from_hdf5_file(input)
 
 
-def _write_output(model, output):
+def _write_output(model, output, sparsity):
+    """
+    Helper function to write a tight-binding model to an output file.
+    The sparsity of the model is changed if specified through the
+    'sparsity' option.
+    """
+    assert sparsity in [choice.value for choice in _SparsityChoices]
+    if sparsity == _SparsityChoices.SPARSE.value:
+        model.set_sparse(True)
+    elif sparsity == _SparsityChoices.DENSE.value:
+        model.set_sparse(False)
     click.echo("Writing output model to file '{}' ...".format(output))
     model.to_hdf5_file(output)
     click.echo("Done!")
@@ -65,8 +91,9 @@ def _write_output(model, output):
     default='wannier',
     help="Which position to use for the orbitals."
 )
+@_sparsity_option()
 @_output_option(default='model.hdf5', help='Path of the output file.')
-def parse(folder, prefix, output, pos_kind):
+def parse(folder, prefix, output, pos_kind, sparsity):
     """
     Parse Wannier90 output files and create an HDF5 file containing the tight-binding model.
     """
@@ -74,7 +101,7 @@ def parse(folder, prefix, output, pos_kind):
     model = Model.from_wannier_folder(
         folder=folder, prefix=prefix, ignore_orbital_order=True, pos_kind=pos_kind
     )
-    _write_output(model, output)
+    _write_output(model, output, sparsity=sparsity)
 
 
 @cli.command(short_help='Create symmetrized tight-binding model.')
@@ -96,7 +123,8 @@ def parse(folder, prefix, output, pos_kind):
     No full group: The symmetries only contain a generating subset of the full group. Overrides the option given in the symmetries file (if any).
     """
 )
-def symmetrize(input, output, symmetries, full_group):  # pylint: disable=redefined-builtin
+@_sparsity_option()
+def symmetrize(input, output, symmetries, full_group, sparsity):  # pylint: disable=redefined-builtin
     """Symmetrize tight-binding model with given symmetry group(s)."""
     import symmetry_representation as sr  # pylint: disable=import-outside-toplevel
     model = _read_input(input)
@@ -138,7 +166,7 @@ def symmetrize(input, output, symmetries, full_group):  # pylint: disable=redefi
         return _symmetrize(sym_group, model, full_group)
 
     model_sym = _symmetrize(sym, model, full_group)
-    _write_output(model_sym, output)
+    _write_output(model_sym, output, sparsity=sparsity)
 
 
 @cli.command(short_help="Slice specific orbitals from model.")
@@ -149,14 +177,15 @@ def symmetrize(input, output, symmetries, full_group):  # pylint: disable=redefi
     type=int,
     nargs=-1,
 )  # pylint: disable=redefined-builtin
-def slice(input, output, slice_idx):  # pylint: disable=redefined-builtin
+@_sparsity_option()
+def slice(input, output, slice_idx, sparsity):  # pylint: disable=redefined-builtin
     """
     Create a model containing only the orbitals given in the SLICE_IDX.
     """
     model = _read_input(input)
     click.echo("Slicing model with indices {} ...".format(slice_idx))
     model_slice = model.slice_orbitals(slice_idx=slice_idx)
-    _write_output(model_slice, output)
+    _write_output(model_slice, output, sparsity=sparsity)
 
 
 @cli.command(short_help="Calculate energy eigenvalues.")
