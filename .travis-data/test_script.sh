@@ -8,7 +8,7 @@ set -ev
 
 case "$TEST_TYPE" in
     tests)
-        cd ${TRAVIS_BUILD_DIR}/tests; pytest
+        cd ${TRAVIS_BUILD_DIR}/tests; pytest --cov=tbmodels
         ;;
     precommit)
         pre-commit run --all-files
