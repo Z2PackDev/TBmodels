@@ -1464,6 +1464,37 @@ class Model(HDF5Enabled):
             )
         )
 
+    def shift_unit_cell(
+        self, *, offset: ty.Sequence[float] = (0, 0, 0), cartesian: bool = True
+    ) -> "Model":
+        """
+        Returns a model with a shifted unit cell origin.
+
+        Parameters
+        ----------
+        offset :
+            The position of the new unit cell origin, relative to the old
+            one.
+        cartesian :
+            Specifies if the offset is given in cartesian or reduced
+            coordinates.
+        """
+        if self.pos is None:
+            raise ValueError('Cannot shift unit cell: model positions are not defined.')
+
+        if cartesian:
+            if self.uc is None:
+                raise ValueError(
+                    'Cannot shift unit cell in cartesian coordinates: model does not have a unit cell.'
+                )
+            offset_reduced = la.solve(self.uc.T, np.array(offset).T).T
+        else:
+            offset_reduced = np.array(offset)
+
+        new_pos = self.pos - offset_reduced
+        return Model(**co.ChainMap(dict(pos=new_pos, ), self._input_kwargs))
+
+
     def fold_model(  # pylint: disable=too-many-locals # noqa:C001
         self,
         *,
