@@ -22,6 +22,8 @@ New features
 
 - The ``hamilton`` and ``eigenval`` methods now also accept a list of k-points as input, returning a sequence of results in that case. This improves performance when evaluating many k-points.
 
+- The ``shift_unit_cell`` method can be used to change the origin of the unit cell.
+
 - Add ``remove_small_hop`` and ``remove_long_range_hop`` methods to cut hoppings with small value or long distance, respectively. Both these methods operate in-place on the existing model.
 
 - The command-line interfaces creating tight-binding models support a ``--sparsity`` flag to change the sparsity of the output model (valid options are ``as_input``, ``dense``, and ``sparse``). Setting ``--sparsity=sparse`` can significantly reduce the memory needed to store a model.
