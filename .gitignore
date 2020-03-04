@@ -35,7 +35,7 @@ venv*
 .pytest_cache
 tests/.cache
 htmlcov
-tests/.coverage
+.coverage
 
 speed_test/data
 

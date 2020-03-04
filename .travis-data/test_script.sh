@@ -8,7 +8,7 @@ set -ev
 
 case "$TEST_TYPE" in
     tests)
-        cd ${TRAVIS_BUILD_DIR}/tests; pytest --cov=tbmodels
+        pytest --cov=tbmodels --cov-config=.coveragerc --cov-report xml --cov-report term-missing --cov-append tests/
         ;;
     precommit)
         pre-commit run --all-files
