@@ -11,6 +11,7 @@ import re
 import os
 import copy
 import time
+import warnings
 import itertools
 import contextlib
 import typing as ty
@@ -901,8 +902,14 @@ class Model(HDF5Enabled):
             :class:`.Model` keyword arguments. Explicitly specified
             keywords take precedence over those given in the HDF5 file.
         """
-        with h5py.File(hdf5_file, 'r') as f:
-            return cls.from_hdf5(f, **kwargs)
+        with h5py.File(hdf5_file, 'r') as hdf_handle:
+            if 'type_tag' not in hdf_handle:
+                warnings.warn(
+                    f"The loaded file '{hdf5_file}' is stored in an outdated "
+                    "format. Consider loading and storing the file to update it.",
+                    DeprecationWarning
+                )
+            return cls.from_hdf5(hdf_handle, **kwargs)
 
     @classmethod
     def from_hdf5(cls, hdf5_handle, **kwargs) -> "Model":  # pylint: disable=arguments-differ

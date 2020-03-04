@@ -52,6 +52,15 @@ def hdf5_sample(sample, request):
     return sample(request.param)
 
 
+@pytest.fixture(params=['InAs_nosym_legacy.hdf5'])
+def hdf5_sample_legacy(sample, request):
+    """
+    Fixture which provides the filename of a HDF5 tight-binding model,
+    in legacy format.
+    """
+    return sample(request.param)
+
+
 def test_hdf5_load_freefunc(hdf5_sample):  # pylint: disable=redefined-outer-name
     """Test that a HDF5 file can be loaded with the `io.load` function."""
     res = tbmodels.io.load(hdf5_sample)
@@ -61,6 +70,20 @@ def test_hdf5_load_freefunc(hdf5_sample):  # pylint: disable=redefined-outer-nam
 def test_hdf5_load_method(hdf5_sample):  # pylint: disable=redefined-outer-name
     """Test that a HDF5 file can be loaded with the Model method."""
     res = tbmodels.Model.from_hdf5_file(hdf5_sample)
+    assert isinstance(res, tbmodels.Model)
+
+
+def test_hdf5_load_freefunc_legacy(hdf5_sample_legacy):  # pylint: disable=redefined-outer-name
+    """Test that a HDF5 file in legacy format can be loaded with the `io.load` function."""
+    with pytest.deprecated_call():
+        res = tbmodels.io.load(hdf5_sample_legacy)
+    assert isinstance(res, tbmodels.Model)
+
+
+def test_hdf5_load_method_legacy(hdf5_sample_legacy):  # pylint: disable=redefined-outer-name
+    """Test that a HDF5 file in legacy format can be loaded with the Model method."""
+    with pytest.deprecated_call():
+        res = tbmodels.Model.from_hdf5_file(hdf5_sample_legacy)
     assert isinstance(res, tbmodels.Model)
 
 
