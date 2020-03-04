@@ -9,7 +9,7 @@ cd ${TRAVIS_BUILD_DIR}
 
 case "$INSTALL_TYPE" in
     dev)
-        pip install .[dev]
+        pip install -e .[dev]
         ;;
     dev_sdist)
         python setup.py sdist
