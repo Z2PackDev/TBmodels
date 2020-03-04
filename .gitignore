@@ -36,6 +36,7 @@ venv*
 tests/.cache
 htmlcov
 .coverage
+coverage.xml
 
 speed_test/data
 

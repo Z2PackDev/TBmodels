@@ -1,4 +1,2 @@
 [run]
 source = tbmodels
-
-[html]rectory = .ci/coverage/html

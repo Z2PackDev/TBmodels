@@ -8,7 +8,7 @@ set -ev
 
 case "$TEST_TYPE" in
     tests)
-        pytest --cov=tbmodels --cov-config=.coveragerc --cov-report xml --cov-report term-missing --cov-append tests/
+        pytest --cov=tbmodels --cov-config=.coveragerc
         ;;
     precommit)
         pre-commit run --all-files
