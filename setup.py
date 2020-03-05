@@ -38,11 +38,12 @@ setup(
     python_requires=">=3.6",
     install_requires=[
         'numpy', 'scipy>=0.14', 'h5py', 'fsc.export', 'symmetry-representation>=0.2', 'click', 'bands-inspect',
-        'fsc.hdf5-io>=0.3.0'
+        'fsc.hdf5-io>=0.6.0'
     ],
     extras_require=EXTRAS_REQUIRE,
     long_description=README,
     long_description_content_type="text/markdown",
+
     classifiers=[  # yapf:disable
         'License :: OSI Approved :: Apache Software License',
         'Natural Language :: English',
@@ -54,10 +55,10 @@ setup(
         'Intended Audience :: Science/Research',
         'Topic :: Scientific/Engineering :: Physics'
     ],
-    entry_points='''
-        [console_scripts]
-        tbmodels=tbmodels._cli:cli
-    ''',
+    entry_points={
+        'console_scripts': ['tbmodels = tbmodels._cli:cli'],
+        'fsc.hdf5_io.load' : ['tbmodels = tbmodels']
+    },
     license='Apache 2.0',
     packages=find_packages()
 )
