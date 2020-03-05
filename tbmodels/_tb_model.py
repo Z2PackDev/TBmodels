@@ -11,6 +11,7 @@ import re
 import os
 import copy
 import time
+import warnings
 import itertools
 import contextlib
 import typing as ty
@@ -901,8 +902,14 @@ class Model(HDF5Enabled):
             :class:`.Model` keyword arguments. Explicitly specified
             keywords take precedence over those given in the HDF5 file.
         """
-        with h5py.File(hdf5_file, 'r') as f:
-            return cls.from_hdf5(f, **kwargs)
+        with h5py.File(hdf5_file, 'r') as hdf_handle:
+            if 'type_tag' not in hdf_handle:
+                warnings.warn(
+                    f"The loaded file '{hdf5_file}' is stored in an outdated "
+                    "format. Consider loading and storing the file to update it.",
+                    DeprecationWarning
+                )
+            return cls.from_hdf5(hdf_handle, **kwargs)
 
     @classmethod
     def from_hdf5(cls, hdf5_handle, **kwargs) -> "Model":  # pylint: disable=arguments-differ
@@ -995,12 +1002,20 @@ class Model(HDF5Enabled):
             k_array = k_array.reshape((1, -1))
         else:
             single_point = False
-
-        H = sum((
-            self._array_cast(hop)[np.newaxis, :, :] *
-            np.exp(2j * np.pi * np.dot(k_array, R)).reshape((-1, 1, 1))
-            for R, hop in self.hop.items()
-        ), np.zeros((k_array.shape[0], self.size, self.size), dtype=complex))
+        H = np.zeros((k_array.shape[0], self.size, self.size), dtype=complex)
+        tmp_array = np.empty_like(H)
+        for R, hop in self.hop.items():
+            # When the hopping matrices are very large, allocating new
+            # arrays for the result of this multiplication (which is
+            # of size len(k_array) * self.size**2) becomes expensive.
+            # To avoid this, we reuse the same temporary array - even
+            # if this is _slightly_ slower for single k-point calculations.
+            np.multiply(
+                np.exp(2j * np.pi * np.dot(k_array, R)).reshape((-1, 1, 1)),
+                self._array_cast(hop)[np.newaxis, :, :],
+                out=tmp_array
+            )
+            H += tmp_array
         H += H.conjugate().transpose((0, 2, 1))
         if convention == 1:
             pos_exponential = np.array([[np.exp(2j * np.pi * np.dot(k_array, p))
@@ -1455,6 +1470,37 @@ class Model(HDF5Enabled):
                 ), self._input_kwargs
             )
         )
+
+    def shift_unit_cell(
+        self, *, offset: ty.Sequence[float] = (0, 0, 0), cartesian: bool = True
+    ) -> "Model":
+        """
+        Returns a model with a shifted unit cell origin.
+
+        Parameters
+        ----------
+        offset :
+            The position of the new unit cell origin, relative to the old
+            one.
+        cartesian :
+            Specifies if the offset is given in cartesian or reduced
+            coordinates.
+        """
+        if self.pos is None:
+            raise ValueError('Cannot shift unit cell: model positions are not defined.')
+
+        if cartesian:
+            if self.uc is None:
+                raise ValueError(
+                    'Cannot shift unit cell in cartesian coordinates: model does not have a unit cell.'
+                )
+            offset_reduced = la.solve(self.uc.T, np.array(offset).T).T
+        else:
+            offset_reduced = np.array(offset)
+
+        new_pos = self.pos - offset_reduced
+        return Model(**co.ChainMap(dict(pos=new_pos, ), self._input_kwargs))
+
 
     def fold_model(  # pylint: disable=too-many-locals # noqa:C001
         self,

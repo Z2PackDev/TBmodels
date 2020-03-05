@@ -9,7 +9,7 @@ from setuptools import setup, find_packages
 
 import sys
 if sys.version_info < (3, 6):
-    raise 'must use Python version 3.6 or higher'
+    raise ValueError('must use Python version 3.6 or higher')
 
 with open('./README.md', 'r') as f:
     README = f.read()

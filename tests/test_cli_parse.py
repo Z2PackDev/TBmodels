@@ -16,14 +16,16 @@ from tbmodels._cli import cli
 
 @pytest.mark.parametrize('pos_kind', ['wannier', 'nearest_atom'])
 @pytest.mark.parametrize('prefix', ['silicon', 'bi'])
-def test_cli_parse(models_equal, prefix, sample, pos_kind):
+def test_cli_parse(
+    models_equal, prefix, sample, pos_kind, cli_sparsity_arguments, modify_reference_model_sparsity
+):
     """Test the 'parse' command with different 'prefix' and 'pos_kind'."""
     runner = CliRunner()
     with tempfile.NamedTemporaryFile() as out_file:
         run = runner.invoke(
             cli,
             ['parse', '-o', out_file.name, '-f',
-             sample(''), '-p', prefix, '--pos-kind', pos_kind],
+             sample(''), '-p', prefix, '--pos-kind', pos_kind] + cli_sparsity_arguments,
             catch_exceptions=False
         )
         print(run.output)
@@ -31,4 +33,5 @@ def test_cli_parse(models_equal, prefix, sample, pos_kind):
     model_reference = tbmodels.Model.from_wannier_folder(
         folder=sample(''), prefix=prefix, pos_kind=pos_kind
     )
+    modify_reference_model_sparsity(model_reference)
     models_equal(model_res, model_reference)

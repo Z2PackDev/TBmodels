@@ -71,13 +71,11 @@ def models_equal():
         assert np.array(model1.uc == model2.uc).all()
         assert model1.occ == model2.occ
         for k in model1.hop.keys() | model2.hop.keys():
-            print('k:', k)
-            print('model1:\n', np.array(model1.hop[k]))
-            print('model2:\n', np.array(model2.hop[k]))
-            assert (np.array(model1.hop[k]) == np.array(model2.hop[k])).all()
-        assert (model1.pos == model2.pos).all()
+            assert (np.array(model1.hop[k]) == np.array(model2.hop[k])).all(
+            ), f"Hoppins unequal at k={k}\nmodel1:\n{np.array(model1.hop[k])}\nmodel2:\n{np.array(model2.hop[k])}"
+        assert (model1.pos == model2.pos).all(), "Positions do not match."
         if not ignore_sparsity:
-            assert model1._sparse == model2._sparse  # pylint: disable=protected-access
+            assert model1._sparse == model2._sparse, "Sparsity does not match"  # pylint: disable=protected-access
         return True
 
     return inner
@@ -193,3 +191,30 @@ def get_model(get_model_clean, sparse):
     sparsity determined by the 'sparse' fixture.
     """
     return partial(get_model_clean, sparsity_default=sparse)
+
+
+@pytest.fixture(params=[None, 'as_input', 'sparse', 'dense'])
+def cli_sparsity(request):
+    return request.param
+
+
+@pytest.fixture
+def cli_sparsity_arguments(cli_sparsity):
+    if cli_sparsity is None:
+        return []
+    return ['--sparsity', cli_sparsity]
+
+
+@pytest.fixture
+def modify_reference_model_sparsity(cli_sparsity):
+    """
+    Modify the sparsity of the given reference model in-place to match
+    the value given in the sparsity argument.
+    """
+    def _modify_model(model):
+        if cli_sparsity == 'dense':
+            model.set_sparse(False)
+        elif cli_sparsity == 'sparse':
+            model.set_sparse(True)
+
+    return _modify_model
