@@ -28,6 +28,8 @@ New features
 
 - The command-line interfaces creating tight-binding models support a ``--sparsity`` flag to change the sparsity of the output model (valid options are ``as_input``, ``dense``, and ``sparse``). Setting ``--sparsity=sparse`` can significantly reduce the memory needed to store a model.
 
+- When using ``pos_kind='nearest_atom'``, the ``from_wannier_files`` method (and by extension the ``from_wannier_folder`` method and ``parse`` command) have an additional check: The ratio between next-nearest and nearest distance can be no lower than a given ``distance_ratio_threshold``. Note that this is a backwards-incompatible change, because the check might fail for cases where parsing succeeded before. However, we expect a failing check to indicate an underlying problem in most cases. To disable the check, set ``distance_ratio_threshold=1``.
+
 Experimental features
 '''''''''''''''''''''
 

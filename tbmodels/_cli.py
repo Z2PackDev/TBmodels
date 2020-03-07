@@ -91,15 +91,20 @@ def _write_output(model, output, sparsity):
     default='wannier',
     help="Which position to use for the orbitals."
 )
+@click.option('--distance-ratio-threshold', type=click.FloatRange(min=1.), default=3.)
 @_sparsity_option()
 @_output_option(default='model.hdf5', help='Path of the output file.')
-def parse(folder, prefix, output, pos_kind, sparsity):
+def parse(folder, prefix, output, pos_kind, distance_ratio_threshold, sparsity):
     """
     Parse Wannier90 output files and create an HDF5 file containing the tight-binding model.
     """
     click.echo("Parsing output files '{}*' ...".format(os.path.join(folder, prefix)))
     model = Model.from_wannier_folder(
-        folder=folder, prefix=prefix, ignore_orbital_order=True, pos_kind=pos_kind
+        folder=folder,
+        prefix=prefix,
+        ignore_orbital_order=True,
+        pos_kind=pos_kind,
+        distance_ratio_threshold=distance_ratio_threshold,
     )
     _write_output(model, output, sparsity=sparsity)
 
