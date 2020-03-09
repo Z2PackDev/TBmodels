@@ -22,7 +22,7 @@ I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) source
 
 .PHONY: all show help clean html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest coverage gettext
 
-all: clean html
+all: html
 
 show:
 	firefox $(HTMLBUILDDIR)/index.html
