@@ -27,7 +27,7 @@ if ty.TYPE_CHECKING:
     import symmetry_representation  # pylint: disable=unused-import
 
 from .kdotp import KdotpModel
-from ._exceptions import TbmodelsException, ParseExceptionMarker
+from .exceptions import TbmodelsException, ParseExceptionMarker
 from . import _check_compatibility
 from . import _sparse_matrix as sp
 

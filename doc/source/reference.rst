@@ -46,3 +46,11 @@ k.p Model class
 ---------------
 
 .. autoclass:: tbmodels.kdotp.KdotpModel
+
+
+Exceptions
+----------
+
+.. automodule:: tbmodels.exceptions
+    :members:
+    :undoc-members:

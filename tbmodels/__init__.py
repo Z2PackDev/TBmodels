@@ -8,8 +8,10 @@ __version__ = '1.4.0.dev0'
 
 # import order is important due to circular imports
 from . import helpers
+from . import exceptions
 from ._tb_model import Model
 
 from . import kdotp
-
 from . import io
+
+__all__ = ('helpers', 'exceptions', 'Model', 'kdotp', 'io')
