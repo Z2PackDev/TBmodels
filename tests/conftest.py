@@ -205,6 +205,13 @@ def cli_sparsity_arguments(cli_sparsity):
     return ['--sparsity', cli_sparsity]
 
 
+@pytest.fixture(params=[False, True])
+def cli_verbosity_argument(request):
+    if request.param:
+        return ['--verbose']
+    return []
+
+
 @pytest.fixture
 def modify_reference_model_sparsity(cli_sparsity):
     """

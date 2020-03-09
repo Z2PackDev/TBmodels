@@ -17,7 +17,7 @@ from tbmodels._cli import cli
 @pytest.mark.parametrize('pos_kind', ['wannier', 'nearest_atom'])
 @pytest.mark.parametrize('prefix, distance_ratio_threshold', [('silicon', 2.), ('bi', 1)])
 def test_cli_parse(  # pylint: disable=too-many-arguments
-    models_equal, prefix, sample, pos_kind, cli_sparsity_arguments, modify_reference_model_sparsity,
+    models_equal, prefix, sample, pos_kind, cli_sparsity_arguments, cli_verbosity_argument, modify_reference_model_sparsity,
     distance_ratio_threshold
 ):
     """Test the 'parse' command with different 'prefix' and 'pos_kind'."""
@@ -33,7 +33,7 @@ def test_cli_parse(  # pylint: disable=too-many-arguments
             cli,
             ['parse', '-o', out_file.name, '-f',
              sample(''), '-p', prefix, '--pos-kind', pos_kind] + cli_sparsity_arguments +
-            distance_ratio_arguments,
+            cli_verbosity_argument + distance_ratio_arguments,
             catch_exceptions=False
         )
         print(run.output)
