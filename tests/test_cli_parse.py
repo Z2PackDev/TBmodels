@@ -52,7 +52,7 @@ def test_ambiguous_nearest_atom(prefix, sample):
     in the expected error for cases where the nearest atom position is
     ambiguous.
     """
-    runner = CliRunner(mix_stderr=False)
+    runner = CliRunner()
     with tempfile.NamedTemporaryFile() as out_file:
         run = runner.invoke(
             cli, [
@@ -61,4 +61,5 @@ def test_ambiguous_nearest_atom(prefix, sample):
             ],
             catch_exceptions=False
         )
-        assert run.stderr.startswith('Error: [AMBIGUOUS_NEAREST_ATOM_POSITIONS]')
+        print('OUTPUT:', run.output)
+        assert 'Error: [AMBIGUOUS_NEAREST_ATOM_POSITIONS]' in run.output

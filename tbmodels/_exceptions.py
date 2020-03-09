@@ -19,10 +19,19 @@ class ExceptionMarker(Enum):
 
 
 class TbmodelsException(click.ClickException):
+    """
+    Custom exception class for TBmodels errors. Errors which use this
+    exception class will be caught and formatted properly in the CLI.
+    """
+    #: The exit code for this exception
+    exit_code = 3
     """Base class for the custom TBmodels exceptions."""
-    def __init__(self, msg, exception_marker: ExceptionMarker):
-        formatted_msg = f'[{exception_marker.name}] {msg}'
-        super().__init__(formatted_msg)
+    def __init__(self, message, exception_marker: ExceptionMarker):
+        super().__init__(message)
+        self.exception_marker = exception_marker
+
+    def format_message(self):
+        return f'[{self.exception_marker.name}] {super().format_message()}'
 
 
 class ParseExceptionMarker(ExceptionMarker):
