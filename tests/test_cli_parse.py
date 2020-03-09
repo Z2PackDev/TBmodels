@@ -43,3 +43,22 @@ def test_cli_parse(  # pylint: disable=too-many-arguments
     )
     modify_reference_model_sparsity(model_reference)
     models_equal(model_res, model_reference)
+
+
+@pytest.mark.parametrize('prefix', ['silicon', 'bi'])
+def test_ambiguous_nearest_atom(prefix, sample):
+    """
+    Test that the 'parse' command with `pos_kind='nearest_atom' results
+    in the expected error for cases where the nearest atom position is
+    ambiguous.
+    """
+    runner = CliRunner(mix_stderr=False)
+    with tempfile.NamedTemporaryFile() as out_file:
+        run = runner.invoke(
+            cli, [
+                'parse', '-o', out_file.name, '-f',
+                sample(''), '-p', prefix, '--pos-kind', 'nearest_atom'
+            ],
+            catch_exceptions=False
+        )
+        assert run.stderr.startswith('Error: [AMBIGUOUS_NEAREST_ATOM_POSITIONS]')
