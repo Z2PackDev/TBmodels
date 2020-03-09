@@ -16,7 +16,8 @@ from tbmodels._cli import cli
 
 @pytest.mark.parametrize('slice_idx', [(3, 1, 2), (0, 1, 4, 2, 3, 5, 6, 8, 7, 9, 10, 11, 12)])
 def test_cli_slice(
-    models_equal, slice_idx, sample, cli_sparsity_arguments, modify_reference_model_sparsity
+    models_equal, slice_idx, sample, cli_sparsity_arguments, cli_verbosity_argument,
+    modify_reference_model_sparsity
 ):
     """
     Check that using the CLI to slice a tight-binding model produces
@@ -32,7 +33,7 @@ def test_cli_slice(
                 out_file.name,
                 '-i',
                 input_file,
-            ] + cli_sparsity_arguments + [str(x) for x in slice_idx],
+            ] + cli_sparsity_arguments + cli_verbosity_argument + [str(x) for x in slice_idx],
             catch_exceptions=False
         )
         print(run.output)

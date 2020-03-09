@@ -59,7 +59,9 @@ def test_wannier_hr_wsvec_xyz(hr_name, wsvec_name, xyz_name, sample):
     xyz_file = sample(xyz_name)
     # cannot determine reduced pos if uc is not given
     with pytest.raises(ValueError):
-        tbmodels.Model.from_wannier_files(hr_file=hr_file, wsvec_file=wsvec_file, xyz_file=xyz_file)
+        tbmodels.Model.from_wannier_files(
+            hr_file=hr_file, wsvec_file=wsvec_file, xyz_file=xyz_file, distance_ratio_threshold=1.
+        )
 
 
 @pytest.mark.parametrize(
@@ -161,9 +163,10 @@ def test_wannier_all(
         xyz_file=xyz_file,
         win_file=win_file,
         pos_kind=pos_kind,
+        distance_ratio_threshold=1.
     )
     model2 = tbmodels.Model.from_wannier_files(
-        hr_file=hr_file, wsvec_file=wsvec_file, win_file=win_file
+        hr_file=hr_file, wsvec_file=wsvec_file, win_file=win_file, distance_ratio_threshold=1.
     )
     hamiltonian_list = np.array([model.hamilton(k) for k in KPT])
 

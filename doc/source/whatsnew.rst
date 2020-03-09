@@ -14,8 +14,6 @@ What's new in TBmodels 1.4 (development version)
 New features
 ''''''''''''
 
-- Add ``--version`` option to the command-line interface, to print the current version.
-
 - The ``KdotpModel`` has been promoted from an internal-only interface to the public ``tbmodels.kdotp`` submodule.
 
 - The ``supercell`` method can be used to obtain a supercell tight-binding model.
@@ -26,7 +24,17 @@ New features
 
 - Add ``remove_small_hop`` and ``remove_long_range_hop`` methods to cut hoppings with small value or long distance, respectively. Both these methods operate in-place on the existing model.
 
+- When using ``pos_kind='nearest_atom'``, the ``from_wannier_files`` method (and by extension the ``from_wannier_folder`` method and ``parse`` command) have an additional check: The ratio between next-nearest and nearest distance can be no lower than a given ``distance_ratio_threshold``. Note that this is a backwards-incompatible change, because the check might fail for cases where parsing succeeded before. However, we expect a failing check to indicate an underlying problem in most cases. To disable the check, set ``distance_ratio_threshold=1``.
+
+Command-line interface
+``````````````````````
+
+- Add ``--version`` option to the command-line interface, to print the current version.
+
+- Add a ``--verbose`` option to the command-line interface, which causes informational output to be printed. By default, the CLI is now silent.
+
 - The command-line interfaces creating tight-binding models support a ``--sparsity`` flag to change the sparsity of the output model (valid options are ``as_input``, ``dense``, and ``sparse``). Setting ``--sparsity=sparse`` can significantly reduce the memory needed to store a model.
+
 
 Experimental features
 '''''''''''''''''''''

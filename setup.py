@@ -37,7 +37,7 @@ setup(
     description="A tool for reading, creating and modifying tight-binding models.",
     python_requires=">=3.6",
     install_requires=[
-        'numpy', 'scipy>=0.14', 'h5py', 'fsc.export', 'symmetry-representation>=0.2', 'click', 'bands-inspect',
+        'numpy', 'scipy>=0.14', 'h5py', 'fsc.export', 'symmetry-representation>=0.2', 'click>=7.0, !=7.1.0', 'bands-inspect',
         'fsc.hdf5-io>=0.6.0'
     ],
     extras_require=EXTRAS_REQUIRE,

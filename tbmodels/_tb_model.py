@@ -26,9 +26,10 @@ from fsc.hdf5_io import subscribe_hdf5, HDF5Enabled
 if ty.TYPE_CHECKING:
     import symmetry_representation  # pylint: disable=unused-import
 
+from .kdotp import KdotpModel
+from ._exceptions import TbmodelsException, ParseExceptionMarker
 from . import _check_compatibility
 from . import _sparse_matrix as sp
-from .kdotp import KdotpModel
 
 __all__ = ('Model', )
 
@@ -518,7 +519,7 @@ class Model(HDF5Enabled):
 
         return cls.from_wannier_files(**co.ChainMap(kwargs, input_files))
 
-    @classmethod
+    @classmethod  # noqa: MC0001
     def from_wannier_files(  # pylint: disable=too-many-locals
         cls,
         *,
@@ -529,6 +530,7 @@ class Model(HDF5Enabled):
         h_cutoff: float = 0.,
         ignore_orbital_order: bool = False,
         pos_kind: str = 'wannier',
+        distance_ratio_threshold: float = 3.,
         **kwargs
     ) -> "Model":
         """
@@ -560,6 +562,10 @@ class Model(HDF5Enabled):
             Determines how positions are assinged to orbitals. Valid
             options are `wannier` (use Wannier centres) or
             `nearest_atom` (map to nearest atomic position).
+        distance_ratio_threshold :
+            [Applies only for pos_kind='nearest_atom']
+            The minimum ratio between the second-nearest and nearest
+            atom below which an error will be raised.
         kwargs :
             :class:`.Model` keyword arguments.
         """
@@ -588,6 +594,10 @@ class Model(HDF5Enabled):
                 if pos_kind == 'wannier':
                     pos_cartesian = wannier_pos_cartesian
                 elif pos_kind == 'nearest_atom':
+                    if distance_ratio_threshold < 1:
+                        raise ValueError(
+                            "Invalid value for 'distance_ratio_threshold': must be >= 1."
+                        )
                     pos_cartesian = []
                     for p in wannier_pos_cartesian:
                         p_reduced = la.solve(kwargs['uc'].T, np.array(p).T).T
@@ -598,7 +608,18 @@ class Model(HDF5Enabled):
                             for T_shift in itertools.product([-1, 0, 1], repeat=3)
                         ])
                         distances = la.norm(p - all_atom_pos, axis=-1)
-                        pos_cartesian.append(all_atom_pos[np.argmin(distances)])
+                        idx = np.argpartition(distances, 2)[:2]
+                        nearest, second_nearest = distances[idx]
+                        if second_nearest / nearest < distance_ratio_threshold:
+                            raise TbmodelsException(
+                                f"The ratio ({second_nearest / nearest:.3f}) between "
+                                f"the nearest ({nearest:.3f}) and second-nearest "
+                                f"({second_nearest:.3f}) atomic position is less than "
+                                f"'distance_ratio_threshold' ({distance_ratio_threshold}).",
+                                exception_marker=ParseExceptionMarker.
+                                AMBIGUOUS_NEAREST_ATOM_POSITIONS
+                            )
+                        pos_cartesian.append(all_atom_pos[idx[0]])
                 else:
                     raise ValueError(
                         "Invalid value '{}' for 'pos_kind', must be 'wannier' or 'nearest_atom'".
@@ -624,8 +645,9 @@ class Model(HDF5Enabled):
                             # Explicitly catching this because 'remap_hoppings'
                             # is also a generator.
                             except StopIteration as exc:
-                                raise ValueError(
-                                    "The 'wsvec_generator' stopped prematurely."
+                                raise TbmodelsException(
+                                    "The 'wsvec_generator' stopped prematurely.",
+                                    exception_marker=ParseExceptionMarker.INCOMPLETE_WSVEC_FILE
                                 ) from exc
                             T_list = wsvec_generator.send((orbital_1, orbital_2, tuple(R)))
                             N = len(T_list)
@@ -682,7 +704,10 @@ class Model(HDF5Enabled):
         try:
             next(iterator)
         except StopIteration as exc:
-            raise ValueError("The 'wsvec' iterator is empty.") from exc
+            raise TbmodelsException(
+                "The 'wsvec' iterator is empty.",
+                exception_marker=ParseExceptionMarker.INCOMPLETE_WSVEC_FILE
+            ) from exc
         for first_line in iterator:
             *R, o1, o2 = (int(x) for x in first_line.split())
             # in our convention, orbital indices start at 0.
@@ -691,7 +716,10 @@ class Model(HDF5Enabled):
                 N = int(next(iterator))
                 val = [tuple(int(x) for x in next(iterator).split()) for _ in range(N)]
             except StopIteration as exc:
-                raise ValueError('Incomplete wsvec iterator.') from exc
+                raise TbmodelsException(
+                    'Incomplete wsvec iterator.',
+                    exception_marker=ParseExceptionMarker.INCOMPLETE_WSVEC_FILE
+                ) from exc
             yield key, val
 
     @staticmethod

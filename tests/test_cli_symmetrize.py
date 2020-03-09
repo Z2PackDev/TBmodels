@@ -16,7 +16,8 @@ from tbmodels._cli import cli
 
 
 def test_cli_symmetrize(
-    models_close, sample, cli_sparsity_arguments, modify_reference_model_sparsity
+    models_close, sample, cli_sparsity_arguments, cli_verbosity_argument,
+    modify_reference_model_sparsity
 ):
     """
     Test the 'symmetrize' command.
@@ -29,7 +30,7 @@ def test_cli_symmetrize(
                 'symmetrize', '-o', out_file.name, '-s',
                 sample('InAs_symmetries.hdf5'), '-i',
                 sample('InAs_nosym.hdf5')
-            ] + cli_sparsity_arguments,
+            ] + cli_sparsity_arguments + cli_verbosity_argument,
             catch_exceptions=False
         )
         print(run.output)

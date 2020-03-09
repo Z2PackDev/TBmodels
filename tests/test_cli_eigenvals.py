@@ -17,7 +17,7 @@ from click.testing import CliRunner
 from tbmodels._cli import cli
 
 
-def test_cli_eigenvals(sample):
+def test_cli_eigenvals(sample, cli_verbosity_argument):
     """
     Test the 'eigenvals' command.
     """
@@ -25,11 +25,12 @@ def test_cli_eigenvals(sample):
     runner = CliRunner()
     with tempfile.NamedTemporaryFile() as out_file:
         run = runner.invoke(
-            cli, [
+            cli,
+            [
                 'eigenvals', '-o', out_file.name, '-k',
                 os.path.join(samples_dir, 'kpoints.hdf5'), '-i',
                 os.path.join(samples_dir, 'silicon_model.hdf5')
-            ],
+            ] + cli_verbosity_argument,
             catch_exceptions=False
         )
         print(run.output)
