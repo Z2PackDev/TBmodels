@@ -26,9 +26,10 @@ from fsc.hdf5_io import subscribe_hdf5, HDF5Enabled
 if ty.TYPE_CHECKING:
     import symmetry_representation  # pylint: disable=unused-import
 
+from .kdotp import KdotpModel
+from ._exceptions import TbmodelsException, ParseExceptionMarker
 from . import _check_compatibility
 from . import _sparse_matrix as sp
-from .kdotp import KdotpModel
 
 __all__ = ('Model', )
 
@@ -610,11 +611,13 @@ class Model(HDF5Enabled):
                         idx = np.argpartition(distances, 2)[:2]
                         nearest, second_nearest = distances[idx]
                         if second_nearest / nearest < distance_ratio_threshold:
-                            raise ValueError(
+                            raise TbmodelsException(
                                 f"The ratio ({second_nearest / nearest:.3f}) between "
                                 f"the nearest ({nearest:.3f}) and second-nearest "
                                 f"({second_nearest:.3f}) atomic position is less than "
-                                f"'distance_ratio_threshold' ({distance_ratio_threshold})."
+                                f"'distance_ratio_threshold' ({distance_ratio_threshold}).",
+                                exception_marker=ParseExceptionMarker.
+                                AMBIGUOUS_NEAREST_ATOM_POSITIONS
                             )
                         pos_cartesian.append(all_atom_pos[idx[0]])
                 else:
@@ -642,8 +645,9 @@ class Model(HDF5Enabled):
                             # Explicitly catching this because 'remap_hoppings'
                             # is also a generator.
                             except StopIteration as exc:
-                                raise ValueError(
-                                    "The 'wsvec_generator' stopped prematurely."
+                                raise TbmodelsException(
+                                    "The 'wsvec_generator' stopped prematurely.",
+                                    exception_marker=ParseExceptionMarker.INCOMPLETE_WSVEC_FILE
                                 ) from exc
                             T_list = wsvec_generator.send((orbital_1, orbital_2, tuple(R)))
                             N = len(T_list)
@@ -700,7 +704,10 @@ class Model(HDF5Enabled):
         try:
             next(iterator)
         except StopIteration as exc:
-            raise ValueError("The 'wsvec' iterator is empty.") from exc
+            raise TbmodelsException(
+                "The 'wsvec' iterator is empty.",
+                exception_marker=ParseExceptionMarker.INCOMPLETE_WSVEC_FILE
+            ) from exc
         for first_line in iterator:
             *R, o1, o2 = (int(x) for x in first_line.split())
             # in our convention, orbital indices start at 0.
@@ -709,7 +716,10 @@ class Model(HDF5Enabled):
                 N = int(next(iterator))
                 val = [tuple(int(x) for x in next(iterator).split()) for _ in range(N)]
             except StopIteration as exc:
-                raise ValueError('Incomplete wsvec iterator.') from exc
+                raise TbmodelsException(
+                    'Incomplete wsvec iterator.',
+                    exception_marker=ParseExceptionMarker.INCOMPLETE_WSVEC_FILE
+                ) from exc
             yield key, val
 
     @staticmethod

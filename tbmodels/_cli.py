@@ -21,7 +21,7 @@ def cli():
     pass
 
 
-def _output_option(**kwargs):
+def _get_output_option(**kwargs):
     return click.option('--output', '-o', type=click.Path(dir_okay=False), **kwargs)
 
 
@@ -31,16 +31,14 @@ class _SparsityChoices(enum.Enum):
     AS_INPUT = 'as_input'
 
 
-def _sparsity_option():
-    return click.option(
-        '--sparsity',
-        default=_SparsityChoices.AS_INPUT.value,
-        type=click.Choice([choice.value for choice in _SparsityChoices]),
-        help='Write the model in sparse format. By default, the format of the input model is used.'
-    )
+_SPARSITY_OPTION = click.option(
+    '--sparsity',
+    default=_SparsityChoices.AS_INPUT.value,
+    type=click.Choice([choice.value for choice in _SparsityChoices]),
+    help='Write the model in sparse format. By default, the format of the input model is used.'
+)
 
-
-_input_option = click.option(  # pylint: disable=invalid-name
+_INPUT_OPTION = click.option(
     '--input',
     '-i',
     type=click.Path(exists=True, dir_okay=False),
@@ -48,13 +46,16 @@ _input_option = click.option(  # pylint: disable=invalid-name
     help='File containing the input model (in HDF5 format).'
 )
 
+_VERBOSE_OPTION = click.option('-v', '--verbose', is_flag=True, default=False)
 
-def _read_input(input):  # pylint: disable=redefined-builtin
-    click.echo("Reading initial model from file '{}' ...".format(input))
+
+def _read_input(input, verbose):  # pylint: disable=redefined-builtin
+    if verbose:
+        click.echo("Reading initial model from file '{}' ...".format(input))
     return Model.from_hdf5_file(input)
 
 
-def _write_output(model, output, sparsity):
+def _write_output(model, output, sparsity, verbose):
     """
     Helper function to write a tight-binding model to an output file.
     The sparsity of the model is changed if specified through the
@@ -65,9 +66,11 @@ def _write_output(model, output, sparsity):
         model.set_sparse(True)
     elif sparsity == _SparsityChoices.DENSE.value:
         model.set_sparse(False)
-    click.echo("Writing output model to file '{}' ...".format(output))
+    if verbose:
+        click.echo("Writing output model to file '{}' ...".format(output))
     model.to_hdf5_file(output)
-    click.echo("Done!")
+    if verbose:
+        click.echo("Done!")
 
 
 @cli.command(short_help='Parse Wannier90 output files to an HDF5 file.')
@@ -92,13 +95,15 @@ def _write_output(model, output, sparsity):
     help="Which position to use for the orbitals."
 )
 @click.option('--distance-ratio-threshold', type=click.FloatRange(min=1.), default=3.)
-@_sparsity_option()
-@_output_option(default='model.hdf5', help='Path of the output file.')
-def parse(folder, prefix, output, pos_kind, distance_ratio_threshold, sparsity):
+@_SPARSITY_OPTION  # pylint: disable=too-many-arguments
+@_VERBOSE_OPTION
+@_get_output_option(default='model.hdf5', help='Path of the output file.')
+def parse(folder, prefix, output, pos_kind, distance_ratio_threshold, sparsity, verbose):
     """
     Parse Wannier90 output files and create an HDF5 file containing the tight-binding model.
     """
-    click.echo("Parsing output files '{}*' ...".format(os.path.join(folder, prefix)))
+    if verbose:
+        click.echo("Parsing output files '{}*' ...".format(os.path.join(folder, prefix)))
     model = Model.from_wannier_folder(
         folder=folder,
         prefix=prefix,
@@ -106,12 +111,12 @@ def parse(folder, prefix, output, pos_kind, distance_ratio_threshold, sparsity):
         pos_kind=pos_kind,
         distance_ratio_threshold=distance_ratio_threshold,
     )
-    _write_output(model, output, sparsity=sparsity)
+    _write_output(model, output, sparsity=sparsity, verbose=verbose)
 
 
 @cli.command(short_help='Create symmetrized tight-binding model.')
-@_input_option
-@_output_option(default='model_symmetrized.hdf5', help='Output file for the symmetrized model.')
+@_INPUT_OPTION
+@_get_output_option(default='model_symmetrized.hdf5', help='Output file for the symmetrized model.')
 @click.option(
     '--symmetries',
     '-s',
@@ -128,12 +133,14 @@ def parse(folder, prefix, output, pos_kind, distance_ratio_threshold, sparsity):
     No full group: The symmetries only contain a generating subset of the full group. Overrides the option given in the symmetries file (if any).
     """
 )
-@_sparsity_option()
-def symmetrize(input, output, symmetries, full_group, sparsity):  # pylint: disable=redefined-builtin
+@_SPARSITY_OPTION
+@_VERBOSE_OPTION
+def symmetrize(input, output, symmetries, full_group, sparsity, verbose):  # pylint: disable=redefined-builtin
     """Symmetrize tight-binding model with given symmetry group(s)."""
     import symmetry_representation as sr  # pylint: disable=import-outside-toplevel
-    model = _read_input(input)
-    click.echo("Reading symmetries from file '{}' ...".format(symmetries))
+    model = _read_input(input, verbose=verbose)
+    if verbose:
+        click.echo("Reading symmetries from file '{}' ...".format(symmetries))
     sym = sr.io.load(symmetries)
 
     @singledispatch
@@ -171,30 +178,32 @@ def symmetrize(input, output, symmetries, full_group, sparsity):  # pylint: disa
         return _symmetrize(sym_group, model, full_group)
 
     model_sym = _symmetrize(sym, model, full_group)
-    _write_output(model_sym, output, sparsity=sparsity)
+    _write_output(model_sym, output, sparsity=sparsity, verbose=verbose)
 
 
 @cli.command(short_help="Slice specific orbitals from model.")
-@_input_option
-@_output_option(default='model_sliced.hdf5', help='Output file for the sliced model.')
+@_INPUT_OPTION
+@_get_output_option(default='model_sliced.hdf5', help='Output file for the sliced model.')
 @click.argument(
     'slice-idx',
     type=int,
     nargs=-1,
 )  # pylint: disable=redefined-builtin
-@_sparsity_option()
-def slice(input, output, slice_idx, sparsity):  # pylint: disable=redefined-builtin
+@_SPARSITY_OPTION
+@_VERBOSE_OPTION
+def slice(input, output, slice_idx, sparsity, verbose):  # pylint: disable=redefined-builtin
     """
     Create a model containing only the orbitals given in the SLICE_IDX.
     """
-    model = _read_input(input)
-    click.echo("Slicing model with indices {} ...".format(slice_idx))
+    model = _read_input(input, verbose=verbose)
+    if verbose:
+        click.echo("Slicing model with indices {} ...".format(slice_idx))
     model_slice = model.slice_orbitals(slice_idx=slice_idx)
-    _write_output(model_slice, output, sparsity=sparsity)
+    _write_output(model_slice, output, sparsity=sparsity, verbose=verbose)
 
 
 @cli.command(short_help="Calculate energy eigenvalues.")
-@_input_option
+@_INPUT_OPTION
 @click.option(
     '-k',
     '--kpoints',
@@ -202,24 +211,28 @@ def slice(input, output, slice_idx, sparsity):  # pylint: disable=redefined-buil
     default='kpoints.hdf5',
     help='File containing the k-points for which the eigenvalues are evaluated.'
 )
-@_output_option(default='eigenvals.hdf5', help='Output file for the energy eigenvalues.')
-def eigenvals(input, kpoints, output):  # pylint: disable=redefined-builtin
+@_get_output_option(default='eigenvals.hdf5', help='Output file for the energy eigenvalues.')
+@_VERBOSE_OPTION
+def eigenvals(input, kpoints, output, verbose):  # pylint: disable=redefined-builtin
     """
     Calculate the energy eigenvalues for a given set of k-points (in reduced coordinates). The input and output is given in an HDF5 file.
     """
     import bands_inspect as bi  # pylint: disable=import-outside-toplevel
 
-    model = _read_input(input)
-    click.echo("Reading kpoints from file '{}' ...".format(kpoints))
+    model = _read_input(input, verbose=verbose)
+    if verbose:
+        click.echo("Reading kpoints from file '{}' ...".format(kpoints))
     kpts = bi.io.load(kpoints)
     if isinstance(kpts, bi.eigenvals.EigenvalsData):
         kpts = kpts.kpoints
 
-    click.echo("Calculating energy eigenvalues ...")
+    if verbose:
+        click.echo("Calculating energy eigenvalues ...")
     eigenvalues = bi.eigenvals.EigenvalsData.from_eigenval_function(
         kpoints=kpts, eigenval_function=model.eigenval, listable=True
     )
-
-    click.echo("Writing kpoints and energy eigenvalues to file '{}' ...".format(output))
+    if verbose:
+        click.echo("Writing kpoints and energy eigenvalues to file '{}' ...".format(output))
     bi.io.save(eigenvalues, output)
-    click.echo("Done!")
+    if verbose:
+        click.echo("Done!")
