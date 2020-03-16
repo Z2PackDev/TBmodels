@@ -15,6 +15,7 @@ from collections import ChainMap
 
 import pytest
 import numpy as np
+from numpy.testing import assert_allclose, assert_equal
 
 import tbmodels
 from tbmodels.io import save, load
@@ -72,8 +73,8 @@ def models_equal():
         assert model1.occ == model2.occ
         for k in model1.hop.keys() | model2.hop.keys():
             assert (np.array(model1.hop[k]) == np.array(model2.hop[k])).all(
-            ), f"Hoppins unequal at k={k}\nmodel1:\n{np.array(model1.hop[k])}\nmodel2:\n{np.array(model2.hop[k])}"
-        assert (model1.pos == model2.pos).all(), "Positions do not match."
+            ), f"Hoppings unequal at k={k}\nmodel1:\n{np.array(model1.hop[k])}\nmodel2:\n{np.array(model2.hop[k])}"
+        assert_equal(model1.pos, model2.pos)
         if not ignore_sparsity:
             assert model1._sparse == model2._sparse, "Sparsity does not match"  # pylint: disable=protected-access
         return True
@@ -108,17 +109,16 @@ def models_close():
         if model1.uc is None:
             assert model1.uc == model2.uc
         else:
-            assert np.isclose(model1.uc, model2.uc).all()
+            assert_allclose(model1.uc, model2.uc)
         assert model1.occ == model2.occ
-        for k in model1.hop.keys() | model2.hop.keys():
-            print('k:', k)
-            print('model1:\n', np.array(model1.hop[k]))
-            print('model2:\n', np.array(model2.hop[k]))
-            assert np.isclose(np.array(model1.hop[k]), np.array(model2.hop[k])).all()
         if model1.pos is None:
             assert model1.pos == model2.pos
         else:
-            assert np.isclose(model1.pos, model2.pos).all()
+            assert_allclose(model1.pos, model2.pos, atol=1e-7)
+        for k in model1.hop.keys() | model2.hop.keys():
+            assert np.isclose(np.array(model1.hop[k]), np.array(model2.hop[k])).all(
+            ), f"Hoppings unequal at k={k}\nmodel1:\n{np.array(model1.hop[k])}\nmodel2:\n{np.array(model2.hop[k])}"
+
         if not ignore_sparsity:
             assert model1._sparse == model2._sparse  # pylint: disable=protected-access
         return True

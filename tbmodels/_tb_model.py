@@ -1499,36 +1499,91 @@ class Model(HDF5Enabled):
             )
         )
 
-    def shift_unit_cell(
-        self, *, offset: ty.Sequence[float] = (0, 0, 0), cartesian: bool = True
+    def change_unit_cell(  # pylint: disable=too-many-branches
+        self,
+        *,
+        uc: ty.Optional[ty.Sequence[ty.Sequence[float]]] = None,
+        offset: ty.Sequence[float] = (0, 0, 0),
+        cartesian: bool = False
     ) -> "Model":
-        """
-        Returns a model with a shifted unit cell origin.
+        """Return a model with a different unit cell of the same volume.
+
+        Creates a model with a changed unit cell - with a different
+        shape and / or origin. The new unit cell must be compatible
+        with the current lattice, and have the same volume.
 
         Parameters
         ----------
+        uc :
+            The new unit cell shape. Lattice vectors are given as rows
+            in a (dim x dim) matrix. If no unit cell is given, the
+            current unit cell shape is kept.
         offset :
             The position of the new unit cell origin, relative to the old
             one.
         cartesian :
-            Specifies if the offset is given in cartesian or reduced
-            coordinates.
+            Specifies if the offset and unit cell are in cartesian or
+            reduced coordinates. Reduced coordinates are with respect to
+            the *old* unit cell.
         """
+        # Validate inputs w.r.t. model properties
         if self.pos is None:
-            raise ValueError('Cannot shift unit cell: model positions are not defined.')
+            raise ValueError('Cannot change the unit cell: model positions are not defined.')
 
         if cartesian:
             if self.uc is None:
                 raise ValueError(
-                    'Cannot shift unit cell in cartesian coordinates: model does not have a unit cell.'
+                    'Cannot change unit cell in cartesian coordinates: model does not have a unit cell.'
                 )
+            # convert to reduced coordinates
+            if uc is None:
+                new_uc = self.uc
+                uc_reduced = np.eye(self.dim)
+            else:
+                new_uc = np.array(uc)
+                uc_reduced = la.solve(self.uc.T, new_uc.T).T
             offset_reduced = la.solve(self.uc.T, np.array(offset).T).T
         else:
+            if uc is None:
+                uc_reduced = np.eye(self.dim)
+            else:
+                uc_reduced = np.array(uc)
+            if self.uc is None:
+                new_uc = None
+            else:
+                new_uc = (self.uc.T @ uc_reduced.T).T
             offset_reduced = np.array(offset)
 
-        new_pos = self.pos - offset_reduced
-        return Model(**co.ChainMap(dict(pos=new_pos, ), self._input_kwargs))
+        # check that the reduced unit cell is compatible with the
+        # current lattice
+        if not np.allclose(np.round(uc_reduced), uc_reduced):
+            raise ValueError(
+                "The new unit cell must be compatible with the current lattice. "
+                "It must be an integer combination of previous lattice vectors, "
+                f"but in reduced coordinates it is:\n{uc_reduced}"
+            )
+        uc_reduced = np.round(uc_reduced).astype(int)
+        if la.det(uc_reduced) != 1:
+            raise ValueError(
+                "The determinant of the unit cell in reduced coordinates must "
+                f"be 1, but it is {la.det(uc_reduced)} instead."
+            )
 
+        # apply offset to positions
+        new_pos = self.pos - offset_reduced
+
+        # rotate positions
+        new_pos = la.solve(uc_reduced.T, new_pos.T).T
+
+        # rotate hopping matrices
+        new_hop = {}
+        for R, hop_mat in self.hop.items():
+            new_R = la.solve(uc_reduced.T, R)
+            assert np.allclose(np.round(new_R), new_R)
+            new_R = tuple(new_R.astype(int))
+            new_hop[new_R] = hop_mat
+
+        return Model(**co.ChainMap(dict(uc=new_uc, pos=new_pos, hop=new_hop), self._input_kwargs))
 
     def fold_model(  # pylint: disable=too-many-locals # noqa:C001
         self,
