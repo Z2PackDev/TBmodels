@@ -6,27 +6,13 @@
 Defines decoding for the legacy (pre fsc.hdf5-io) HDF5 format.
 """
 
-import warnings
-
 from ._tb_model import Model
 
 
-def _decode(hdf5_handle, warn=True):
+def _decode(hdf5_handle):
     """
     Decode the object at the given HDF5 node.
     """
-    if warn:
-        if hasattr(hdf5_handle, 'filename'):
-            msg = (
-                f"The loaded file '{hdf5_handle.filename}' is stored in an outdated "
-                "format. Consider loading and storing the file to update it."
-            )
-        else:
-            msg = (
-                "The loaded object is stored in an outdated format. "
-                "Consider loading and storing the file to update it."
-            )
-        warnings.warn(msg, DeprecationWarning)
     if 'tb_model' in hdf5_handle or 'hop' in hdf5_handle:
         return _decode_model(hdf5_handle)
     elif 'val' in hdf5_handle:
@@ -38,7 +24,7 @@ def _decode(hdf5_handle, warn=True):
 
 
 def _decode_iterable(hdf5_handle):
-    return [_decode(hdf5_handle[key], warn=False) for key in sorted(hdf5_handle, key=int)]
+    return [_decode(hdf5_handle[key]) for key in sorted(hdf5_handle, key=int)]
 
 
 def _decode_model(hdf5_handle):
