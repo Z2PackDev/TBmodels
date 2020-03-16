@@ -94,3 +94,10 @@ def test_hdf5_kdotp(kdotp_models_equal):
         tbmodels.io.save(kp_model, tmpf.name)
         model2 = tbmodels.io.load(tmpf.name)
     kdotp_models_equal(kp_model, model2)
+
+
+def test_generic_legacy_object(sample):
+    """Test that a generic object in legacy format can be loaded."""
+    filename = sample('legacy_general_object.hdf5')
+    res = tbmodels.io.load(filename)
+    assert res == [2, [3, 4], 2.3]

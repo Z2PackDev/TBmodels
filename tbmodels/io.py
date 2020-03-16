@@ -7,6 +7,7 @@ Defines functions for saving and loading in HDF5 format.
 """
 
 import copy
+import warnings
 
 import h5py
 import fsc.hdf5_io
@@ -28,5 +29,9 @@ def load(file_path):
     try:
         return fsc.hdf5_io.load(file_path)
     except ValueError:
+        warnings.warn(
+            f"The loaded file '{file_path}' is stored in an outdated "
+            "format. Consider loading and storing the file to update it.", DeprecationWarning
+        )
         with h5py.File(file_path, 'r') as hdf5_handle:
             return _legacy_decode._decode(hdf5_handle)  # pylint: disable=protected-access
