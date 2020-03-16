@@ -11,7 +11,7 @@ repos:
     language: system
     exclude: '^(doc/)|(examples/)|(playground/)'
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: v0.761
+  rev: v0.770
   hooks:
   - id: mypy
     exclude: '^(doc/)|(examples/)|(playground/)'

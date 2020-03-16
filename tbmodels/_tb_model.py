@@ -1426,79 +1426,6 @@ class Model(HDF5Enabled):
 
         return cls(dim=new_dim, uc=new_uc, pos=new_pos, occ=new_occ, hop=new_hop, contains_cc=False)
 
-    def supercell(self, size: ty.Sequence[int]) -> "Model":  # pylint: disable=too-many-locals
-        """Generate a model for a supercell of the current unit cell.
-
-        Parameters
-        ----------
-        size :
-            The size of the supercell, given as integer multiples of the
-            current lattice vectors
-        """
-        size_array = np.array(size).astype(dtype=int, casting='safe')
-        if size_array.shape != (self.dim, ):
-            raise ValueError(
-                "The given 'size' has incorrect shape {}, should be {}.".format(
-                    size_array.shape, (self.dim, )
-                )
-            )
-        volume_multiplier = np.prod(size_array)
-        new_occ = None if self.occ is None else volume_multiplier * self.occ
-        if self.uc is None:
-            new_uc = None
-        else:
-            new_uc = (self.uc.T * size_array).T
-
-        # the new positions, normalized to the supercell
-        new_pos: ty.List[np.ndarray] = []
-        reduced_pos = np.array([p / size_array for p in self.pos])
-        uc_offsets = list(
-            np.array(offset) for offset in itertools.product(*[range(n) for n in size_array])
-        )
-        for current_uc_offset in uc_offsets:
-            new_pos.extend(reduced_pos + (current_uc_offset / size_array))
-
-        new_size = self.size * volume_multiplier
-        new_hop: HoppingType = co.defaultdict(lambda: np.zeros((new_size, new_size), dtype=complex))
-
-        # Can be used to get the orbital offset of a given unit cell
-        # by taking the inner product with the unit cell position.
-        uc_idx_multiplier = np.array([
-            np.prod(size[i:], dtype=int) for i in range(1,
-                                                        len(size) + 1)
-        ]) * self.size
-
-        for uc1_idx, uc1_pos in enumerate(uc_offsets):
-            uc1_idx_offset = uc1_idx * self.size
-
-            for R, hop_mat in self.hop.items():
-                hop_mat = self._array_cast(hop_mat)
-
-                # position of the uc of orbital 2, not mapped inside supercell
-                full_uc2_pos = uc1_pos + R
-                # mapped into the supercell
-                uc2_pos = full_uc2_pos % size_array
-                uc2_idx_offset = np.inner(uc_idx_multiplier, uc2_pos)
-
-                # R in terms of supercells
-                new_R = np.array(np.floor(full_uc2_pos / size_array), dtype=int)
-
-                new_hop[tuple(new_R)][uc1_idx_offset:uc1_idx_offset + self.size,
-                                      uc2_idx_offset:uc2_idx_offset + self.size] += hop_mat
-
-        return Model(
-            **co.ChainMap(
-                dict(
-                    hop=new_hop,
-                    occ=new_occ,
-                    uc=new_uc,
-                    size=new_size,
-                    pos=new_pos,
-                    contains_cc=False
-                ), self._input_kwargs
-            )
-        )
-
     def change_unit_cell(  # pylint: disable=too-many-branches
         self,
         *,
@@ -1584,6 +1511,80 @@ class Model(HDF5Enabled):
             new_hop[new_R] = hop_mat
 
         return Model(**co.ChainMap(dict(uc=new_uc, pos=new_pos, hop=new_hop), self._input_kwargs))
+
+    def supercell(self, size: ty.Sequence[int]) -> "Model":  # pylint: disable=too-many-locals
+        """Generate a model for a supercell of the current unit cell.
+
+        Parameters
+        ----------
+        size :
+            The size of the supercell, given as integer multiples of the
+            current lattice vectors
+        """
+        size_array = np.array(size).astype(dtype=int, casting='safe')
+        if size_array.shape != (self.dim, ):
+            raise ValueError(
+                "The given 'size' has incorrect shape {}, should be {}.".format(
+                    size_array.shape, (self.dim, )
+                )
+            )
+        volume_multiplier = np.prod(size_array)
+        new_occ = None if self.occ is None else volume_multiplier * self.occ
+        if self.uc is None:
+            new_uc = None
+        else:
+            new_uc = (self.uc.T * size_array).T
+
+        # the new positions, normalized to the supercell
+        new_pos: ty.List[np.ndarray] = []
+        reduced_pos = np.array([p / size_array for p in self.pos])
+        uc_offsets = list(
+            np.array(offset) for offset in itertools.product(*[range(n) for n in size_array])
+        )
+        for current_uc_offset in uc_offsets:
+            new_pos.extend(reduced_pos + (current_uc_offset / size_array))
+
+        new_size = self.size * volume_multiplier
+        new_hop: HoppingType = co.defaultdict(lambda: np.zeros((new_size, new_size), dtype=complex))
+
+        # Can be used to get the orbital offset of a given unit cell
+        # by taking the inner product with the unit cell position.
+        uc_idx_multiplier = np.array([
+            np.prod(size[i:], dtype=int) for i in range(1,
+                                                        len(size) + 1)
+        ]) * self.size
+
+        for uc1_idx, uc1_pos in enumerate(uc_offsets):
+            uc1_idx_offset = uc1_idx * self.size
+
+            for R, hop_mat in self.hop.items():
+                hop_mat = self._array_cast(hop_mat)
+
+                # position of the uc of orbital 2, not mapped inside supercell
+                full_uc2_pos = uc1_pos + R
+                # mapped into the supercell
+                uc2_pos = full_uc2_pos % size_array
+                uc2_idx_offset = np.inner(uc_idx_multiplier, uc2_pos)
+
+                # R in terms of supercells
+                new_R = np.array(np.floor(full_uc2_pos / size_array), dtype=int)
+
+                new_hop[tuple(new_R)][uc1_idx_offset:uc1_idx_offset + self.size,
+                                      uc2_idx_offset:uc2_idx_offset + self.size] += hop_mat
+
+        return Model(
+            **co.ChainMap(
+                dict(
+                    hop=new_hop,
+                    occ=new_occ,
+                    uc=new_uc,
+                    size=new_size,
+                    pos=new_pos,
+                    contains_cc=False
+                ), self._input_kwargs
+            )
+        )
+
 
     def fold_model(  # pylint: disable=too-many-locals # noqa:C001
         self,
@@ -1672,7 +1673,9 @@ class Model(HDF5Enabled):
         total_orbital_ratio = len(self.pos) / len(in_uc_indices)
         if check_orbital_ratio:
             orbital_counts_initial = co.Counter(orbital_labels)
-            orbital_counts_new = co.Counter(np.array(orbital_labels)[np.ix_(in_uc_indices)])
+            orbital_counts_new: ty.Counter[ty.Hashable] = co.Counter(
+                np.array(orbital_labels)[np.ix_(in_uc_indices)]
+            )
 
             for label, count_initial in orbital_counts_initial.items():
                 count_new = orbital_counts_new.get(label, 0)
