@@ -16,11 +16,11 @@ KWARGS = [
     dict(),
     dict(pos=None, dim=3),
     dict(uc=3 * np.eye(3)),
-    dict(pos=np.zeros((2, 3)), uc=np.eye(3))
+    dict(pos=np.zeros((2, 3)), uc=np.eye(3)),
 ]
 
 
-@pytest.mark.parametrize('kwargs', KWARGS)
+@pytest.mark.parametrize("kwargs", KWARGS)
 def test_hdf5_consistency_file(get_model, models_equal, kwargs):
     """
     Test that a tight-binding model remains the same after saving to
@@ -33,7 +33,7 @@ def test_hdf5_consistency_file(get_model, models_equal, kwargs):
     models_equal(model1, model2)
 
 
-@pytest.mark.parametrize('kwargs', KWARGS)
+@pytest.mark.parametrize("kwargs", KWARGS)
 def test_hdf5_consistency_freefunc(get_model, models_equal, kwargs):
     """
     Test that a tight-binding model remains the same after saving to
@@ -46,13 +46,13 @@ def test_hdf5_consistency_freefunc(get_model, models_equal, kwargs):
     models_equal(model1, model2)
 
 
-@pytest.fixture(params=['InAs_nosym.hdf5'])
+@pytest.fixture(params=["InAs_nosym.hdf5"])
 def hdf5_sample(sample, request):
     """Fixture which provides the filename of a HDF5 tight-binding model."""
     return sample(request.param)
 
 
-@pytest.fixture(params=['InAs_nosym_legacy.hdf5'])
+@pytest.fixture(params=["InAs_nosym_legacy.hdf5"])
 def hdf5_sample_legacy(sample, request):
     """
     Fixture which provides the filename of a HDF5 tight-binding model,
@@ -73,14 +73,18 @@ def test_hdf5_load_method(hdf5_sample):  # pylint: disable=redefined-outer-name
     assert isinstance(res, tbmodels.Model)
 
 
-def test_hdf5_load_freefunc_legacy(hdf5_sample_legacy):  # pylint: disable=redefined-outer-name
+def test_hdf5_load_freefunc_legacy(
+    hdf5_sample_legacy,
+):  # pylint: disable=redefined-outer-name
     """Test that a HDF5 file in legacy format can be loaded with the `io.load` function."""
     with pytest.deprecated_call():
         res = tbmodels.io.load(hdf5_sample_legacy)
     assert isinstance(res, tbmodels.Model)
 
 
-def test_hdf5_load_method_legacy(hdf5_sample_legacy):  # pylint: disable=redefined-outer-name
+def test_hdf5_load_method_legacy(
+    hdf5_sample_legacy,
+):  # pylint: disable=redefined-outer-name
     """Test that a HDF5 file in legacy format can be loaded with the Model method."""
     with pytest.deprecated_call():
         res = tbmodels.Model.from_hdf5_file(hdf5_sample_legacy)
@@ -89,7 +93,9 @@ def test_hdf5_load_method_legacy(hdf5_sample_legacy):  # pylint: disable=redefin
 
 def test_hdf5_kdotp(kdotp_models_equal):
     """Test that k.p models can be saved / loaded to HDF5."""
-    kp_model = tbmodels.kdotp.KdotpModel({(1, 0): [[0.1, 0.2j], [-0.2j, 0.3]], (0, 0): np.eye(2)})
+    kp_model = tbmodels.kdotp.KdotpModel(
+        {(1, 0): [[0.1, 0.2j], [-0.2j, 0.3]], (0, 0): np.eye(2)}
+    )
     with tempfile.NamedTemporaryFile() as tmpf:
         tbmodels.io.save(kp_model, tmpf.name)
         model2 = tbmodels.io.load(tmpf.name)
@@ -98,7 +104,7 @@ def test_hdf5_kdotp(kdotp_models_equal):
 
 def test_generic_legacy_object(sample):
     """Test that a generic object in legacy format can be loaded."""
-    filename = sample('legacy_general_object.hdf5')
+    filename = sample("legacy_general_object.hdf5")
     with pytest.deprecated_call():
         res = tbmodels.io.load(filename)
     assert res == [2, [3, 4], 2.3]

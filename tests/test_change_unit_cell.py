@@ -12,15 +12,17 @@ from parameters import T_VALUES
 # pylint: disable=invalid-name
 
 
-@pytest.mark.parametrize('t_values', T_VALUES)
-@pytest.mark.parametrize('offset', [(0.2, 1.2, 0.9), (-0.2, 0.912, 0.)])
-@pytest.mark.parametrize('cartesian', [True, False])
+@pytest.mark.parametrize("t_values", T_VALUES)
+@pytest.mark.parametrize("offset", [(0.2, 1.2, 0.9), (-0.2, 0.912, 0.0)])
+@pytest.mark.parametrize("cartesian", [True, False])
 def test_shift_twice(get_model, t_values, sparse, offset, cartesian, models_close):
     """
     Check that shifting a model twice in opposite direction gives back
     the original model.
     """
-    model = get_model(*t_values, sparse=sparse, uc=[[0.1, 1., 0.], [2., 0., 0.], [0., 0., 3.]])
+    model = get_model(
+        *t_values, sparse=sparse, uc=[[0.1, 1.0, 0.0], [2.0, 0.0, 0.0], [0.0, 0.0, 3.0]]
+    )
     model_shifted = model.change_unit_cell(offset=offset, cartesian=cartesian)
     model_shifted_twice = model_shifted.change_unit_cell(
         offset=[-x for x in offset], cartesian=cartesian
@@ -28,8 +30,10 @@ def test_shift_twice(get_model, t_values, sparse, offset, cartesian, models_clos
     assert models_close(model, model_shifted_twice)
 
 
-@pytest.mark.parametrize('uc', [((1.1, 0.3, 0.), (0.4, 1.5, 0.1), (-0.1, 0., 3.)), None])
-@pytest.mark.parametrize('offset', [(1, 0, -1), (2, 3, 0)])
+@pytest.mark.parametrize(
+    "uc", [((1.1, 0.3, 0.0), (0.4, 1.5, 0.1), (-0.1, 0.0, 3.0)), None]
+)
+@pytest.mark.parametrize("offset", [(1, 0, -1), (2, 3, 0)])
 def test_lattice_shift_reduced(get_model, sparse, offset, uc, models_equal):
     """
     Check that shifting by a lattice vector produces the original
@@ -41,9 +45,13 @@ def test_lattice_shift_reduced(get_model, sparse, offset, uc, models_equal):
 
 
 @pytest.mark.parametrize(
-    'uc, offsets',
-    [([[1.1, 0.3, 0.], [0.4, 1.5, 0.1], [-0.1, 0., 3.]], [(1.1, 0.3, 0), [1.5, 1.8, 0.1],
-                                                          (0.1, 0, -3)])]
+    "uc, offsets",
+    [
+        (
+            [[1.1, 0.3, 0.0], [0.4, 1.5, 0.1], [-0.1, 0.0, 3.0]],
+            [(1.1, 0.3, 0), [1.5, 1.8, 0.1], (0.1, 0, -3)],
+        )
+    ],
 )
 def test_lattice_shift_cartesian(get_model, sparse, uc, offsets, models_close):
     """
@@ -61,9 +69,12 @@ def test_lattice_shift_cartesian(get_model, sparse, uc, offsets, models_close):
 
 
 @pytest.mark.parametrize(
-    'uc',
-    ([[1, 2, 0], [1, 1, 0], [0, 0, 1]], [[2, 0, 0], [0, 1, 0], [0, 0, 1]], [[1, 0, 0], [0, 1.5, 0],
-                                                                            [0, 0, 1]])
+    "uc",
+    (
+        [[1, 2, 0], [1, 1, 0], [0, 0, 1]],
+        [[2, 0, 0], [0, 1, 0], [0, 0, 1]],
+        [[1, 0, 0], [0, 1.5, 0], [0, 0, 1]],
+    ),
 )
 def test_invalid_uc_raises_reduced(get_model, uc, sparse):
     """
@@ -76,14 +87,16 @@ def test_invalid_uc_raises_reduced(get_model, uc, sparse):
 
 
 @pytest.mark.parametrize(
-    'uc', ([[1, 2, 0], [0, 1, 0], [0, 0, 6]], [[1, 2, 0], [0, 1.5, 0], [0, 0, 3]])
+    "uc", ([[1, 2, 0], [0, 1, 0], [0, 0, 6]], [[1, 2, 0], [0, 1.5, 0], [0, 0, 3]])
 )
 def test_invalid_uc_raises_cartesian(get_model, uc, sparse):
     """
     Test that specifying an invalid new unit cell in cartesian coordinates
     raises an error.
     """
-    model = get_model(t1=0.1, t2=0.7, sparse=sparse, uc=[[1, 2, 0], [0, 1, 0], [0, 0, 3]])
+    model = get_model(
+        t1=0.1, t2=0.7, sparse=sparse, uc=[[1, 2, 0], [0, 1, 0], [0, 0, 3]]
+    )
     with pytest.raises(ValueError):
         model.change_unit_cell(uc=uc, cartesian=True)
 
@@ -111,12 +124,24 @@ def test_change_uc_without_uc_cartesian_raises(get_model):
 
 
 @pytest.mark.parametrize(
-    'uc_original, uc_changed, offset',
-    [([[1.2, 0.1, 0.], [0, 2, 0], [1, 0, 3]], [[1.2, 2.1, 0.], [-1, 2, -3], [1, 0, 3]], (0, 0, 0)),
-     ([[1.2, 0.1, 0.], [0, 2, 0], [1, 0, 3]], [[1.2, 2.1, 0.], [-1, 2, -3], [1, 0, 3]],
-      (0.5, -0.1, 10.2)), ([[1.2, 0.1], [0, 2]], [[1.2, 2.1], [0, 2]], (0.2, -1.5))]
+    "uc_original, uc_changed, offset",
+    [
+        (
+            [[1.2, 0.1, 0.0], [0, 2, 0], [1, 0, 3]],
+            [[1.2, 2.1, 0.0], [-1, 2, -3], [1, 0, 3]],
+            (0, 0, 0),
+        ),
+        (
+            [[1.2, 0.1, 0.0], [0, 2, 0], [1, 0, 3]],
+            [[1.2, 2.1, 0.0], [-1, 2, -3], [1, 0, 3]],
+            (0.5, -0.1, 10.2),
+        ),
+        ([[1.2, 0.1], [0, 2]], [[1.2, 2.1], [0, 2]], (0.2, -1.5)),
+    ],
 )
-def test_revert_cartesian_uc_change(get_model, models_close, uc_original, uc_changed, offset):
+def test_revert_cartesian_uc_change(
+    get_model, models_close, uc_original, uc_changed, offset
+):
     """
     Test that reverting a cartesian unit cell change produces the original model.
     """
@@ -125,7 +150,9 @@ def test_revert_cartesian_uc_change(get_model, models_close, uc_original, uc_cha
     else:
         revert_offset = -np.array(offset)
     dim = len(offset)
-    model = get_model(t1=0.2, t2=0.3, pos=[[0.1] * dim, [0.7] * dim], uc=uc_original, dim=dim)
+    model = get_model(
+        t1=0.2, t2=0.3, pos=[[0.1] * dim, [0.7] * dim], uc=uc_original, dim=dim
+    )
     model_changed = model.change_unit_cell(uc=uc_changed, cartesian=True, offset=offset)
     model_change_reverted = model_changed.change_unit_cell(
         uc=uc_original, cartesian=True, offset=revert_offset
@@ -163,5 +190,6 @@ def test_equivalent_uc_shape(get_model, models_close):
     assert models_close(model2, model1.change_unit_cell(uc=uc2, cartesian=True))
     assert models_close(model2, model1.change_unit_cell(uc=uc2, cartesian=False))
     assert models_close(
-        model1, model2.change_unit_cell(uc=[[1, 0, 0], [-1, 1, 0], [0, 0, 1]], cartesian=False)
+        model1,
+        model2.change_unit_cell(uc=[[1, 0, 0], [-1, 1, 0], [0, 0, 1]], cartesian=False),
     )

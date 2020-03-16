@@ -9,7 +9,7 @@ from enum import Enum
 
 import click
 
-__all__ = ('TbmodelsException', 'ExceptionMarker', 'ParseExceptionMarker')
+__all__ = ("TbmodelsException", "ExceptionMarker", "ParseExceptionMarker")
 
 
 class ExceptionMarker(Enum):
@@ -29,8 +29,9 @@ class ParseExceptionMarker(ExceptionMarker):
     Exception markers for errors which can occur while parsing a
     tight-binding model.
     """
-    INCOMPLETE_WSVEC_FILE = 'The seedname_wsvec.dat file is empty or incomplete.'
-    AMBIGUOUS_NEAREST_ATOM_POSITIONS = 'The nearest atom to use for position parsing is ambiguous.'  # pylint: disable=invalid-name
+
+    INCOMPLETE_WSVEC_FILE = "The seedname_wsvec.dat file is empty or incomplete."
+    AMBIGUOUS_NEAREST_ATOM_POSITIONS = "The nearest atom to use for position parsing is ambiguous."  # pylint: disable=invalid-name
 
 
 class TbmodelsException(click.ClickException):
@@ -52,4 +53,4 @@ class TbmodelsException(click.ClickException):
         self.exception_marker = exception_marker
 
     def format_message(self):
-        return f'[{self.exception_marker.name}] {super().format_message()}'
+        return f"[{self.exception_marker.name}] {super().format_message()}"

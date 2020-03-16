@@ -26,46 +26,57 @@ def spin_reps(prep):
     """
     # general representation of the D1/2 rotation about the axis (l,m,n) around the
     # angle phi
-    D12 = lambda l, m, n, phi: np.array([[
-        np.cos(phi / 2.) - 1j * n * np.sin(phi / 2.), (-1j * l - m) * np.sin(phi / 2.)
-    ], [(-1j * l + m) * np.sin(phi / 2.),
-        np.cos(phi / 2.) + 1j * n * np.sin(phi / 2.)]])
+    D12 = lambda l, m, n, phi: np.array(
+        [
+            [
+                np.cos(phi / 2.0) - 1j * n * np.sin(phi / 2.0),
+                (-1j * l - m) * np.sin(phi / 2.0),
+            ],
+            [
+                (-1j * l + m) * np.sin(phi / 2.0),
+                np.cos(phi / 2.0) + 1j * n * np.sin(phi / 2.0),
+            ],
+        ]
+    )
 
     n = np.zeros(3)
     tr = np.trace(prep)
     det = np.round(np.linalg.det(prep), 5)
-    if det == 1.:  # rotations
-        theta = np.arccos(0.5 * (tr - 1.))
+    if det == 1.0:  # rotations
+        theta = np.arccos(0.5 * (tr - 1.0))
         if theta != 0:
             n[0] = prep[2, 1] - prep[1, 2]
             n[1] = prep[0, 2] - prep[2, 0]
             n[2] = prep[1, 0] - prep[0, 1]
-            if np.round(np.linalg.norm(n), 5) == 0.:  # theta = pi, that is C2 rotations
+            if (
+                np.round(np.linalg.norm(n), 5) == 0.0
+            ):  # theta = pi, that is C2 rotations
                 e, v = la.eig(prep)
-                n = v[:, list(np.round(e, 10)).index(1.)]
+                n = v[:, list(np.round(e, 10)).index(1.0)]
                 spin = np.round(D12(n[0], n[1], n[2], np.pi), 15)
             else:
                 n /= np.linalg.norm(n)
                 spin = np.round(D12(n[0], n[1], n[2], theta), 15)
         else:  # case of unity
             spin = D12(0, 0, 0, 0)
-    elif det == -1.:  # improper rotations and reflections
-        theta = np.arccos(0.5 * (tr + 1.))
+    elif det == -1.0:  # improper rotations and reflections
+        theta = np.arccos(0.5 * (tr + 1.0))
         if np.round(theta, 5) != np.round(np.pi, 5):
             n[0] = prep[2, 1] - prep[1, 2]
             n[1] = prep[0, 2] - prep[2, 0]
             n[2] = prep[1, 0] - prep[0, 1]
-            if np.round(np.linalg.norm(n), 5) == 0.:  # theta = 0 (reflection)
+            if np.round(np.linalg.norm(n), 5) == 0.0:  # theta = 0 (reflection)
                 e, v = la.eig(prep)
                 # normal vector is eigenvector to eigenvalue -1
-                n = v[:, list(np.round(e, 10)).index(-1.)]
+                n = v[:, list(np.round(e, 10)).index(-1.0)]
                 # spin is a pseudovector!
                 spin = np.round(D12(n[0], n[1], n[2], np.pi), 15)
             else:
                 n /= np.linalg.norm(n)
                 # rotation followed by reflection:
                 spin = np.round(
-                    np.dot(D12(n[0], n[1], n[2], np.pi), D12(n[0], n[1], n[2], theta)), 15
+                    np.dot(D12(n[0], n[1], n[2], np.pi), D12(n[0], n[1], n[2], theta)),
+                    15,
                 )
         else:  # case of inversion (does not do anything to spin)
             spin = D12(0, 0, 0, 0)
@@ -79,8 +90,8 @@ def compare_bands_plot(model1, model2, structure):
     for i in range(len(labels) - 1):
         if labels[i] and labels[i + 1]:
             if labels[i] != labels[i + 1]:
-                labels[i] = labels[i] + ' | ' + labels[i + 1]
-            labels[i + 1] = ''
+                labels[i] = labels[i] + " | " + labels[i + 1]
+            labels[i + 1] = ""
 
     # E-fermi is just an approximation
     efermi = model1.eigenval([0, 0, 0])[model1.occ]
@@ -93,36 +104,38 @@ def compare_bands_plot(model1, model2, structure):
     for i, l in enumerate(labels):
         if l:
             labels_idx.append(i)
-            labels_clean.append('$' + l + '$')
+            labels_clean.append("$" + l + "$")
     for i in labels_idx[1:-1]:
-        plt.axvline(i, color='b')
-    plt.plot(range(len(kpts)), E1 - efermi, 'k')
-    plt.plot(range(len(kpts)), E2 - efermi, 'r', lw=0.5)
+        plt.axvline(i, color="b")
+    plt.plot(range(len(kpts)), E1 - efermi, "k")
+    plt.plot(range(len(kpts)), E2 - efermi, "r", lw=0.5)
     plt.xticks(labels_idx, labels_clean)
     plt.xlim([0, len(kpts) - 1])
     plt.ylim([-6, 6])
-    plt.savefig('results/compare_bands.pdf', bbox_inches='tight')
+    plt.savefig("results/compare_bands.pdf", bbox_inches="tight")
 
 
-if __name__ == '__main__':
-    model_nosym = tb.Model.from_hdf5_file('data/model_nosym.hdf5')
-    reference_model = tb.Model.from_hdf5_file('data/reference_model.hdf5')
+if __name__ == "__main__":
+    model_nosym = tb.Model.from_hdf5_file("data/model_nosym.hdf5")
+    reference_model = tb.Model.from_hdf5_file("data/reference_model.hdf5")
 
     # change the order of the orbitals from (In: s, py, pz, px; As: py, pz, px) * 2
     # to (In: s, px, py, pz; As: s, px, py, pz) * 2
-    model_nosym = model_nosym.slice_orbitals([0, 2, 3, 1, 5, 6, 4, 7, 9, 10, 8, 12, 13, 11])
+    model_nosym = model_nosym.slice_orbitals(
+        [0, 2, 3, 1, 5, 6, 4, 7, 9, 10, 8, 12, 13, 11]
+    )
 
     # set up symmetry operations
     time_reversal = SymmetryOperation(
         rotation_matrix=np.eye(3),
         repr_matrix=np.kron([[0, -1j], [1j, 0]], np.eye(7)),
-        repr_has_cc=True
+        repr_has_cc=True,
     )
 
     structure = mg.Structure(
         lattice=model_nosym.uc,
-        species=['In', 'As'],
-        coords=np.array([[0, 0, 0], [0.25, 0.25, 0.25]])
+        species=["In", "As"],
+        coords=np.array([[0, 0, 0], [0.25, 0.25, 0.25]]),
     )
 
     # get real-space representations
@@ -139,7 +152,7 @@ if __name__ == '__main__':
         tauc = symops_cart[n].translation_vector
         prep = C
         spinrep = spin_reps(C)
-        R = np.kron(spinrep, la.block_diag(1., prep, prep))
+        R = np.kron(spinrep, la.block_diag(1.0, prep, prep))
         reps.append(R)
 
     # set up the space group symmetries
@@ -148,14 +161,15 @@ if __name__ == '__main__':
             # r-space and k-space matrices are related by transposing and inverting
             rotation_matrix=rot,
             repr_matrix=repr_mat,
-            repr_has_cc=False
-        ) for rot, repr_mat in zip(rots, reps)
+            repr_has_cc=False,
+        )
+        for rot, repr_mat in zip(rots, reps)
     ]
 
-    os.makedirs('results', exist_ok=True)
+    os.makedirs("results", exist_ok=True)
     model_tr = model_nosym.symmetrize([time_reversal])
     model = model_tr.symmetrize(symmetries, full_group=True)
-    model.to_hdf5_file('results/model.hdf5')
+    model.to_hdf5_file("results/model.hdf5")
 
     compare_bands_plot(model_nosym, model, structure)
     for R in set(model.hop.keys()) | set(reference_model.hop.keys()):
@@ -169,8 +183,8 @@ if __name__ == '__main__':
         # when complex conjugation is present, r-space matrix (R) and k-space matrix (K)
         # are related by K = -(R.T)^{-1}
         # -> K^{-1} = -R.T
-        model.hamilton(-time_reversal.rotation_matrix.T @ k, convention=1).conjugate() @
-        time_reversal.repr.matrix.conjugate().T
+        model.hamilton(-time_reversal.rotation_matrix.T @ k, convention=1).conjugate()
+        @ time_reversal.repr.matrix.conjugate().T,
     ).all()
 
     for sym in symmetries:
@@ -179,6 +193,6 @@ if __name__ == '__main__':
             sym.repr.matrix @
             # k-space and r-space matrices are related by transposing and inverting
             # -> k-matrix^{-1} == r-matrix.T
-            model.hamilton(sym.rotation_matrix.T @ k, convention=1) @
-            sym.repr.matrix.conjugate().T
+            model.hamilton(sym.rotation_matrix.T @ k, convention=1)
+            @ sym.repr.matrix.conjugate().T,
         ).all()

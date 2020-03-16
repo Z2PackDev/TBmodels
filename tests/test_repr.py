@@ -16,7 +16,7 @@ from tbmodels._sparse_matrix import csr  # pylint: disable=unused-import
 from parameters import T_VALUES
 
 
-@pytest.mark.parametrize('t', T_VALUES)
+@pytest.mark.parametrize("t", T_VALUES)
 def test_repr_reload(t, get_model, models_equal):
     """Check that the repr() of a Model can be evaluated to get the same model."""
     model1 = get_model(*t)

@@ -7,8 +7,8 @@
 
 import tbmodels as tb
 
-#~ model_1 = tb.Model(on_site=[0, -1, 1], hop={(0, 0, 0): [[0, 0.2, 0], [0.2, 0, 0], [0, 0, 0]]}, pos=[[0., 0.1, 0.2], [0.5, 0.5, 0.5], [0., 0.1, 0.2]], uc=[[1, 1, 0], [0, 1, 0], [0, 0, 0.5]])
-#~ model_2 = tb.Model(on_site=[-1, 1], hop={(0, 0, 0): [[0, 0.2], [0.2, 0]]}, pos=[[0., 0.1, 0.2], [0., 0.1, 0.2]])
+# ~ model_1 = tb.Model(on_site=[0, -1, 1], hop={(0, 0, 0): [[0, 0.2, 0], [0.2, 0, 0], [0, 0, 0]]}, pos=[[0., 0.1, 0.2], [0.5, 0.5, 0.5], [0., 0.1, 0.2]], uc=[[1, 1, 0], [0, 1, 0], [0, 0, 0.5]])
+# ~ model_2 = tb.Model(on_site=[-1, 1], hop={(0, 0, 0): [[0, 0.2], [0.2, 0]]}, pos=[[0., 0.1, 0.2], [0., 0.1, 0.2]])
 
-#~ res1 = model_1.to_kwant_lattice()
-#~ res2 = model_2.to_kwant_lattice()
+# ~ res1 = model_1.to_kwant_lattice()
+# ~ res2 = model_2.to_kwant_lattice()

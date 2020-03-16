@@ -16,7 +16,7 @@ from fsc.hdf5_io import subscribe_hdf5, SimpleHDF5Mapping
 
 
 @export
-@subscribe_hdf5('tbmodels.kdotp_model', check_on_load=False)
+@subscribe_hdf5("tbmodels.kdotp_model", check_on_load=False)
 class KdotpModel(SimpleHDF5Mapping):
     """
     A class describing a k.p model.
@@ -32,12 +32,17 @@ class KdotpModel(SimpleHDF5Mapping):
             (1, 0, 2): [[1, 0], [0, -1]]
             describes k_x * k_z**2 * sigma_z
     """
-    HDF5_ATTRIBUTES = ['taylor_coefficients']
 
-    def __init__(self, taylor_coefficients: ty.Mapping[ty.Tuple[int, ...], ty.Any]) -> None:
+    HDF5_ATTRIBUTES = ["taylor_coefficients"]
+
+    def __init__(
+        self, taylor_coefficients: ty.Mapping[ty.Tuple[int, ...], ty.Any]
+    ) -> None:
         for mat in taylor_coefficients.values():
             if not np.allclose(mat, np.array(mat).T.conj()):
-                raise ValueError('The provided Taylor coefficient {} is not hermitian'.format(mat))
+                raise ValueError(
+                    "The provided Taylor coefficient {} is not hermitian".format(mat)
+                )
         self.taylor_coefficients = {
             tuple(key): np.array(mat, dtype=complex)
             for key, mat in taylor_coefficients.items()
@@ -65,7 +70,8 @@ class KdotpModel(SimpleHDF5Mapping):
             single_point = False
 
         ham: np.ndarray = sum(
-            np.prod(k_array**k_powers, axis=-1).reshape(-1, 1, 1) * mat[np.newaxis, :, :]
+            np.prod(k_array ** k_powers, axis=-1).reshape(-1, 1, 1)
+            * mat[np.newaxis, :, :]
             for k_powers, mat in self.taylor_coefficients.items()
         )
         if single_point:

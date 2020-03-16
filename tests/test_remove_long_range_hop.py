@@ -105,7 +105,10 @@ def test_model_skewed_uc_and_pos(get_model):
     unit cell and positions works as expected.
     """
     model = get_model(
-        t1=1, t2=2, uc=np.array([[4, 0, 0], [4, 4, 0], [0, 0, 1]]), pos=[[0, 0, 0], [0.5, 0.25, 0]]
+        t1=1,
+        t2=2,
+        uc=np.array([[4, 0, 0], [4, 4, 0], [0, 0, 1]]),
+        pos=[[0, 0, 0], [0.5, 0.25, 0]],
     )
 
     # baseline -- check the initial state
