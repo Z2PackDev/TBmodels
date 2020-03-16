@@ -78,12 +78,12 @@ def test_no_dim(get_model):
 
 def test_pos_outside_uc(get_model, models_equal):
     """Check that positions outside the UC are mapped back inside."""
-    model1 = get_model(0.1, 0.2, pos=((0., 0., 0.), (-0.5, -0.5, 0.)))
+    model1 = get_model(0.1, 0.2, pos=((0.0, 0.0, 0.0), (-0.5, -0.5, 0.0)))
     model2 = get_model(0.1, 0.2)
     models_equal(model1, model2)
 
 
-@pytest.mark.parametrize('sparse', [True, False])
+@pytest.mark.parametrize("sparse", [True, False])
 def test_from_hop_list(get_model, models_equal, sparse):
     """
     Check the 'from_hop_list' constructor.
@@ -102,14 +102,14 @@ def test_from_hop_list(get_model, models_equal, sparse):
         contains_cc=False,
         on_site=(1, -1),
         occ=1,
-        pos=((0., ) * 3, (0.5, 0.5, 0.)),
-        sparse=sparse
+        pos=((0.0,) * 3, (0.5, 0.5, 0.0)),
+        sparse=sparse,
     )
     model2 = get_model(t1, t2, sparse=sparse)
     models_equal(model1, model2)
 
 
-@pytest.mark.parametrize('sparse', [True, False])
+@pytest.mark.parametrize("sparse", [True, False])
 def test_from_hop_list_with_cc(get_model, models_close, sparse):
     """
     Check the 'from_hop_list' constructor, where complex conjugate terms
@@ -134,15 +134,17 @@ def test_from_hop_list_with_cc(get_model, models_close, sparse):
         contains_cc=True,
         on_site=(1, -1),
         occ=1,
-        pos=((0., ) * 3, (0.5, 0.5, 0.)),
-        sparse=sparse
+        pos=((0.0,) * 3, (0.5, 0.5, 0.0)),
+        sparse=sparse,
     )
     model2 = get_model(t1, t2, sparse=sparse)
     models_close(model1, model2)
 
 
-@pytest.mark.parametrize('sparse', [True, False])
-def test_pos_outside_uc_with_hoppings(get_model, models_equal, sparse):  # pylint: disable=invalid-name
+@pytest.mark.parametrize("sparse", [True, False])
+def test_pos_outside_uc_with_hoppings(
+    get_model, models_equal, sparse
+):  # pylint: disable=invalid-name
     """
     Check the 'from_hop_list' constructor with positions outside of the UC.
     """
@@ -160,8 +162,8 @@ def test_pos_outside_uc_with_hoppings(get_model, models_equal, sparse):  # pylin
         contains_cc=False,
         on_site=(1, -1),
         occ=1,
-        pos=((0., ) * 3, (-0.5, -0.5, 0.)),
-        sparse=sparse
+        pos=((0.0,) * 3, (-0.5, -0.5, 0.0)),
+        sparse=sparse,
     )
     model2 = get_model(t1, t2, sparse=sparse)
     models_equal(model1, model2)
@@ -192,9 +194,8 @@ def test_non_hermitian_2():
     """
     with pytest.raises(ValueError):
         tbmodels.Model(
-            size=2, hop={(0, 0, 0): np.eye(2),
-                         (1, 0, 0): np.eye(2),
-                         (-1, 0, 0): 2 * np.eye(2)}
+            size=2,
+            hop={(0, 0, 0): np.eye(2), (1, 0, 0): np.eye(2), (-1, 0, 0): 2 * np.eye(2)},
         )
 
 
@@ -206,10 +207,8 @@ def test_wrong_key_length():
     with pytest.raises(ValueError):
         tbmodels.Model(
             size=2,
-            hop={(0, 0, 0): np.eye(2),
-                 (1, 0, 0): np.eye(2),
-                 (-1, 0, 0, 0): np.eye(2)},
-            contains_cc=False
+            hop={(0, 0, 0): np.eye(2), (1, 0, 0): np.eye(2), (-1, 0, 0, 0): np.eye(2)},
+            contains_cc=False,
         )
 
 
@@ -221,11 +220,9 @@ def test_wrong_pos_length():
     with pytest.raises(ValueError):
         tbmodels.Model(
             size=2,
-            hop={(0, 0, 0): np.eye(2),
-                 (1, 0, 0): np.eye(2),
-                 (-1, 0, 0): np.eye(2)},
+            hop={(0, 0, 0): np.eye(2), (1, 0, 0): np.eye(2), (-1, 0, 0): np.eye(2)},
             contains_cc=False,
-            pos=((0., ) * 3, (0.5, ) * 3, (0.2, ) * 3)
+            pos=((0.0,) * 3, (0.5,) * 3, (0.2,) * 3),
         )
 
 
@@ -237,11 +234,9 @@ def test_wrong_pos_dim():
     with pytest.raises(ValueError):
         tbmodels.Model(
             size=2,
-            hop={(0, 0, 0): np.eye(2),
-                 (1, 0, 0): np.eye(2),
-                 (-1, 0, 0): np.eye(2)},
+            hop={(0, 0, 0): np.eye(2), (1, 0, 0): np.eye(2), (-1, 0, 0): np.eye(2)},
             contains_cc=False,
-            pos=((0., ) * 3, (0.5, ) * 4)
+            pos=((0.0,) * 3, (0.5,) * 4),
         )
 
 
@@ -252,12 +247,10 @@ def test_wrong_uc_shape():
     with pytest.raises(ValueError):
         tbmodels.Model(
             size=2,
-            hop={(0, 0, 0): np.eye(2),
-                 (1, 0, 0): np.eye(2),
-                 (-1, 0, 0): np.eye(2)},
+            hop={(0, 0, 0): np.eye(2), (1, 0, 0): np.eye(2), (-1, 0, 0): np.eye(2)},
             contains_cc=False,
-            pos=((0., ) * 3, (0.5, ) * 3),
-            uc=np.array([[1, 2], [3, 4], [5, 6]])
+            pos=((0.0,) * 3, (0.5,) * 3),
+            uc=np.array([[1, 2], [3, 4], [5, 6]]),
         )
 
 

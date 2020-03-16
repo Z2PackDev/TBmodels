@@ -26,10 +26,10 @@ from parameters import T_VALUES, KPT
 
 def to_kwant_params(kval):
     """Helper function to turn a k-point value into a kwant params dict."""
-    return {key: 2 * np.pi * val for key, val in zip(['k_x', 'k_y', 'k_z'], kval)}
+    return {key: 2 * np.pi * val for key, val in zip(["k_x", "k_y", "k_z"], kval)}
 
 
-@pytest.mark.parametrize('t', T_VALUES)
+@pytest.mark.parametrize("t", T_VALUES)
 def test_simple(t, get_model):
     """
     Check converting a simple model to kwant. The models are checked for
@@ -39,7 +39,9 @@ def test_simple(t, get_model):
     model = get_model(*t)
 
     latt = model.to_kwant_lattice()
-    sym = kwant.TranslationalSymmetry(latt.vec((1, 0, 0)), latt.vec((0, 1, 0)), latt.vec((0, 0, 1)))  # pylint: disable=no-member
+    sym = kwant.TranslationalSymmetry(  # pylint: disable=no-member
+        latt.vec((1, 0, 0)), latt.vec((0, 1, 0)), latt.vec((0, 0, 1))
+    )
     sys = kwant.Builder(sym)  # pylint: disable=no-member
     sys[latt.shape(lambda p: True, (0, 0, 0))] = 0
     model.add_hoppings_kwant(sys)
@@ -50,11 +52,13 @@ def test_simple(t, get_model):
         np.testing.assert_allclose(
             model.eigenval(k),
             la.eigvalsh(sys.hamiltonian_submatrix(params=to_kwant_params(k))),
-            atol=1e-8
+            atol=1e-8,
         )
 
 
-@pytest.mark.parametrize('hr_name', ['hr_hamilton.dat', 'wannier90_hr.dat', 'wannier90_hr_v2.dat'])
+@pytest.mark.parametrize(
+    "hr_name", ["hr_hamilton.dat", "wannier90_hr.dat", "wannier90_hr_v2.dat"]
+)
 def test_realistic(hr_name, sample):
     """
     Check converting a realistic model to kwant. The models are checked for
@@ -65,7 +69,9 @@ def test_realistic(hr_name, sample):
     model = tbmodels.Model.from_wannier_files(hr_file=hr_file, occ=28)
 
     latt = model.to_kwant_lattice()
-    sym = kwant.TranslationalSymmetry(latt.vec((1, 0, 0)), latt.vec((0, 1, 0)), latt.vec((0, 0, 1)))  # pylint: disable=no-member
+    sym = kwant.TranslationalSymmetry(  # pylint: disable=no-member
+        latt.vec((1, 0, 0)), latt.vec((0, 1, 0)), latt.vec((0, 0, 1))
+    )
     sys = kwant.Builder(sym)  # pylint: disable=no-member
     sys[latt.shape(lambda p: True, (0, 0, 0))] = 0
     model.add_hoppings_kwant(sys)
@@ -77,10 +83,12 @@ def test_realistic(hr_name, sample):
         np.testing.assert_allclose(
             model.eigenval(k),
             la.eigvalsh(sys.hamiltonian_submatrix(params=to_kwant_params(k))),
-            atol=1e-8
+            atol=1e-8,
         )
         np.testing.assert_allclose(
-            model.hamilton(k), sys.hamiltonian_submatrix(params=to_kwant_params(k)), atol=1e-8
+            model.hamilton(k),
+            sys.hamiltonian_submatrix(params=to_kwant_params(k)),
+            atol=1e-8,
         )
 
 
@@ -89,7 +97,9 @@ def test_unequal_orbital_number():
     Check converting a simple model to kwant, where the two positions
     don't have an equal number of orbitals.
     """
-    model = tbmodels.Model(pos=[[0., 0.], [0.5, 0.5], [0.5, 0.5]], on_site=[1, 0.7, -1.2])
+    model = tbmodels.Model(
+        pos=[[0.0, 0.0], [0.5, 0.5], [0.5, 0.5]], on_site=[1, 0.7, -1.2]
+    )
     t1 = 0.1
     t2 = 0.15
     t3 = 0.4
@@ -103,7 +113,9 @@ def test_unequal_orbital_number():
         model.add_hop(-t2, 2, 2, R)
 
     latt = model.to_kwant_lattice()
-    sym = kwant.TranslationalSymmetry(latt.vec((1, 0)), latt.vec((0, 1)))  # pylint: disable=no-member
+    sym = kwant.TranslationalSymmetry(  # pylint: disable=no-member
+        latt.vec((1, 0)), latt.vec((0, 1))
+    )
     sys = kwant.Builder(sym)  # pylint: disable=no-member
     sys[latt.shape(lambda p: True, (0, 0))] = 0
     model.add_hoppings_kwant(sys)
@@ -114,5 +126,5 @@ def test_unequal_orbital_number():
         np.testing.assert_allclose(
             model.eigenval(k),
             la.eigvalsh(sys.hamiltonian_submatrix(params=to_kwant_params(k))),
-            atol=1e-8
+            atol=1e-8,
         )

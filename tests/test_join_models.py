@@ -13,7 +13,7 @@ import tbmodels
 @pytest.fixture
 def model_dense(sample):
     """Fixture for a dense tight-binding model."""
-    res = tbmodels.io.load(sample('InAs_nosym.hdf5'))
+    res = tbmodels.io.load(sample("InAs_nosym.hdf5"))
     res.set_sparse(False)
     return res
 
@@ -21,7 +21,7 @@ def model_dense(sample):
 @pytest.fixture
 def model_sparse(sample):
     """Fixture for a sparse tight-binding model."""
-    res = tbmodels.io.load(sample('InAs_nosym.hdf5'))
+    res = tbmodels.io.load(sample("InAs_nosym.hdf5"))
     res.set_sparse(True)
     return res
 
@@ -34,19 +34,23 @@ def model(model_dense, model_sparse, sparse):  # pylint: disable=redefined-outer
     return model_dense
 
 
-@pytest.mark.parametrize('num_models', range(1, 4))
+@pytest.mark.parametrize("num_models", range(1, 4))
 def test_join_models(model, num_models):  # pylint: disable=redefined-outer-name
     """Test joining equal models."""
     model_list = [model] * num_models
     joined_model = tbmodels.Model.join_models(*model_list)
 
-    for k in [[0., 0., 0.], [0.1231, 0.236, 0.84512]]:
-        assert np.allclose(sorted(list(model.eigenval(k)) * num_models), joined_model.eigenval(k))
+    for k in [[0.0, 0.0, 0.0], [0.1231, 0.236, 0.84512]]:
+        assert np.allclose(
+            sorted(list(model.eigenval(k)) * num_models), joined_model.eigenval(k)
+        )
 
 
-def test_join_mixed_sparsity(model_dense, model_sparse, models_close):  # pylint: disable=redefined-outer-name
+def test_join_mixed_sparsity(
+    model_dense, model_sparse, models_close
+):  # pylint: disable=redefined-outer-name
     """Test joining dense and sparse models."""
     assert models_close(
         tbmodels.Model.join_models(model_sparse, model_dense),
-        tbmodels.Model.join_models(model_dense, model_sparse)
+        tbmodels.Model.join_models(model_dense, model_sparse),
     )

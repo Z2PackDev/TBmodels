@@ -10,14 +10,14 @@ import pytest
 from parameters import T_VALUES, KPT
 
 
-@pytest.mark.parametrize('t1', T_VALUES)
-@pytest.mark.parametrize('k', KPT)
+@pytest.mark.parametrize("t1", T_VALUES)
+@pytest.mark.parametrize("k", KPT)
 def test_simple(t1, get_model, k, compare_data, models_equal, compare_isclose):
     """Regression test for a simple manually created tight-binding model."""
     model = get_model(*t1)
 
-    compare_isclose(model.hamilton(k), tag='hamilton')
-    compare_isclose(model.eigenval(k), tag='eigenval')
+    compare_isclose(model.hamilton(k), tag="hamilton")
+    compare_isclose(model.eigenval(k), tag="eigenval")
     compare_data(models_equal, model)
 
 

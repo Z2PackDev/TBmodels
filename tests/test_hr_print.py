@@ -14,14 +14,14 @@ import tbmodels
 from parameters import T_VALUES
 
 
-@pytest.mark.parametrize('t', T_VALUES)
+@pytest.mark.parametrize("t", T_VALUES)
 def test_hr_print(t, get_model, compare_equal):
     """Regression test for converting a model to *_hr.dat format."""
     model = get_model(*t)
     compare_equal(model.to_hr().splitlines()[1:])  # timestamp in first line isn't equal
 
 
-@pytest.mark.parametrize('hr_name', ['hr_hamilton.dat'])
+@pytest.mark.parametrize("hr_name", ["hr_hamilton.dat"])
 def test_consistency(hr_name, sample):
     """
     Check that the result of loading a *_hr.dat file and converting it
@@ -30,16 +30,17 @@ def test_consistency(hr_name, sample):
     """
     hr_file = sample(hr_name)
     model = tbmodels.Model.from_wannier_files(hr_file=hr_file, occ=28, sparse=True)
-    lines_new = model.to_hr().split('\n')
-    with open(hr_file, 'r') as f:
-        lines_old = [line.rstrip(' \r\n') for line in f.readlines()]
+    lines_new = model.to_hr().split("\n")
+    with open(hr_file, "r") as f:
+        lines_old = [line.rstrip(" \r\n") for line in f.readlines()]
     assert len(lines_new) == len(lines_old)
     for l_new, l_old in zip(lines_new[1:], lines_old[1:]):
-        assert l_new.replace('-0.00000000000000', ' 0.00000000000000'
-                             ) == l_old.replace('-0.00000000000000', ' 0.00000000000000')
+        assert l_new.replace("-0.00000000000000", " 0.00000000000000") == l_old.replace(
+            "-0.00000000000000", " 0.00000000000000"
+        )
 
 
-@pytest.mark.parametrize('hr_name', ['hr_hamilton.dat'])
+@pytest.mark.parametrize("hr_name", ["hr_hamilton.dat"])
 def test_consistency_file(hr_name, models_equal, sparse, sample):
     """
     Check that a model loaded directly from a *_hr.dat file is equal
@@ -53,7 +54,7 @@ def test_consistency_file(hr_name, models_equal, sparse, sample):
     models_equal(model1, model2)
 
 
-@pytest.mark.parametrize('hr_name', ['hr_hamilton.dat', 'hr_hamilton_full.dat'])
+@pytest.mark.parametrize("hr_name", ["hr_hamilton.dat", "hr_hamilton_full.dat"])
 def test_consistency_no_hcutoff(hr_name, sample):
     """
     Check that the result of loading a *_hr.dat file and converting it
@@ -62,14 +63,17 @@ def test_consistency_no_hcutoff(hr_name, sample):
     value).
     """
     hr_file = sample(hr_name)
-    model = tbmodels.Model.from_wannier_files(hr_file=hr_file, occ=28, h_cutoff=-1, sparse=True)
-    lines_new = model.to_hr().split('\n')
-    with open(hr_file, 'r') as f:
-        lines_old = [line.rstrip(' \r\n') for line in f.readlines()]
+    model = tbmodels.Model.from_wannier_files(
+        hr_file=hr_file, occ=28, h_cutoff=-1, sparse=True
+    )
+    lines_new = model.to_hr().split("\n")
+    with open(hr_file, "r") as f:
+        lines_old = [line.rstrip(" \r\n") for line in f.readlines()]
     assert len(lines_new) == len(lines_old)
     for l_new, l_old in zip(lines_new[1:], lines_old[1:]):
-        assert l_new.replace('-0.00000000000000', ' 0.00000000000000'
-                             ) == l_old.replace('-0.00000000000000', ' 0.00000000000000')
+        assert l_new.replace("-0.00000000000000", " 0.00000000000000") == l_old.replace(
+            "-0.00000000000000", " 0.00000000000000"
+        )
 
 
 def test_invalid_empty():
