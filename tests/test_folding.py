@@ -29,12 +29,13 @@ def test_fold_supercell_simple(
         # TODO: changing the 'offset_red' manually is a temporary fix:
         # to be removed when more complex orbital matching is implemented.
         offset_cart = supercell_model.uc.T @ (offset_red - 1e-12)
-        folded_model = supercell_model.fold_model(
-            new_unit_cell=model.uc,
-            unit_cell_offset=offset_cart,
-            orbital_labels=orbital_labels,
-            target_indices=[2 * i, 2 * i + 1],
-        )
+        with pytest.warns(UserWarning):
+            folded_model = supercell_model.fold_model(
+                new_unit_cell=model.uc,
+                unit_cell_offset=offset_cart,
+                orbital_labels=orbital_labels,
+                target_indices=[2 * i, 2 * i + 1],
+            )
         assert models_close(model, folded_model)
 
 
@@ -55,13 +56,14 @@ def test_fold_inexact_positions(get_model, models_close):
             continue
         delta = np.random.uniform(-0.01, 0.01, 3)
         supercell_model.pos[i] += delta
-    folded_model = supercell_model.fold_model(
-        new_unit_cell=model.uc,
-        unit_cell_offset=supercell_model.uc.T @ supercell_model.pos[4],
-        orbital_labels=orbital_labels,
-        position_tolerance=0.1,
-        check_cc=False,
-    )
+    with pytest.warns(UserWarning):
+        folded_model = supercell_model.fold_model(
+            new_unit_cell=model.uc,
+            unit_cell_offset=supercell_model.uc.T @ supercell_model.pos[4],
+            orbital_labels=orbital_labels,
+            position_tolerance=0.1,
+            check_cc=False,
+        )
     assert models_close(model, folded_model)
 
 
@@ -93,6 +95,7 @@ def test_consistency_checks_disabled(
         orbital_labels=["a", "b"],
         check_orbital_ratio=False,
         check_uc_volume=False,
+        unmatched_position_threshold=0.0,
     )
 
 
@@ -109,6 +112,42 @@ def test_orbital_number_consistency_check(
             new_unit_cell=model.uc, orbital_labels=["a", "b"], check_uc_volume=False
         )
     assert "individual orbital numbers" in str(excinfo.value)
+
+
+def test_unmatched_position_check(
+    get_model_pos_outside,
+):  # pylint: disable=redefined-outer-name
+    """
+    Test that the unmatched position check raises an error for
+    a model that has a position outside the unit cell.
+    """
+    model = get_model_pos_outside()
+    with pytest.raises(ValueError) as excinfo:
+        model.fold_model(
+            new_unit_cell=model.uc,
+            orbital_labels=["a", "b"],
+            check_orbital_ratio=False,
+            check_uc_volume=False,
+            unmatched_position_threshold=1.0,
+        )
+    assert "does not match any orbital in the new model" in str(excinfo.value)
+
+
+def test_unmatched_position_check_wrong_uc(get_model):  # pylint: disable=invalid-name
+    """
+    Test that the unmatched position check raises an error when folding
+    with a unit cell that does not match the current lattice.
+    """
+    model = get_model(t1=0.1, t2=0.6, uc=np.eye(3))
+    supercell_model = model.supercell(size=(2, 2, 2))
+    with pytest.raises(ValueError) as excinfo:
+        supercell_model.fold_model(
+            new_unit_cell=np.diag([1, 1, 1.2]),
+            unit_cell_offset=(0.1, 0.1, 0.1),
+            orbital_labels=["a", "b"] * 8,
+            check_uc_volume=False,
+        )
+    assert "does not match any orbital in the new model" in str(excinfo.value)
 
 
 def test_volume_consistency_check(
@@ -135,6 +174,7 @@ def test_fractional_occupation_consistency_check(
     the occupation number in a supercell model
     """
     model = get_model(0.1, 0.3, uc=np.eye(3))
+    model.pos += 0.01
     supercell_model = model.supercell(size=(2, 1, 1))
     supercell_model.occ += 1
     with pytest.raises(ValueError) as excinfo:
@@ -142,3 +182,18 @@ def test_fractional_occupation_consistency_check(
             new_unit_cell=model.uc, orbital_labels=["a", "b"] * 2
         )
     assert "fractional" in str(excinfo.value)
+
+
+def test_new_unit_cell_check(get_model):
+    """
+    Test the check that the new unit cell must lie within the current one.
+    """
+    model = get_model(0.1, 0.3, uc=np.diag([1, 2, 3]))
+    supercell_model = model.supercell(size=(1, 2, 1))
+    with pytest.raises(ValueError) as excinfo:
+        supercell_model.fold_model(
+            new_unit_cell=model.uc,
+            unit_cell_offset=(0.2, 0, 0),
+            orbital_labels=["a", "b"] * 2,
+        )
+    assert "new unit cell is not contained" in str(excinfo.value)

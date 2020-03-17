@@ -1698,6 +1698,7 @@ class Model(HDF5Enabled):
         new_unit_cell: ty.Sequence[ty.Sequence[float]],
         unit_cell_offset: ty.Sequence[float] = (0, 0, 0),
         position_tolerance: float = 1e-3,
+        unmatched_position_threshold: float = float("inf"),
         orbital_labels: ty.Sequence[ty.Hashable],
         target_indices: ty.Optional[ty.Sequence[int]] = None,
         check_cc: bool = True,
@@ -1725,6 +1726,11 @@ class Model(HDF5Enabled):
         position_tolerance :
             Tolerance used when determining if a position mapped into the
             new unit cell is the same as an existing orbital position.
+        unmatched_position_threshold :
+            Threshold above which orbital positions that do not have a
+            matching position in the new model are ignored. The
+            threshold is defined as cartesian distance from the new unit
+            cell origin.
         orbital_labels :
             A list of labels for the orbitals of the current model. This
             is needed to distinguish between orbitals of the same position
@@ -1761,13 +1767,53 @@ class Model(HDF5Enabled):
                 "Unit cell and positions must be specified for model folding."
             )
 
+        new_uc = np.array(new_unit_cell)
+        # Check that the new unit cell lies within the current one
+        new_uc_vertices = unit_cell_offset + np.array(
+            [
+                sum(mult * a_i for mult, a_i in zip(multipliers, new_uc))
+                for multipliers in itertools.product([0, 1], repeat=self.dim)
+            ]
+        )
+        new_uc_vertices_reduced = la.solve(self.uc.T, new_uc_vertices.T).T
+        eps = 1e-6
+        if not np.all(
+            np.logical_and(
+                new_uc_vertices_reduced >= -eps, new_uc_vertices_reduced <= 1 + eps
+            )
+        ):
+            raise ValueError(
+                "The new unit cell is not contained within the current one. The new "
+                "unit cell vertices in reduced coordinates are:\n"
+                f"{new_uc_vertices_reduced}."
+            )
+
         positions_cartesian = (self.uc.T @ self.pos.T).T
         pos_cartesian_relative = positions_cartesian - unit_cell_offset
-        new_uc = np.array(new_unit_cell)
         pos_reduced_new = la.solve(new_uc.T, pos_cartesian_relative.T).T
 
-        # TODO: Check that the new UC is inside the old one, or also check
-        # periodic images (w.r.t old UC) of the initial positions.
+        # Check and warn if positions are at the edge of the new unit cell.
+        at_uc_edge_indices = list(
+            np.argwhere(
+                np.all(
+                    np.logical_or(
+                        np.isclose(pos_reduced_new, 0, rtol=0),
+                        np.isclose(pos_reduced_new, 1, rtol=0),
+                    ),
+                    axis=-1,
+                )
+            ).flatten()
+        )
+        if at_uc_edge_indices:
+            warnings.warn(
+                f"The positions of the orbitals with indices {at_uc_edge_indices}, are "
+                "close to the border of the new unit cell (new reduced coordinates "
+                f" {pos_reduced_new[at_uc_edge_indices]}). This can lead to incorrect "
+                "classification of positions inside / outside the new unit cell, "
+                "which leads to an incorrect model.",
+                UserWarning,
+            )
+
         in_uc_indices = np.argwhere(
             np.all(np.logical_and(pos_reduced_new >= 0, pos_reduced_new < 1), axis=-1,)
         ).flatten()
@@ -1859,6 +1905,12 @@ class Model(HDF5Enabled):
             elif len(res_idx) > 1:
                 raise ValueError(f"More than one matching index found: {res_idx}.")
             else:
+                pos_dist = la.norm(new_uc.T @ pos_reduced)
+                if pos_dist < unmatched_position_threshold:
+                    raise ValueError(
+                        "The orbital at position (in new reduced coordinates) "
+                        f"{pos_reduced} does not match any orbital in the new model."
+                    )
                 return None, None
 
         new_size = len(in_uc_labels)

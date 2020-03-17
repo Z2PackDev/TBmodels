@@ -11,7 +11,8 @@ def test_shift_supercell(sample, models_close):
     then folding a supercell.
     """
     model = tbmodels.io.load(sample("InAs_nosym.hdf5"))
-    shift = model.uc[2] / 2 - 0.03
+    model.pos += 0.03  # make sure the positions are not at the UC border
+    shift = model.uc[2] / 2
 
     model_shifted = model.change_unit_cell(offset=shift, cartesian=True)
 
