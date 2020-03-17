@@ -1792,6 +1792,8 @@ class Model(HDF5Enabled):
         pos_cartesian_relative = positions_cartesian - unit_cell_offset
         pos_reduced_new = la.solve(new_uc.T, pos_cartesian_relative.T).T
 
+        # Check and warn if positions are at the edge of the new unit cell.
+
         in_uc_indices = np.argwhere(
             np.all(np.logical_and(pos_reduced_new >= 0, pos_reduced_new < 1), axis=-1,)
         ).flatten()
