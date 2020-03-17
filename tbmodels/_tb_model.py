@@ -665,24 +665,18 @@ class Model(HDF5Enabled):
 
             if wsvec_file is not None:
                 with open(wsvec_file, "r") as f:
-                    # wsvec_mapping is not a generator because it doesn't have
-                    # the same order as the hoppings in _hr.dat
-                    # This could still be done, but would be more complicated.
                     wsvec_generator = cls._async_parse(
                         cls._read_wsvec(f), chunksize=num_wann
                     )
 
                     def remap_hoppings(hop_entries):
                         for t, orbital_1, orbital_2, R in hop_entries:
-                            try:
-                                next(wsvec_generator)
-                            # Explicitly catching this because 'remap_hoppings'
-                            # is also a generator.
-                            except StopIteration as exc:
-                                raise TbmodelsException(
-                                    "The 'wsvec_generator' stopped prematurely.",
-                                    exception_marker=ParseExceptionMarker.INCOMPLETE_WSVEC_FILE,
-                                ) from exc
+                            # Step _async_parse to where it accepts
+                            # a new key.
+                            # The _async_parse does not raise StopIteration
+                            next(  # pylint: disable=stop-iteration-return
+                                wsvec_generator
+                            )
                             T_list = wsvec_generator.send(
                                 (orbital_1, orbital_2, tuple(R))
                             )
@@ -712,6 +706,9 @@ class Model(HDF5Enabled):
         will go through the `iterator` until that key is found. Pairs
         for which the key has not yet been requested are stored in a
         temporary dictionary.
+
+        Note that this generator never raises StopIteration, it can
+        only exit with KeyError.
         """
         mapping = dict()
         stopped = False
