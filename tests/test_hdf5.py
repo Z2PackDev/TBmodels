@@ -108,3 +108,15 @@ def test_generic_legacy_object(sample):
     with pytest.deprecated_call():
         res = tbmodels.io.load(filename)
     assert res == [2, [3, 4], 2.3]
+
+
+def test_invalid_hdf5_file(sample):
+    """
+    Check that trying to load a file with invalid structure raises the
+    expected error.
+    """
+
+    filename = sample("invalid_file_structure.hdf5")
+    with pytest.deprecated_call(), pytest.raises(ValueError) as excinfo:
+        tbmodels.io.load(filename)
+    assert "File structure not understood" in str(excinfo.value)
