@@ -1698,6 +1698,7 @@ class Model(HDF5Enabled):
         new_unit_cell: ty.Sequence[ty.Sequence[float]],
         unit_cell_offset: ty.Sequence[float] = (0, 0, 0),
         position_tolerance: float = 1e-3,
+        unmatched_position_threshold: float = float("inf"),
         orbital_labels: ty.Sequence[ty.Hashable],
         target_indices: ty.Optional[ty.Sequence[int]] = None,
         check_cc: bool = True,
@@ -1725,6 +1726,11 @@ class Model(HDF5Enabled):
         position_tolerance :
             Tolerance used when determining if a position mapped into the
             new unit cell is the same as an existing orbital position.
+        unmatched_position_threshold :
+            Threshold above which orbital positions that do not have a
+            matching position in the new model are ignored. The
+            threshold is defined as cartesian distance from the new unit
+            cell origin.
         orbital_labels :
             A list of labels for the orbitals of the current model. This
             is needed to distinguish between orbitals of the same position
@@ -1877,6 +1883,12 @@ class Model(HDF5Enabled):
             elif len(res_idx) > 1:
                 raise ValueError(f"More than one matching index found: {res_idx}.")
             else:
+                pos_dist = la.norm(new_uc.T @ pos_reduced)
+                if pos_dist < unmatched_position_threshold:
+                    raise ValueError(
+                        "The orbital at position (in new reduced coordinates) "
+                        f"{pos_reduced} does not match any orbital in the new model."
+                    )
                 return None, None
 
         new_size = len(in_uc_labels)

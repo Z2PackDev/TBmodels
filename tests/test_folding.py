@@ -93,6 +93,7 @@ def test_consistency_checks_disabled(
         orbital_labels=["a", "b"],
         check_orbital_ratio=False,
         check_uc_volume=False,
+        unmatched_position_threshold=0.0,
     )
 
 
@@ -109,6 +110,25 @@ def test_orbital_number_consistency_check(
             new_unit_cell=model.uc, orbital_labels=["a", "b"], check_uc_volume=False
         )
     assert "individual orbital numbers" in str(excinfo.value)
+
+
+def test_unmatched_position_check(
+    get_model_pos_outside,
+):  # pylint: disable=redefined-outer-name
+    """
+    Test that the orbital ratio check raises an error for a model
+    that has a position outside the unit cell.
+    """
+    model = get_model_pos_outside()
+    with pytest.raises(ValueError) as excinfo:
+        model.fold_model(
+            new_unit_cell=model.uc,
+            orbital_labels=["a", "b"],
+            check_orbital_ratio=False,
+            check_uc_volume=False,
+            unmatched_position_threshold=1.0,
+        )
+    assert "does not match any orbital in the new model" in str(excinfo.value)
 
 
 def test_volume_consistency_check(
