@@ -1761,13 +1761,31 @@ class Model(HDF5Enabled):
                 "Unit cell and positions must be specified for model folding."
             )
 
+        new_uc = np.array(new_unit_cell)
+        # Check that the new unit cell lies within the current one
+        new_uc_vertices = unit_cell_offset + np.array(
+            [
+                sum(mult * a_i for mult, a_i in zip(multipliers, new_uc))
+                for multipliers in itertools.product([0, 1], repeat=self.dim)
+            ]
+        )
+        new_uc_vertices_reduced = la.solve(self.uc.T, new_uc_vertices.T).T
+        eps = 1e-6
+        if not np.all(
+            np.logical_and(
+                new_uc_vertices_reduced >= -eps, new_uc_vertices_reduced <= 1 + eps
+            )
+        ):
+            raise ValueError(
+                "The new unit cell is not contained within the current one. The new "
+                "unit cell vertices in reduced coordinates are:\n"
+                f"{new_uc_vertices_reduced}."
+            )
+
         positions_cartesian = (self.uc.T @ self.pos.T).T
         pos_cartesian_relative = positions_cartesian - unit_cell_offset
-        new_uc = np.array(new_unit_cell)
         pos_reduced_new = la.solve(new_uc.T, pos_cartesian_relative.T).T
 
-        # TODO: Check that the new UC is inside the old one, or also check
-        # periodic images (w.r.t old UC) of the initial positions.
         in_uc_indices = np.argwhere(
             np.all(np.logical_and(pos_reduced_new >= 0, pos_reduced_new < 1), axis=-1,)
         ).flatten()

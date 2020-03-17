@@ -142,3 +142,18 @@ def test_fractional_occupation_consistency_check(
             new_unit_cell=model.uc, orbital_labels=["a", "b"] * 2
         )
     assert "fractional" in str(excinfo.value)
+
+
+def test_new_unit_cell_check(get_model):
+    """
+    Test the check that the new unit cell must lie within the current one.
+    """
+    model = get_model(0.1, 0.3, uc=np.diag([1, 2, 3]))
+    supercell_model = model.supercell(size=(1, 2, 1))
+    with pytest.raises(ValueError) as excinfo:
+        supercell_model.fold_model(
+            new_unit_cell=model.uc,
+            unit_cell_offset=(0.2, 0, 0),
+            orbital_labels=["a", "b"] * 2,
+        )
+    assert "new unit cell is not contained" in str(excinfo.value)
