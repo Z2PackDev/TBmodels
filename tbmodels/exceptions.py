@@ -9,7 +9,12 @@ from enum import Enum
 
 import click
 
-__all__ = ("TbmodelsException", "ExceptionMarker", "ParseExceptionMarker")
+__all__ = (
+    "TbmodelsException",
+    "ExceptionMarker",
+    "ParseExceptionMarker",
+    "SymmetrizeExceptionMarker",
+)
 
 
 class ExceptionMarker(Enum):
@@ -32,6 +37,15 @@ class ParseExceptionMarker(ExceptionMarker):
 
     INCOMPLETE_WSVEC_FILE = "The seedname_wsvec.dat file is empty or incomplete."
     AMBIGUOUS_NEAREST_ATOM_POSITIONS = "The nearest atom to use for position parsing is ambiguous."  # pylint: disable=invalid-name
+
+
+class SymmetrizeExceptionMarker(ExceptionMarker):
+    """
+    Exception markers for errors which can occur while symmetrizing a
+    tight-binding model.
+    """
+
+    INVALID_SYMMETRY_TYPE = "The type of the given symmetries object is incorrect."
 
 
 class TbmodelsException(click.ClickException):
