@@ -118,8 +118,8 @@ def test_unmatched_position_check(
     get_model_pos_outside,
 ):  # pylint: disable=redefined-outer-name
     """
-    Test that the orbital ratio check raises an error for a model
-    that has a position outside the unit cell.
+    Test that the unmatched position check raises an error for
+    a model that has a position outside the unit cell.
     """
     model = get_model_pos_outside()
     with pytest.raises(ValueError) as excinfo:
@@ -129,6 +129,23 @@ def test_unmatched_position_check(
             check_orbital_ratio=False,
             check_uc_volume=False,
             unmatched_position_threshold=1.0,
+        )
+    assert "does not match any orbital in the new model" in str(excinfo.value)
+
+
+def test_unmatched_position_check_wrong_uc(get_model):  # pylint: disable=invalid-name
+    """
+    Test that the unmatched position check raises an error when folding
+    with a unit cell that does not match the current lattice.
+    """
+    model = get_model(t1=0.1, t2=0.6, uc=np.eye(3))
+    supercell_model = model.supercell(size=(2, 2, 2))
+    with pytest.raises(ValueError) as excinfo:
+        supercell_model.fold_model(
+            new_unit_cell=np.diag([1, 1, 1.2]),
+            unit_cell_offset=(0.1, 0.1, 0.1),
+            orbital_labels=["a", "b"] * 8,
+            check_uc_volume=False,
         )
     assert "does not match any orbital in the new model" in str(excinfo.value)
 
