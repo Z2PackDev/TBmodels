@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """Tests for the method of removing long-range hopping terms."""
 
+import pytest
 import numpy as np
 
 
@@ -169,3 +170,25 @@ def _check_zero(model, R, expected_zero):
     expected positions.
     """
     assert np.all((np.array(model.hop[R]) == 0) == expected_zero), f"failed at R={R}"
+
+
+def test_no_uc(get_model):
+    """
+    Check that an error is raised if the unit cell is not given.
+    """
+    model = get_model(t1=0.1, t2=0.2)
+    assert model.uc is None
+    assert model.pos is not None
+    with pytest.raises(ValueError):
+        model.remove_long_range_hop(cutoff_distance_cartesian=1.0)
+
+
+def test_no_pos(get_model):
+    """
+    Check that an error is raised if the unit cell is not given.
+    """
+    model = get_model(t1=0.1, t2=0.2, uc=np.eye(3))
+    model.pos = None
+    assert model.uc is not None
+    with pytest.raises(ValueError):
+        model.remove_long_range_hop(cutoff_distance_cartesian=1.0)
