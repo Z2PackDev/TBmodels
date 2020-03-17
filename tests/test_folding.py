@@ -29,12 +29,13 @@ def test_fold_supercell_simple(
         # TODO: changing the 'offset_red' manually is a temporary fix:
         # to be removed when more complex orbital matching is implemented.
         offset_cart = supercell_model.uc.T @ (offset_red - 1e-12)
-        folded_model = supercell_model.fold_model(
-            new_unit_cell=model.uc,
-            unit_cell_offset=offset_cart,
-            orbital_labels=orbital_labels,
-            target_indices=[2 * i, 2 * i + 1],
-        )
+        with pytest.warns(UserWarning):
+            folded_model = supercell_model.fold_model(
+                new_unit_cell=model.uc,
+                unit_cell_offset=offset_cart,
+                orbital_labels=orbital_labels,
+                target_indices=[2 * i, 2 * i + 1],
+            )
         assert models_close(model, folded_model)
 
 
@@ -55,13 +56,14 @@ def test_fold_inexact_positions(get_model, models_close):
             continue
         delta = np.random.uniform(-0.01, 0.01, 3)
         supercell_model.pos[i] += delta
-    folded_model = supercell_model.fold_model(
-        new_unit_cell=model.uc,
-        unit_cell_offset=supercell_model.uc.T @ supercell_model.pos[4],
-        orbital_labels=orbital_labels,
-        position_tolerance=0.1,
-        check_cc=False,
-    )
+    with pytest.warns(UserWarning):
+        folded_model = supercell_model.fold_model(
+            new_unit_cell=model.uc,
+            unit_cell_offset=supercell_model.uc.T @ supercell_model.pos[4],
+            orbital_labels=orbital_labels,
+            position_tolerance=0.1,
+            check_cc=False,
+        )
     assert models_close(model, folded_model)
 
 
@@ -155,6 +157,7 @@ def test_fractional_occupation_consistency_check(
     the occupation number in a supercell model
     """
     model = get_model(0.1, 0.3, uc=np.eye(3))
+    model.pos += 0.01
     supercell_model = model.supercell(size=(2, 1, 1))
     supercell_model.occ += 1
     with pytest.raises(ValueError) as excinfo:

@@ -1793,6 +1793,26 @@ class Model(HDF5Enabled):
         pos_reduced_new = la.solve(new_uc.T, pos_cartesian_relative.T).T
 
         # Check and warn if positions are at the edge of the new unit cell.
+        at_uc_edge_indices = list(
+            np.argwhere(
+                np.all(
+                    np.logical_or(
+                        np.isclose(pos_reduced_new, 0, rtol=0),
+                        np.isclose(pos_reduced_new, 1, rtol=0),
+                    ),
+                    axis=-1,
+                )
+            ).flatten()
+        )
+        if at_uc_edge_indices:
+            warnings.warn(
+                f"The positions of the orbitals with indices {at_uc_edge_indices}, are "
+                "close to the border of the new unit cell (new reduced coordinates "
+                f" {pos_reduced_new[at_uc_edge_indices]}). This can lead to incorrect "
+                "classification of positions inside / outside the new unit cell, "
+                "which leads to an incorrect model.",
+                UserWarning,
+            )
 
         in_uc_indices = np.argwhere(
             np.all(np.logical_and(pos_reduced_new >= 0, pos_reduced_new < 1), axis=-1,)
