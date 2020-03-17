@@ -31,3 +31,13 @@ def test_parallel_hamilton(get_model, t_values, convention):
         model.hamilton(KPT, convention=convention),
         [model.hamilton(k, convention=convention) for k in KPT],
     )
+
+
+@pytest.mark.parametrize("convention", ["a", "1", None])
+def test_invalid_convention(get_model, convention):
+    """
+    Test that giving an invalid 'convention' raises an error.
+    """
+    model = get_model(t1=0, t2=0.1)
+    with pytest.raises(ValueError):
+        model.hamilton((0, 0, 0), convention=convention)

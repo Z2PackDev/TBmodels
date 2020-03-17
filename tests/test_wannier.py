@@ -11,6 +11,7 @@ import pytest
 import numpy as np
 
 import tbmodels
+from tbmodels.exceptions import TbmodelsException
 
 from parameters import KPT
 
@@ -254,3 +255,100 @@ def test_error(sample):
         tbmodels.Model.from_wannier_files(
             hr_file=sample("hr_hamilton.dat"), occ=28, pos=[[1.0, 1.0, 1.0]]
         )
+
+
+def test_win_and_uc(sample):
+    """Check that passing both the unit cell and win raises an error."""
+    with pytest.raises(ValueError) as excinfo:
+        tbmodels.Model.from_wannier_files(
+            hr_file=sample("silicon_hr.dat"),
+            win_file=sample("silicon.win"),
+            uc=np.eye(3),
+        )
+    assert "Ambiguous unit cell" in str(excinfo.value)
+
+
+def test_xyz_and_pos(sample):
+    """Check that passing both the positions and .xyz raises an error."""
+    with pytest.raises(ValueError) as excinfo:
+        tbmodels.Model.from_wannier_files(
+            hr_file=sample("silicon_hr.dat"),
+            win_file=sample("silicon.win"),
+            xyz_file=sample("silicon_centres.xyz"),
+            pos=[(0, 0, 0)] * 10,
+        )
+    assert "Ambiguous orbital positions" in str(excinfo.value)
+
+
+def test_invalid_distance_ratio_threshold(sample):  # pylint: disable=invalid-name
+    """
+    Check that passing an invalid 'distance_ratio_threshol' value raises
+    an error.
+    """
+    with pytest.raises(ValueError) as excinfo:
+        tbmodels.Model.from_wannier_files(
+            hr_file=sample("silicon_hr.dat"),
+            win_file=sample("silicon.win"),
+            xyz_file=sample("silicon_centres.xyz"),
+            pos_kind="nearest_atom",
+            distance_ratio_threshold=0.5,
+        )
+    assert "Invalid value for 'distance_ratio_threshold'" in str(excinfo.value)
+
+
+def test_invalid_pos_kind(sample):
+    """
+    Check that passing an invalid 'pos_kind' value raises an error.
+    """
+    with pytest.raises(ValueError) as excinfo:
+        tbmodels.Model.from_wannier_files(
+            hr_file=sample("silicon_hr.dat"),
+            win_file=sample("silicon.win"),
+            xyz_file=sample("silicon_centres.xyz"),
+            pos_kind="whatever",
+        )
+    assert "Invalid value 'whatever' for 'pos_kind'" in str(excinfo.value)
+
+
+def test_wsvec_blocks_missing(sample):
+    """
+    Check that a wsvec file with entire missing entries raises KeyError.
+
+    In this case, the individual blocks in the wsvec file are complete,
+    but entire blocks are missing.
+    """
+    with pytest.raises(KeyError):
+        tbmodels.Model.from_wannier_files(
+            hr_file=sample("bi_hr.dat"),
+            wsvec_file=sample("bi_wsvec_blocks_missing.dat"),
+            xyz_file=sample("bi_centres.xyz"),
+            win_file=sample("bi.win"),
+        )
+
+
+def test_wsvec_blocks_incomplete(sample):
+    """
+    Check that a wsvec file with incomplete blocks raises an error.
+    """
+    with pytest.raises(TbmodelsException) as excinfo:
+        tbmodels.Model.from_wannier_files(
+            hr_file=sample("bi_hr.dat"),
+            wsvec_file=sample("bi_wsvec_blocks_incomplete.dat"),
+            xyz_file=sample("bi_centres.xyz"),
+            win_file=sample("bi.win"),
+        )
+    assert "Incomplete wsvec iterator." in str(excinfo.value)
+
+
+def test_wsvec_empty(sample):
+    """
+    Check that an empty wsvec file raises an error.
+    """
+    with pytest.raises(TbmodelsException) as excinfo:
+        tbmodels.Model.from_wannier_files(
+            hr_file=sample("bi_hr.dat"),
+            wsvec_file=sample("bi_wsvec_empty.dat"),
+            xyz_file=sample("bi_centres.xyz"),
+            win_file=sample("bi.win"),
+        )
+    assert "The 'wsvec' iterator is empty." in str(excinfo.value)

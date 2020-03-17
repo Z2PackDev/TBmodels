@@ -13,6 +13,7 @@ import click
 
 from . import __version__ as tbmodels_version
 from . import Model
+from .exceptions import TbmodelsException, SymmetrizeExceptionMarker
 
 
 @click.group()
@@ -158,7 +159,10 @@ def symmetrize(
         Implementation for the symmetrization procedure. The singledispatch is used
         to treat (nested) lists of symmetries or symmetry groups.
         """
-        raise ValueError("Invalid type '{}' for _symmetrize".format(type(sym)))
+        raise TbmodelsException(
+            f"The given symmetries object has invalid type '{type(sym)}'",
+            SymmetrizeExceptionMarker.INVALID_SYMMETRY_TYPE,
+        )
 
     @_symmetrize.register(Iterable)
     def _(sym, model, full_group):

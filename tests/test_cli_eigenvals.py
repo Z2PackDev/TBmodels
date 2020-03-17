@@ -10,6 +10,8 @@ Tests for the 'eigenvals' command.
 import os
 import tempfile
 
+import pytest
+
 import numpy as np
 import bands_inspect as bi
 from click.testing import CliRunner
@@ -17,7 +19,10 @@ from click.testing import CliRunner
 from tbmodels._cli import cli
 
 
-def test_cli_eigenvals(sample, cli_verbosity_argument):
+@pytest.mark.parametrize(
+    "kpoints_file_name", ["kpoints.hdf5", "silicon_eigenvals.hdf5"]
+)
+def test_cli_eigenvals(sample, cli_verbosity_argument, kpoints_file_name):
     """
     Test the 'eigenvals' command.
     """
@@ -31,7 +36,7 @@ def test_cli_eigenvals(sample, cli_verbosity_argument):
                 "-o",
                 out_file.name,
                 "-k",
-                os.path.join(samples_dir, "kpoints.hdf5"),
+                os.path.join(samples_dir, kpoints_file_name),
                 "-i",
                 os.path.join(samples_dir, "silicon_model.hdf5"),
             ]
