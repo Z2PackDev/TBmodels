@@ -147,7 +147,7 @@ class Model(HDF5Enabled):
             self.dim = len(pos[0])
         elif hop:
             self.dim = len(next(iter(hop.keys())))
-        elif uc:
+        elif uc is not None:
             self.dim = len(uc[0])
         else:
             raise ValueError(
@@ -1486,6 +1486,7 @@ class Model(HDF5Enabled):
 
         # join positions (must either all be set, or all None)
         pos_list = list(m.pos for m in models)
+        # Note: this is affected by issue #76
         if any(pos is None for pos in pos_list):
             if not all(pos is None for pos in pos_list):
                 raise ValueError("Either all or no positions must be set.")
@@ -1548,6 +1549,7 @@ class Model(HDF5Enabled):
             the *old* unit cell.
         """
         # Validate inputs w.r.t. model properties
+        # Note: this is affected by issue #76
         if self.pos is None:
             raise ValueError(
                 "Cannot change the unit cell: model positions are not defined."
@@ -1761,6 +1763,7 @@ class Model(HDF5Enabled):
                 f"The lenght of the 'orbital_labels' input ({len(orbital_labels)}) "
                 f"does not match the size of the model ({self.size})."
             )
+        # Note: this is affected by issue #76
         if self.uc is None or self.pos is None:
             raise ValueError(
                 "Unit cell and positions must be specified for model folding."
