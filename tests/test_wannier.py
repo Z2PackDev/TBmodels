@@ -352,3 +352,23 @@ def test_wsvec_empty(sample):
             win_file=sample("bi.win"),
         )
     assert "The 'wsvec' iterator is empty." in str(excinfo.value)
+
+
+def test_length_unit_modes(sample, models_equal):
+    """
+    Check that specifying the length unit in .win explicitly or in the
+    unit cell block is equivalent.
+    """
+    model1 = tbmodels.Model.from_wannier_files(
+        hr_file=sample("bi_hr.dat"),
+        win_file=sample("bi.win"),
+        xyz_file=sample("bi_centres.xyz"),
+        wsvec_file=sample("bi_wsvec.dat"),
+    )
+    model2 = tbmodels.Model.from_wannier_files(
+        hr_file=sample("bi_hr.dat"),
+        win_file=sample("bi_equivalent.win"),
+        xyz_file=sample("bi_centres.xyz"),
+        wsvec_file=sample("bi_wsvec.dat"),
+    )
+    assert models_equal(model1, model2)

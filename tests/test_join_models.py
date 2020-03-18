@@ -4,6 +4,8 @@
 # Author: Dominik Gresch <greschd@gmx.ch>
 """Tests for joining two models together."""
 
+# pylint: disable=invalid-name
+
 import pytest
 import numpy as np
 
@@ -54,3 +56,29 @@ def test_join_mixed_sparsity(
         tbmodels.Model.join_models(model_sparse, model_dense),
         tbmodels.Model.join_models(model_dense, model_sparse),
     )
+
+
+def test_join_no_model():
+    """Test that join_models raises an error if no models are given."""
+    with pytest.raises(ValueError) as excinfo:
+        tbmodels.Model.join_models()
+    assert "At least one model must be given." in str(excinfo.value)
+
+
+def test_join_incompatible_dimension():
+    """Test that models with unequal dimension can not be joined."""
+    model1 = tbmodels.Model(hop={(0,): np.eye(3)})
+    model2 = tbmodels.Model(hop={(0, 0): np.eye(3)})
+    with pytest.raises(ValueError) as excinfo:
+        tbmodels.Model.join_models(model1, model2)
+    assert "dimension" in str(excinfo.value)
+
+
+def test_join_incompatible_unit_cell():
+    """Test that models with unequal unit cell can not be joined."""
+    model1 = tbmodels.Model(uc=np.eye(3), size=2)
+    model2 = tbmodels.Model(uc=np.eye(3), size=2)
+    model3 = tbmodels.Model(uc=np.diag([1.1, 1, 1]), size=2)
+    with pytest.raises(ValueError) as excinfo:
+        tbmodels.Model.join_models(model1, model2, model3)
+    assert "unit cell" in str(excinfo.value)

@@ -107,6 +107,7 @@ def test_change_uc_without_pos_raises(get_model):
     positions are defined.
     """
     model = get_model(t1=0.4, t2=0.9)
+    # Note: this is affected by issue #76
     model.pos = None
     with pytest.raises(ValueError):
         model.change_unit_cell()

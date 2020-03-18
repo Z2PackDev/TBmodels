@@ -32,6 +32,14 @@ def test_no_size_given(get_model, models_equal):
     models_equal(model1, model2)
 
 
+def test_size_from_hop():
+    """
+    Check that the size can be obtained from hopping matrices.
+    """
+    model = tbmodels.Model(hop={(0, 0, 0): np.zeros((4, 4))})
+    assert model.size == 4
+
+
 def test_size_unknown(get_model):
     """
     Check that an error is raised when the size can not be inferred.
@@ -74,6 +82,12 @@ def test_no_dim(get_model):
     """Check that an error is raised when the dimension can not be inferred."""
     with pytest.raises(ValueError):
         get_model(0.1, 0.2, pos=None)
+
+
+def test_dim_from_uc():
+    """Check that the dimension can be inferred from the unit cell."""
+    model = tbmodels.Model(uc=((1, 0), (0, 1)), size=5)
+    assert model.dim == 2
 
 
 def test_pos_outside_uc(get_model, models_equal):

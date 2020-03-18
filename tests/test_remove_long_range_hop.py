@@ -188,6 +188,7 @@ def test_no_pos(get_model):
     Check that an error is raised if the unit cell is not given.
     """
     model = get_model(t1=0.1, t2=0.2, uc=np.eye(3))
+    # Note: this is affected by issue #76
     model.pos = None
     assert model.uc is not None
     with pytest.raises(ValueError):
