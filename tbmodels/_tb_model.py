@@ -102,7 +102,7 @@ class Model(HDF5Enabled):
         self._init_size(size=size, on_site=on_site, hop=hop, pos=pos)
 
         # ---- DIMENSION ----
-        self._init_dim(dim=dim, hop=hop, pos=pos)
+        self._init_dim(dim=dim, hop=hop, pos=pos, uc=uc)
 
         # ---- UNIT CELL ----
         self.uc = None if uc is None else np.array(uc)  # implicit copy
@@ -137,7 +137,7 @@ class Model(HDF5Enabled):
                 "Empty hoppings dictionary supplied and no size, on-site energies or positions given. Cannot determine the size of the system."
             )
 
-    def _init_dim(self, dim, hop, pos):
+    def _init_dim(self, dim, hop, pos, uc):
         r"""
         Sets the system's dimensionality.
         """
@@ -147,9 +147,11 @@ class Model(HDF5Enabled):
             self.dim = len(pos[0])
         elif hop:
             self.dim = len(next(iter(hop.keys())))
+        elif uc:
+            self.dim = len(uc[0])
         else:
             raise ValueError(
-                "No dimension specified and no positions or hoppings are given. The dimensionality of the system cannot be determined."
+                "No dimension specified and no positions, hoppings, or unit cell are given. The dimensionality of the system cannot be determined."
             )
 
         self._zero_vec = tuple([0] * self.dim)
