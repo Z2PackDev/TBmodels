@@ -28,7 +28,11 @@ if ty.TYPE_CHECKING:
     import symmetry_representation  # pylint: disable=unused-import
 
 from .kdotp import KdotpModel
-from .exceptions import TbmodelsException, ParseExceptionMarker
+from .exceptions import (
+    TbmodelsException,
+    ParseExceptionMarker,
+    SymmetrizeExceptionMarker,
+)
 from . import _check_compatibility
 from . import _sparse_matrix as sp
 
@@ -1395,17 +1399,13 @@ class Model(HDF5Enabled):
                 ):
                     valid_shifts.append(tuple(shift))
             if not valid_shifts:
-                raise ValueError(
-                    "New position {} does not match any known sublattice".format(
-                        new_pos
-                    )
+                raise TbmodelsException(
+                    f"New position {new_pos} does not match any known sublattice",
+                    exception_marker=SymmetrizeExceptionMarker.POSITIONS_NOT_SYMMETRIC,
                 )
-            if len(valid_shifts) > 1:
-                raise ValueError(
-                    "Ambiguity error: New position {} matches more than one known sublattice".format(
-                        new_pos
-                    )
-                )
+            assert (
+                len(valid_shifts) == 1
+            ), f"New position {new_pos} matches more than one known sublattice"
             uc_shift.append(valid_shifts[0])
 
         # setting up the indices to slice the hopping matrices

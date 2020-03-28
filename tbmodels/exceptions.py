@@ -46,6 +46,7 @@ class SymmetrizeExceptionMarker(ExceptionMarker):
     """
 
     INVALID_SYMMETRY_TYPE = "The type of the given symmetries object is incorrect."
+    POSITIONS_NOT_SYMMETRIC = "The model positions do not respect the given symmetry."
 
 
 class TbmodelsException(click.ClickException):

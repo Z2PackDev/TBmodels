@@ -1,6 +1,5 @@
 language: python
 cache: pip
-sudo: true
 python:
   - "3.6"
   - "3.7"
