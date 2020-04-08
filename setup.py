@@ -48,7 +48,7 @@ setup(
     python_requires=">=3.6",
     install_requires=[
         "numpy",
-        "scipy>=0.14",
+        "scipy>=0.15",
         "h5py",
         "fsc.export",
         "symmetry-representation>=0.2",

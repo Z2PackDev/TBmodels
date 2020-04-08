@@ -34,27 +34,6 @@ class csr(ArrayConvertible, sp.csr_matrix):  # pylint: disable=invalid-name
     Wrapper for CSR matrices to be array-convertible.
     """
 
-    def __repr__(self):
-        res = (
-            "csr(("
-            + "["
-            + ", ".join(str(x) for x in self.data)
-            + "], "
-            + "["
-            + ", ".join(str(x) for x in self.indices)
-            + "], "
-            + "["
-            + ", ".join(str(x) for x in self.indptr)
-            + "]), "
-            + "shape={0.shape}, dtype=np.{0.dtype})".format(self)
-        )
-        return res
-
-    # This is here because scipy throws NotImplementedError
-    # Is not needed for newer versions of scipy
-    def __iadd__(self, other):
-        return self + other
-
 
 class coo(ArrayConvertible, sp.coo_matrix):  # pylint: disable=invalid-name
     """
