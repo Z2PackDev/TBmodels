@@ -1051,11 +1051,11 @@ class Model(HDF5Enabled):
                 group["mat"] = mat
 
     def __repr__(self):
+        # Note: this is affected by issue #76
         return " ".join(
-            "tbmodels.Model(hop={1}, pos={0.pos!r}, uc={0.uc!r}, occ={0.occ}, contains_cc=False)".format(
-                self, dict(self.hop)
+            f"tbmodels.Model(hop=<{len(self.hop)} matrices>, pos=<{len(self.pos)} values>, uc={self.uc!r}, occ={self.occ}, contains_cc=False)".replace(
+                "\n", " "
             )
-            .replace("\n", " ")
             .replace("array", "np.array")
             .split()
         )
