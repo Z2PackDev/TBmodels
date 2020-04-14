@@ -4,7 +4,7 @@
 # Author: Dominik Gresch <greschd@gmx.ch>
 """A tool for creating / loading and manipulating tight-binding models."""
 
-__version__ = "1.4.0.rc2"
+from ._version import __version__
 
 # import order is important due to circular imports
 from . import helpers
