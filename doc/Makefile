@@ -6,7 +6,7 @@ SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 PAPER         =
 BUILDDIR      = build
-HTMLBUILDDIR  = ../../Z2Pack_website/web/tbmodels/doc/1.3
+HTMLBUILDDIR  = build/html
 
 # User-friendly check for sphinx-build
 ifeq ($(shell which $(SPHINXBUILD) >/dev/null 2>&1; echo $$?), 1)
@@ -22,17 +22,16 @@ I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) source
 
 .PHONY: all show help clean html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest coverage gettext
 
-all: clean html
+all: html
 
 show:
 	firefox $(HTMLBUILDDIR)/index.html
 
 clean:
-	rm -rf $(HTMLBUILDDIR)
+	rm -rf $(HTMLBUILDDIR) $(BUILDDIR)
 
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(HTMLBUILDDIR)
-	python replace_colors.py $(HTMLBUILDDIR)
 	@echo
 	@echo "Build finished. The HTML pages are in $(HTMLBUILDDIR)."
 

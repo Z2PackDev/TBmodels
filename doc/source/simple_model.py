@@ -6,7 +6,9 @@
 import tbmodels
 import itertools
 
-model = tbmodels.Model(on_site=[1, -1], dim=3, occ=1, pos=[[0., 0., 0.], [0.5, 0.5, 0.]])
+model = tbmodels.Model(
+    on_site=[1, -1], dim=3, occ=1, pos=[[0.0, 0.0, 0.0], [0.5, 0.5, 0.0]]
+)
 
 t1, t2 = (0.1, 0.2)
 for phase, R in zip([1, -1j, 1j, -1], itertools.product([0, -1], [0, -1], [0])):

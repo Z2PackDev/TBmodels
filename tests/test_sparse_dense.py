@@ -13,7 +13,7 @@ import tbmodels
 from parameters import T_VALUES, KPT
 
 
-@pytest.mark.parametrize('t1', T_VALUES)
+@pytest.mark.parametrize("t1", T_VALUES)
 def test_simple(t1, get_model):
     """
     Check that a simple model set up as sparse and dense creates
@@ -26,7 +26,7 @@ def test_simple(t1, get_model):
         assert np.isclose(model_dense.hamilton(k), model_sparse.hamilton(k)).all()
 
 
-@pytest.mark.parametrize('t1', T_VALUES)
+@pytest.mark.parametrize("t1", T_VALUES)
 def test_change_to_dense(t1, get_model, models_close):
     """
     Check that creating a sparse model and then switching it to dense
@@ -38,7 +38,7 @@ def test_change_to_dense(t1, get_model, models_close):
     assert models_close(model1, model2)
 
 
-@pytest.mark.parametrize('t1', T_VALUES)
+@pytest.mark.parametrize("t1", T_VALUES)
 def test_change_to_sparse(t1, get_model, models_close):
     """
     Check that creating a dense model and then switching it to sparse
@@ -50,7 +50,9 @@ def test_change_to_sparse(t1, get_model, models_close):
     assert models_close(model1, model2)
 
 
-@pytest.mark.parametrize('hr_name', ['hr_hamilton.dat', 'wannier90_hr.dat', 'wannier90_hr_v2.dat'])
+@pytest.mark.parametrize(
+    "hr_name", ["hr_hamilton.dat", "wannier90_hr.dat", "wannier90_hr_v2.dat"]
+)
 def test_hr(hr_name, sample):
     """
     Check that models loaded from *_hr.dat format have the same Hamiltonians

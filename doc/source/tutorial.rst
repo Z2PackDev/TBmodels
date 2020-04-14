@@ -87,6 +87,6 @@ Finally, the :class:`.Model` class is also compatible with Python's built-in :py
 Command-line interface
 ----------------------
 
-TBmodels has a built-in command line interface, which is designed to perform common operations, such as converting Wannier90 output into a TBmodels file. It can be accessed via the ``tbmodels`` command, and its documentation can be accessed with the ``--help`` flag or in the `reference section <cli_reference>`_. For example, ``tbmodels --help`` gives a list of possible commands, and ``tbmodels parse --help`` gives specific information about the ``parse`` command.
+TBmodels has a built-in command line interface, which is designed to perform common operations, such as converting Wannier90 output into a TBmodels file. It can be accessed via the ``tbmodels`` command, and its documentation can be accessed with the ``--help`` flag or in the :ref:`reference section <cli_reference>`. For example, ``tbmodels --help`` gives a list of possible commands, and ``tbmodels parse --help`` gives specific information about the ``parse`` command.
 
 .. note:: The command line commands may change in future releases, because this feature is still in early development.

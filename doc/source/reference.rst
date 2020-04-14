@@ -14,7 +14,7 @@ Model Class
 
 .. autoclass:: tbmodels.Model
     :members:
-    :special-members:
+    :special-members: __add__, __mul__, __neg__, __rmul__, __sub__, __truediv__
     :inherited-members:
 
 
@@ -40,3 +40,17 @@ Command line interface
 .. click:: tbmodels._cli:cli
     :prog: tbmodels
     :show-nested:
+
+
+k.p Model class
+---------------
+
+.. autoclass:: tbmodels.kdotp.KdotpModel
+
+
+Exceptions
+----------
+
+.. automodule:: tbmodels.exceptions
+    :members:
+    :undoc-members:

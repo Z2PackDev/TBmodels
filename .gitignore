@@ -32,11 +32,11 @@ decorator.py
 venv*
 
 # pytest
-.pytest_cache/v/cache
-tests/.pytest_cache
+.pytest_cache
 tests/.cache
 htmlcov
-tests/.coverage
+.coverage
+coverage.xml
 
 speed_test/data
 

@@ -17,34 +17,22 @@ class ArrayConvertible:
     Base class for sparse matrix types that should be directly convertible
     to numpy arrays.
     """
+
     def __array__(self):
         return self.toarray()  # pylint: disable=no-member
 
     # Because transpose / conjugate return scipy sparse arrays.
     def transpose(self):
-        return self.__class__(super(ArrayConvertible, self).transpose())  # pylint: disable=no-member
+        return self.__class__(super().transpose())  # pylint: disable=no-member
 
     def conjugate(self):
-        return self.__class__(super(ArrayConvertible, self).conjugate())  # pylint: disable=no-member
+        return self.__class__(super().conjugate())  # pylint: disable=no-member
 
 
 class csr(ArrayConvertible, sp.csr_matrix):  # pylint: disable=invalid-name
     """
     Wrapper for CSR matrices to be array-convertible.
     """
-    def __repr__(self):
-        res = (
-            'csr((' + '[' + ', '.join(str(x)
-                                      for x in self.data) + '], ' + '[' + ', '.join(str(x)
-                                                                                    for x in self.indices) + '], ' +
-            '[' + ', '.join(str(x) for x in self.indptr) + ']), ' + 'shape={0.shape}, dtype=np.{0.dtype})'.format(self)
-        )
-        return res
-
-    # This is here because scipy throws NotImplementedError
-    # Is not needed for newer versions of scipy
-    def __iadd__(self, other):
-        return self + other
 
 
 class coo(ArrayConvertible, sp.coo_matrix):  # pylint: disable=invalid-name

@@ -12,10 +12,15 @@ import pickle
 import pytest
 import numpy as np
 
-KWARGS = [dict(), dict(pos=None, dim=3), dict(uc=3 * np.eye(3)), dict(pos=np.zeros((2, 3)), uc=np.eye(3))]
+KWARGS = [
+    dict(),
+    dict(pos=None, dim=3),
+    dict(uc=3 * np.eye(3)),
+    dict(pos=np.zeros((2, 3)), uc=np.eye(3)),
+]
 
 
-@pytest.mark.parametrize('kwargs', KWARGS)
+@pytest.mark.parametrize("kwargs", KWARGS)
 def test_pickle_consistency(get_model, models_equal, kwargs):
     """
     Check that a simple model remains unchanged after passing through

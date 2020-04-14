@@ -22,62 +22,79 @@ def spin_reps(prep):
     """
     # general representation of the D1/2 rotation about the axis (l,m,n) around the
     # angle phi
-    D12 = lambda l, m, n, phi: np.array([[
-        np.cos(phi / 2.) - 1j * n * np.sin(phi / 2.), (-1j * l - m) * np.sin(phi / 2.)
-    ], [(-1j * l + m) * np.sin(phi / 2.),
-        np.cos(phi / 2.) + 1j * n * np.sin(phi / 2.)]])
+    D12 = lambda l, m, n, phi: np.array(
+        [
+            [
+                np.cos(phi / 2.0) - 1j * n * np.sin(phi / 2.0),
+                (-1j * l - m) * np.sin(phi / 2.0),
+            ],
+            [
+                (-1j * l + m) * np.sin(phi / 2.0),
+                np.cos(phi / 2.0) + 1j * n * np.sin(phi / 2.0),
+            ],
+        ]
+    )
 
     n = np.zeros(3)
     tr = np.trace(prep)
     det = np.round(np.linalg.det(prep), 5)
-    if det == 1.:  # rotations
-        theta = np.arccos(0.5 * (tr - 1.))
+    if det == 1.0:  # rotations
+        theta = np.arccos(0.5 * (tr - 1.0))
         if theta != 0:
             n[0] = prep[2, 1] - prep[1, 2]
             n[1] = prep[0, 2] - prep[2, 0]
             n[2] = prep[1, 0] - prep[0, 1]
-            if np.round(np.linalg.norm(n), 5) == 0.:  # theta = pi, that is C2 rotations
+            if (
+                np.round(np.linalg.norm(n), 5) == 0.0
+            ):  # theta = pi, that is C2 rotations
                 e, v = la.eig(prep)
-                n = v[:, list(np.round(e, 10)).index(1.)]
+                n = v[:, list(np.round(e, 10)).index(1.0)]
                 spin = np.round(D12(n[0], n[1], n[2], np.pi), 15)
             else:
                 n /= np.linalg.norm(n)
                 spin = np.round(D12(n[0], n[1], n[2], theta), 15)
         else:  # case of unitiy
             spin = D12(0, 0, 0, 0)
-    elif det == -1.:  # improper rotations and reflections
-        theta = np.arccos(0.5 * (tr + 1.))
+    elif det == -1.0:  # improper rotations and reflections
+        theta = np.arccos(0.5 * (tr + 1.0))
         if np.round(theta, 5) != np.round(np.pi, 5):
             n[0] = prep[2, 1] - prep[1, 2]
             n[1] = prep[0, 2] - prep[2, 0]
             n[2] = prep[1, 0] - prep[0, 1]
-            if np.round(np.linalg.norm(n), 5) == 0.:  # theta = 0 (reflection)
+            if np.round(np.linalg.norm(n), 5) == 0.0:  # theta = 0 (reflection)
                 e, v = la.eig(prep)
                 # normal vector is eigenvector to eigenvalue -1
-                n = v[:, list(np.round(e, 10)).index(-1.)]
+                n = v[:, list(np.round(e, 10)).index(-1.0)]
                 # spin is a pseudovector!
                 spin = np.round(D12(n[0], n[1], n[2], np.pi), 15)
             else:
                 n /= np.linalg.norm(n)
                 # rotation followed by reflection:
-                spin = np.round(np.dot(D12(n[0], n[1], n[2], np.pi), D12(n[0], n[1], n[2], theta)), 15)
+                spin = np.round(
+                    np.dot(D12(n[0], n[1], n[2], np.pi), D12(n[0], n[1], n[2], theta)),
+                    15,
+                )
         else:  # case of inversion (does not do anything to spin)
             spin = D12(0, 0, 0, 0)
     return np.array(spin)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # For this example we already changed the order of the orbitals (unlike the
     # other symmetrization example).
-    model_nosym = tb.Model.from_hdf5_file('data/model_nosym.hdf5')
+    model_nosym = tb.Model.from_hdf5_file("data/model_nosym.hdf5")
 
     # set up symmetry operations
     time_reversal = sr.SymmetryOperation(
-        rotation_matrix=np.eye(3), repr_matrix=np.kron([[0, -1j], [1j, 0]], np.eye(7)), repr_has_cc=True
+        rotation_matrix=np.eye(3),
+        repr_matrix=np.kron([[0, -1j], [1j, 0]], np.eye(7)),
+        repr_has_cc=True,
     )
 
     structure = mg.Structure(
-        lattice=model_nosym.uc, species=['In', 'As'], coords=np.array([[0, 0, 0], [0.25, 0.25, 0.25]])
+        lattice=model_nosym.uc,
+        species=["In", "As"],
+        coords=np.array([[0, 0, 0], [0.25, 0.25, 0.25]]),
     )
 
     # get real-space representations
@@ -94,7 +111,7 @@ if __name__ == '__main__':
         tauc = symops_cart[n].translation_vector
         prep = C
         spinrep = spin_reps(C)
-        R = np.kron(spinrep, la.block_diag(1., prep, prep))
+        R = np.kron(spinrep, la.block_diag(1.0, prep, prep))
         reps.append(R)
 
     # set up the space group symmetries
@@ -103,8 +120,9 @@ if __name__ == '__main__':
             # r-space and k-space matrices are related by transposing and inverting
             rotation_matrix=rot,
             repr_matrix=repr_mat,
-            repr_has_cc=False
-        ) for rot, repr_mat in zip(rots, reps)
+            repr_has_cc=False,
+        )
+        for rot, repr_mat in zip(rots, reps)
     ]
     point_group = sr.SymmetryGroup(symmetries=symmetries, full_group=True)
-    sr.io.save([time_reversal, point_group], 'results/symmetries.hdf5')
+    sr.io.save([time_reversal, point_group], "results/symmetries.hdf5")

@@ -15,10 +15,24 @@ We start by loading the initial model:
 
     In [0]: import tbmodels
 
+The model is located in the ``examples`` directory of the TBmodels source. You will have to change the following part to point to your examples directory:
+
+.. ipython::
+
+    In [0]: import os
+       ...: import pathlib
+       ...: EXAMPLES_DIR = pathlib.Path('../examples')
+
+.. ipython::
+    :suppress:
+
+    In [0]: if os.environ.get('READTHEDOCS', None) == 'True':
+       ...:     EXAMPLES_DIR = pathlib.Path('../../examples')
+
 .. ipython::
 
     In [0]: model_nosym =  tbmodels.io.load(
-       ...:     '../examples/symmetrization/nonsymmorphic_Si/data/model_nosym.hdf5'
+       ...:     EXAMPLES_DIR / 'symmetrization' / 'nonsymmorphic_Si'/'data' / 'model_nosym.hdf5'
        ...: )
 
 

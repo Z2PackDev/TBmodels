@@ -2,16 +2,16 @@
 
 # (c) 2015-2018, ETH Zurich, Institut fuer Theoretische Physik
 # Author: Dominik Gresch <greschd@gmx.ch>
-r"""
-TBmodels is a tool for creating / loading and manipulating tight-binding models.
-"""
+"""A tool for creating / loading and manipulating tight-binding models."""
 
-__version__ = '1.3.2'
+from ._version import __version__
 
 # import order is important due to circular imports
 from . import helpers
+from . import exceptions
 from ._tb_model import Model
 
-from . import _kdotp
-
+from . import kdotp
 from . import io
+
+__all__ = ("helpers", "exceptions", "Model", "kdotp", "io")
