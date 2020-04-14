@@ -25,4 +25,4 @@ install:
 script:
   - ./.travis-data/test_script.sh
 after_success:
-  - codecov
+  - if [ "$INSTALL_TYPE" == "dev" ] ; then codecov ; fi
