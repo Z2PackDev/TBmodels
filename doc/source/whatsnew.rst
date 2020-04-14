@@ -46,7 +46,7 @@ Deprecations and removals
 
 - The ``from_hr`` and ``from_hr_file`` methods, deprecated since version 1.1, have been removed.
 
-- The `__repr__` of the model can no longer be evaluated to create a new model. This had led to problems because the resulting string can be very large.
+- The ``__repr__`` of the model can no longer be evaluated to create a new model. This feature had led to problems because the resulting string can be very large.
 
 
 What's new in TBmodels 1.3
