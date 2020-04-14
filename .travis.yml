@@ -9,6 +9,8 @@ env:
     INSTALL_TYPE="dev"
   - TEST_TYPE="tests"
     INSTALL_TYPE="dev_sdist"
+  - TEST_TYPE="tests"
+    INSTALL_TYPE="dev_bdist_wheel"
 jobs:
   include:
     - python: "3.7"
