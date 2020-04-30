@@ -8,8 +8,8 @@ What's new
 
 The following is a short summary of the most important changes in new releases of TBmodels, starting *after* version 1.1.
 
-What's new in TBmodels 1.4 (development version)
-------------------------------------------------
+What's new in TBmodels 1.4
+--------------------------
 
 New features
 ''''''''''''

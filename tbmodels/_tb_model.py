@@ -893,10 +893,10 @@ class Model(HDF5Enabled):
 
         # R != 0 terms
         for R, mat in self.hop.items():
-            mat = self._array_cast(mat)
             # special case R = 0 handled already
             if R == self._zero_vec:
                 continue
+            mat = self._array_cast(mat)
             minus_R = tuple(-np.array(R))
             for i, s1 in enumerate(sublattices):
                 for j, s2 in enumerate(sublattices):
@@ -1336,6 +1336,7 @@ class Model(HDF5Enabled):
         self,
         symmetries: ty.Sequence["symmetry_representation.SymmetryOperation"],
         full_group: bool = False,
+        position_tolerance: float = 1e-5,
     ) -> "Model":
         """
         Returns a model which is symmetrized w.r.t. the given
@@ -1350,13 +1351,25 @@ class Model(HDF5Enabled):
             Specifies whether the given symmetries represent the full
             symmetry group, or only a subset from which the full
             symmetry group is generated.
+        position_tolerance :
+            Absolute tolerance (in reduced coordinates) when matching
+            positions after a symmetry has been applied to existing
+            positions.
         """
         if full_group:
-            new_model = self._apply_operation(symmetries[0])
+            new_model = self._apply_operation(
+                symmetries[0], position_tolerance=position_tolerance
+            )
             return (
                 1
                 / len(symmetries)
-                * sum((self._apply_operation(s) for s in symmetries[1:]), new_model,)
+                * sum(
+                    (
+                        self._apply_operation(s, position_tolerance=position_tolerance)
+                        for s in symmetries[1:]
+                    ),
+                    new_model,
+                )
             )
         else:
             new_model = self
@@ -1366,14 +1379,14 @@ class Model(HDF5Enabled):
                 tmp_model = new_model
                 for _ in range(1, order):
                     tmp_model += new_model._apply_operation(  # pylint: disable=protected-access
-                        sym_pow
+                        sym_pow, position_tolerance=position_tolerance
                     )
                     sym_pow @= sym
                 new_model = 1 / order * tmp_model
             return new_model
 
     def _apply_operation(  # pylint: disable=too-many-locals
-        self, symmetry_operation
+        self, symmetry_operation, position_tolerance
     ) -> "Model":
         """
         Helper function to apply a symmetry operation to the model.
@@ -1395,7 +1408,8 @@ class Model(HDF5Enabled):
             for T in itertools.product(range(-1, 2), repeat=self.dim):
                 shift = nearest_R + T
                 if any(
-                    np.isclose(new_pos - shift, latt.pos).all() for latt in sublattices
+                    np.isclose(new_pos - shift, latt.pos, atol=position_tolerance).all()
+                    for latt in sublattices
                 ):
                     valid_shifts.append(tuple(shift))
             if not valid_shifts:
