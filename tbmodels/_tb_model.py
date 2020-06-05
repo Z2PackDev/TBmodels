@@ -1707,7 +1707,7 @@ class Model(HDF5Enabled):
             )
         )
 
-    def fold_model(  # pylint: disable=too-many-locals # noqa:C001
+    def fold_model(  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         self,
         *,
         new_unit_cell: ty.Sequence[ty.Sequence[float]],
