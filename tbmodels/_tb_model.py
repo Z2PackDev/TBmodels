@@ -76,6 +76,9 @@ class Model(HDF5Enabled):
         given fully (``contains_cc=True``), or the complex conjugate
         should be added for each term to obtain the full model. The
         ``on_site`` parameter is not affected by this.
+    cc_check_tolerance :
+        Tolerance when checking if the complex conjugate values (if
+        given) match.
     sparse :
         Specifies whether the hopping matrices should be saved in sparse
         format.
@@ -92,6 +95,7 @@ class Model(HDF5Enabled):
         pos: ty.Optional[ty.Sequence[ty.Sequence[float]]] = None,
         uc: ty.Optional[np.ndarray] = None,
         contains_cc: bool = True,
+        cc_check_tolerance: float = 1e-12,
         sparse: bool = False,
     ):
         if hop is None:
@@ -112,7 +116,13 @@ class Model(HDF5Enabled):
         self.uc = None if uc is None else np.array(uc)  # implicit copy
 
         # ---- HOPPING TERMS AND POSITIONS ----
-        self._init_hop_pos(on_site=on_site, hop=hop, pos=pos, contains_cc=contains_cc)
+        self._init_hop_pos(
+            on_site=on_site,
+            hop=hop,
+            pos=pos,
+            contains_cc=contains_cc,
+            cc_check_tolerance=cc_check_tolerance,
+        )
 
         # ---- CONSISTENCY CHECK FOR SIZE ----
         self._check_size_hop()
@@ -160,7 +170,7 @@ class Model(HDF5Enabled):
 
         self._zero_vec = tuple([0] * self.dim)
 
-    def _init_hop_pos(self, on_site, hop, pos, contains_cc):
+    def _init_hop_pos(self, on_site, hop, pos, contains_cc, cc_check_tolerance):
         """
         Sets the hopping terms and positions, mapping the positions to the UC (and changing the hoppings accordingly) if necessary.
         """
@@ -187,7 +197,7 @@ class Model(HDF5Enabled):
             )
 
         if contains_cc:
-            hop = self._reduce_hop(hop)
+            hop = self._reduce_hop(hop, cc_check_tolerance=cc_check_tolerance)
         else:
             hop = self._map_hop_positive_R(hop)
         # use partial instead of lambda to allow for pickling
@@ -234,18 +244,28 @@ class Model(HDF5Enabled):
         return new_pos, new_hop
 
     @staticmethod
-    def _reduce_hop(hop):
+    def _reduce_hop(hop, cc_check_tolerance):
         """
         Reduce the full hoppings representation (with cc) to the reduced one (without cc, zero-terms halved).
         """
         # Consistency checks
         failed_R = []
+        res = dict()
         for R, mat in hop.items():
-            diff_norm = la.norm(
-                mat - hop.get(tuple(-x for x in R), np.zeros(mat.shape)).T.conjugate()
-            )
-            if diff_norm > 1e-12:
+            equiv_mat = hop.get(tuple(-x for x in R), np.zeros(mat.shape)).T.conjugate()
+            diff_norm = la.norm(mat - equiv_mat)
+            if diff_norm > cc_check_tolerance:
                 failed_R.append((R, diff_norm))
+
+            avg_mat = (mat + equiv_mat) / 2
+
+            try:
+                if R[np.nonzero(R)[0][0]] > 0:
+                    res[R] = avg_mat
+            # Case R = 0
+            except IndexError:
+                res[R] = avg_mat / 2
+
         if failed_R:
             raise ValueError(
                 "The provided hoppings do not correspond to a hermitian Hamiltonian. hoppings[-R] = hoppings[R].H is not fulfilled for the following values:\n"
@@ -255,16 +275,6 @@ class Model(HDF5Enabled):
                 )
             )
 
-        res = dict()
-        for R, mat in hop.items():
-            try:
-                if R[np.nonzero(R)[0][0]] > 0:
-                    res[R] = mat
-                else:
-                    continue
-            # zero case
-            except IndexError:
-                res[R] = 0.5 * mat
         return res
 
     def _map_hop_positive_R(self, hop: HoppingType) -> HoppingType:
