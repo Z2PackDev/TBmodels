@@ -1821,12 +1821,21 @@ class Model(HDF5Enabled):
         # Check and warn if positions are at the edge of the new unit cell.
         at_uc_edge_indices = list(
             np.argwhere(
-                np.all(
-                    np.logical_or(
-                        np.isclose(pos_reduced_new, 0, rtol=0),
-                        np.isclose(pos_reduced_new, 1, rtol=0),
+                np.logical_and(
+                    np.any(
+                        np.logical_or(
+                            np.isclose(pos_reduced_new, 0, rtol=0, atol=2 * eps),
+                            np.isclose(pos_reduced_new, 1, rtol=0, atol=2 * eps),
+                        ),
+                        axis=-1,
                     ),
-                    axis=-1,
+                    np.all(
+                        np.logical_and(
+                            pos_reduced_new >= -2 * eps,
+                            pos_reduced_new <= 1 + 2 * eps,
+                        ),
+                        axis=-1,
+                    )
                 )
             ).flatten()
         )
