@@ -100,7 +100,13 @@ def _write_output(model, output, sparsity, verbose):
 @_VERBOSE_OPTION
 @_get_output_option(default="model.hdf5", help="Path of the output file.")
 def parse(
-    folder, prefix, output, pos_kind, distance_ratio_threshold, sparsity, verbose,
+    folder,
+    prefix,
+    output,
+    pos_kind,
+    distance_ratio_threshold,
+    sparsity,
+    verbose,
 ):
     """
     Parse Wannier90 output files and create an HDF5 file containing the tight-binding model.
@@ -122,7 +128,8 @@ def parse(
 @cli.command(short_help="Create symmetrized tight-binding model.")
 @_INPUT_OPTION
 @_get_output_option(
-    default="model_symmetrized.hdf5", help="Output file for the symmetrized model.",
+    default="model_symmetrized.hdf5",
+    help="Output file for the symmetrized model.",
 )
 @click.option(
     "--symmetries",
@@ -177,7 +184,9 @@ def symmetrize(
             full_group = sym.full_group
         click.echo(
             "Symmetrizing model with {} symmetr{}, full_group={} ...".format(
-                len(symmetries), "y" if len(symmetries) == 1 else "ies", full_group,
+                len(symmetries),
+                "y" if len(symmetries) == 1 else "ies",
+                full_group,
             )
         )
         return model.symmetrize(symmetries=symmetries, full_group=full_group)
@@ -201,7 +210,9 @@ def symmetrize(
     default="model_sliced.hdf5", help="Output file for the sliced model."
 )
 @click.argument(
-    "slice-idx", type=int, nargs=-1,
+    "slice-idx",
+    type=int,
+    nargs=-1,
 )  # pylint: disable=redefined-builtin
 @_SPARSITY_OPTION
 @_VERBOSE_OPTION
