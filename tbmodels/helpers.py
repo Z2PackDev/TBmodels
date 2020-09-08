@@ -41,6 +41,11 @@ def matrix_to_hop(
     for i, row in enumerate(mat):
         for j, x in enumerate(row):
             hop.append(
-                [multiplier * x, orbitals[i], orbitals[j], np.array(R, dtype=int),]
+                [
+                    multiplier * x,
+                    orbitals[i],
+                    orbitals[j],
+                    np.array(R, dtype=int),
+                ]
             )
     return hop
