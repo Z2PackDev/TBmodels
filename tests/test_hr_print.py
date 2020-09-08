@@ -9,9 +9,8 @@ import tempfile
 
 import pytest
 
-import tbmodels
-
 from parameters import T_VALUES
+import tbmodels
 
 
 @pytest.mark.parametrize("t", T_VALUES)

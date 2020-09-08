@@ -34,7 +34,13 @@ def test_cli_slice(
     with tempfile.NamedTemporaryFile() as out_file:
         run = runner.invoke(
             cli,
-            ["slice", "-o", out_file.name, "-i", input_file,]
+            [
+                "slice",
+                "-o",
+                out_file.name,
+                "-i",
+                input_file,
+            ]
             + cli_sparsity_arguments
             + cli_verbosity_argument
             + [str(x) for x in slice_idx],

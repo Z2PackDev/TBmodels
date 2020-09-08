@@ -10,10 +10,10 @@ Test the __repr__ of the Model class.
 import pytest
 import numpy as np  # pylint: disable=unused-import
 
+from parameters import T_VALUES
+
 import tbmodels  # pylint: disable=unused-import
 from tbmodels._sparse_matrix import csr  # pylint: disable=unused-import
-
-from parameters import T_VALUES
 
 
 @pytest.mark.parametrize("t", T_VALUES)

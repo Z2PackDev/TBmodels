@@ -357,10 +357,10 @@ class Model(HDF5Enabled):
         if size is None:
             try:
                 size = len(kwargs["on_site"])
-            except KeyError:
+            except KeyError as exc:
                 raise ValueError(
                     "No on-site energies and no size given. The size of the system cannot be determined."
-                )
+                ) from exc
 
         class _hop:
             """
@@ -897,7 +897,9 @@ class Model(HDF5Enabled):
                     continue
                 kwant_sys[
                     kwant.builder.HoppingKind(
-                        self._zero_vec, kwant_sublattices[i], kwant_sublattices[j],
+                        self._zero_vec,
+                        kwant_sublattices[i],
+                        kwant_sublattices[j],
                     )
                 ] = on_site_mat[np.ix_(s1.indices, s2.indices)]
 
@@ -1154,7 +1156,11 @@ class Model(HDF5Enabled):
 
     # -------------------MODIFYING THE MODEL ----------------------------#
     def add_hop(
-        self, overlap: complex, orbital_1: int, orbital_2: int, R: ty.Sequence[int],
+        self,
+        overlap: complex,
+        orbital_1: int,
+        orbital_2: int,
+        R: ty.Sequence[int],
     ):
         r"""
         Adds a hopping term with a given overlap (hopping strength) from
@@ -1388,8 +1394,10 @@ class Model(HDF5Enabled):
                 sym_pow = sym
                 tmp_model = new_model
                 for _ in range(1, order):
-                    tmp_model += new_model._apply_operation(  # pylint: disable=protected-access
-                        sym_pow, position_tolerance=position_tolerance
+                    tmp_model += (
+                        new_model._apply_operation(  # pylint: disable=protected-access
+                            sym_pow, position_tolerance=position_tolerance
+                        )
                     )
                     sym_pow @= sym
                 new_model = 1 / order * tmp_model
@@ -1448,7 +1456,8 @@ class Model(HDF5Enabled):
         new_hop: HoppingType = co.defaultdict(self._empty_matrix)
         for R, mat in self.hop.items():
             R_transformed = np.array(
-                np.rint(np.dot(symmetry_operation.rotation_matrix, R)), dtype=int,
+                np.rint(np.dot(symmetry_operation.rotation_matrix, R)),
+                dtype=int,
             )
             for shift, (idx1, idx2) in hop_shifts_idx.items():
                 new_R = tuple(np.array(R_transformed) + np.array(shift))
@@ -1821,12 +1830,21 @@ class Model(HDF5Enabled):
         # Check and warn if positions are at the edge of the new unit cell.
         at_uc_edge_indices = list(
             np.argwhere(
-                np.all(
-                    np.logical_or(
-                        np.isclose(pos_reduced_new, 0, rtol=0),
-                        np.isclose(pos_reduced_new, 1, rtol=0),
+                np.logical_and(
+                    np.any(
+                        np.logical_or(
+                            np.isclose(pos_reduced_new, 0, rtol=0, atol=2 * eps),
+                            np.isclose(pos_reduced_new, 1, rtol=0, atol=2 * eps),
+                        ),
+                        axis=-1,
                     ),
-                    axis=-1,
+                    np.all(
+                        np.logical_and(
+                            pos_reduced_new >= -2 * eps,
+                            pos_reduced_new <= 1 + 2 * eps,
+                        ),
+                        axis=-1,
+                    ),
                 )
             ).flatten()
         )
@@ -1841,7 +1859,10 @@ class Model(HDF5Enabled):
             )
 
         in_uc_indices = np.argwhere(
-            np.all(np.logical_and(pos_reduced_new >= 0, pos_reduced_new < 1), axis=-1,)
+            np.all(
+                np.logical_and(pos_reduced_new >= 0, pos_reduced_new < 1),
+                axis=-1,
+            )
         ).flatten()
         if target_indices is not None:
             if not np.all(target_indices == in_uc_indices):
@@ -1872,7 +1893,9 @@ class Model(HDF5Enabled):
         if check_uc_volume:
             uc_volume_change_factor = la.det(self.uc) / la.det(new_uc)
             if not np.isclose(
-                uc_volume_change_factor, total_orbital_ratio, atol=uc_volume_tolerance,
+                uc_volume_change_factor,
+                total_orbital_ratio,
+                atol=uc_volume_tolerance,
             ):
                 raise ValueError(
                     f"The unit cell volume decreased by a factor {uc_volume_change_factor}, "

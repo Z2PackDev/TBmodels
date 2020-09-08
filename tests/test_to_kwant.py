@@ -19,9 +19,9 @@ with warnings.catch_warnings():
     import kwant
 from kwant import wraparound
 
-import tbmodels
-
 from parameters import T_VALUES, KPT
+
+import tbmodels
 
 
 def to_kwant_params(kval):
