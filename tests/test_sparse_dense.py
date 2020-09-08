@@ -8,9 +8,9 @@
 import pytest
 import numpy as np
 
-import tbmodels
-
 from parameters import T_VALUES, KPT
+
+import tbmodels
 
 
 @pytest.mark.parametrize("t1", T_VALUES)

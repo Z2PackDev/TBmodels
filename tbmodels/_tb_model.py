@@ -357,10 +357,10 @@ class Model(HDF5Enabled):
         if size is None:
             try:
                 size = len(kwargs["on_site"])
-            except KeyError:
+            except KeyError as exc:
                 raise ValueError(
                     "No on-site energies and no size given. The size of the system cannot be determined."
-                )
+                ) from exc
 
         class _hop:
             """

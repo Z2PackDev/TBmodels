@@ -10,9 +10,9 @@ Test the construction of k.p models around a given k-point.
 import pytest
 import numpy as np
 
+from parameters import KPT
 import tbmodels
 from tbmodels.kdotp import KdotpModel
-from parameters import KPT
 
 
 def test_kdotp_model():
