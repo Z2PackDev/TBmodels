@@ -8,6 +8,7 @@ set -ev
 cd ${TRAVIS_BUILD_DIR}
 
 pip install codecov
+pip install -U setuptools wheel
 
 case "$INSTALL_TYPE" in
     dev)
