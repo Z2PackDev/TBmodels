@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # (c) 2015-2018, ETH Zurich, Institut fuer Theoretische Physik
 # Author: Dominik Gresch <greschd@gmx.ch>
@@ -210,7 +209,7 @@ class Model(HDF5Enabled):
         if on_site is not None:
             if len(on_site) != self.size:
                 raise ValueError(
-                    "The number of on-site energies {0} does not match the size of the system {1}".format(
+                    "The number of on-site energies {} does not match the size of the system {}".format(
                         len(on_site), self.size
                     )
                 )
@@ -315,14 +314,14 @@ class Model(HDF5Enabled):
         for key in self.hop.keys():
             if len(key) != self.dim:
                 raise ValueError(
-                    "The length of R = {0} does not match the dimensionality of the system ({1})".format(
+                    "The length of R = {} does not match the dimensionality of the system ({})".format(
                         key, self.dim
                     )
                 )
         if self.uc is not None:
             if self.uc.shape != (self.dim, self.dim):
                 raise ValueError(
-                    "Inconsistend dimension of the unit cell: {0}, does not match the dimensionality of the system ({1})".format(
+                    "Inconsistend dimension of the unit cell: {}, does not match the dimensionality of the system ({})".format(
                         self.uc.shape, self.dim
                     )
                 )
@@ -424,9 +423,7 @@ class Model(HDF5Enabled):
                 if not (orbital_a == i % num_wann) and (
                     orbital_b == (i % num_wann_square) // num_wann
                 ):
-                    raise ValueError(
-                        "Inconsistent orbital numbers in line '{}'".format(line)
-                    )
+                    raise ValueError(f"Inconsistent orbital numbers in line '{line}'")
             return [
                 (float(entry[5]) + 1j * float(entry[6]))
                 / (deg_pts[i // num_wann_square]),
@@ -477,11 +474,11 @@ class Model(HDF5Enabled):
             "%a, %d %b %Y %H:%M:%S %Z"
         )
         lines.append(tagline)
-        lines.append("{0:>12}".format(self.size))
+        lines.append(f"{self.size:>12}")
         num_g = len(self.hop.keys()) * 2 - 1
         if num_g <= 0:
             raise ValueError("Cannot print empty model to hr format.")
-        lines.append("{0:>12}".format(num_g))
+        lines.append(f"{num_g:>12}")
         tmp = ""
         for i in range(num_g):
             if tmp != "" and i % 15 == 0:
@@ -619,7 +616,7 @@ class Model(HDF5Enabled):
                 raise ValueError(
                     "Ambiguous unit cell: It can be given either via 'uc' or the 'win_file' keywords, but not both."
                 )
-            with open(win_file, "r") as f:
+            with open(win_file) as f:
                 kwargs["uc"] = cls._read_win(f)["unit_cell_cart"]
 
         if xyz_file is not None:
@@ -631,7 +628,7 @@ class Model(HDF5Enabled):
                 raise ValueError(
                     "Positions cannot be read from .xyz file without unit cell given: Transformation from cartesian to reduced coordinates not possible. Specify the unit cell using one of the keywords 'uc' or 'win_file'."
                 )
-            with open(xyz_file, "r") as f:
+            with open(xyz_file) as f:
                 wannier_pos_list_cartesian, atom_list_cartesian = cls._read_xyz(f)
                 wannier_pos_cartesian = np.array(wannier_pos_list_cartesian)
                 atom_pos_cartesian = np.array([a.pos for a in atom_list_cartesian])
@@ -673,14 +670,14 @@ class Model(HDF5Enabled):
                     )
                 kwargs["pos"] = la.solve(kwargs["uc"].T, np.array(pos_cartesian).T).T
 
-        with open(hr_file, "r") as f:
+        with open(hr_file) as f:
             num_wann, hop_entries = cls._read_hr(
                 f, ignore_orbital_order=ignore_orbital_order
             )
             hop_entries = (hop for hop in hop_entries if abs(hop[0]) > h_cutoff)
 
             if wsvec_file is not None:
-                with open(wsvec_file, "r") as f:
+                with open(wsvec_file) as f:
                     wsvec_generator = cls._async_parse(
                         cls._read_wsvec(f), chunksize=num_wann
                     )
@@ -887,7 +884,7 @@ class Model(HDF5Enabled):
             # site doesn't belong to any sublattice
             else:
                 # TODO: check if there is a legitimate use case which triggers this
-                raise ValueError("Site {} did not match any sublattice.".format(site))
+                raise ValueError(f"Site {site} did not match any sublattice.")
 
         # R = 0 terms between different sublattices
         for i, s1 in enumerate(sublattices):
@@ -2015,7 +2012,7 @@ class Model(HDF5Enabled):
         # check if the occupation number matches
         if self.occ != model.occ:
             raise ValueError(
-                "Error when adding Models: occupation numbers ({0}, {1}) don't match".format(
+                "Error when adding Models: occupation numbers ({}, {}) don't match".format(
                     self.occ, model.occ
                 )
             )
@@ -2023,7 +2020,7 @@ class Model(HDF5Enabled):
         # check if the size of the hopping matrices match
         if self.size != model.size:
             raise ValueError(
-                "Error when adding Models: the number of states ({0}, {1}) doesn't match".format(
+                "Error when adding Models: the number of states ({}, {}) doesn't match".format(
                     self.size, model.size
                 )
             )

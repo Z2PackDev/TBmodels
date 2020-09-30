@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # (c) 2015-2018, ETH Zurich, Institut fuer Theoretische Physik
 # Author: Dominik Gresch <greschd@gmx.ch>
@@ -41,7 +40,7 @@ class KdotpModel(SimpleHDF5Mapping):
         for mat in taylor_coefficients.values():
             if not np.allclose(mat, np.array(mat).T.conj()):
                 raise ValueError(
-                    "The provided Taylor coefficient {} is not hermitian".format(mat)
+                    f"The provided Taylor coefficient {mat} is not hermitian"
                 )
         self.taylor_coefficients = {
             tuple(key): np.array(mat, dtype=complex)
