@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Defines custom exceptions to be used in TBmodels. The main purpose of
 these custom exceptions is their use in the CLI. Custom exceptions are

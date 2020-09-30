@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 #
 
 # (c) 2015-2018, ETH Zurich, Institut fuer Theoretische Physik

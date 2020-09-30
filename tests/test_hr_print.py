@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 # (c) 2015-2018, ETH Zurich, Institut fuer Theoretische Physik
 # Author: Dominik Gresch <greschd@gmx.ch>
@@ -30,7 +29,7 @@ def test_consistency(hr_name, sample):
     hr_file = sample(hr_name)
     model = tbmodels.Model.from_wannier_files(hr_file=hr_file, occ=28, sparse=True)
     lines_new = model.to_hr().split("\n")
-    with open(hr_file, "r") as f:
+    with open(hr_file) as f:
         lines_old = [line.rstrip(" \r\n") for line in f.readlines()]
     assert len(lines_new) == len(lines_old)
     for l_new, l_old in zip(lines_new[1:], lines_old[1:]):
@@ -66,7 +65,7 @@ def test_consistency_no_hcutoff(hr_name, sample):
         hr_file=hr_file, occ=28, h_cutoff=-1, sparse=True
     )
     lines_new = model.to_hr().split("\n")
-    with open(hr_file, "r") as f:
+    with open(hr_file) as f:
         lines_old = [line.rstrip(" \r\n") for line in f.readlines()]
     assert len(lines_new) == len(lines_old)
     for l_new, l_old in zip(lines_new[1:], lines_old[1:]):

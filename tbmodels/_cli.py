@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # (c) 2015-2018, ETH Zurich, Institut fuer Theoretische Physik
 # Author: Dominik Gresch <greschd@gmx.ch>
@@ -52,7 +51,7 @@ _VERBOSE_OPTION = click.option("-v", "--verbose", is_flag=True, default=False)
 
 def _read_input(input, verbose):  # pylint: disable=redefined-builtin
     if verbose:
-        click.echo("Reading initial model from file '{}' ...".format(input))
+        click.echo(f"Reading initial model from file '{input}' ...")
     return Model.from_hdf5_file(input)
 
 
@@ -68,7 +67,7 @@ def _write_output(model, output, sparsity, verbose):
     elif sparsity == _SparsityChoices.DENSE.value:
         model.set_sparse(False)
     if verbose:
-        click.echo("Writing output model to file '{}' ...".format(output))
+        click.echo(f"Writing output model to file '{output}' ...")
     model.to_hdf5_file(output)
     if verbose:
         click.echo("Done!")
@@ -157,7 +156,7 @@ def symmetrize(
 
     model = _read_input(input, verbose=verbose)
     if verbose:
-        click.echo("Reading symmetries from file '{}' ...".format(symmetries))
+        click.echo(f"Reading symmetries from file '{symmetries}' ...")
     sym = sr.io.load(symmetries)
 
     @singledispatch
@@ -224,7 +223,7 @@ def slice(
     """
     model = _read_input(input, verbose=verbose)
     if verbose:
-        click.echo("Slicing model with indices {} ...".format(slice_idx))
+        click.echo(f"Slicing model with indices {slice_idx} ...")
     model_slice = model.slice_orbitals(slice_idx=slice_idx)
     _write_output(model_slice, output, sparsity=sparsity, verbose=verbose)
 
@@ -250,7 +249,7 @@ def eigenvals(input, kpoints, output, verbose):  # pylint: disable=redefined-bui
 
     model = _read_input(input, verbose=verbose)
     if verbose:
-        click.echo("Reading kpoints from file '{}' ...".format(kpoints))
+        click.echo(f"Reading kpoints from file '{kpoints}' ...")
     kpts = bi.io.load(kpoints)
     if isinstance(kpts, bi.eigenvals.EigenvalsData):
         kpts = kpts.kpoints
@@ -261,9 +260,7 @@ def eigenvals(input, kpoints, output, verbose):  # pylint: disable=redefined-bui
         kpoints=kpts, eigenval_function=model.eigenval, listable=True
     )
     if verbose:
-        click.echo(
-            "Writing kpoints and energy eigenvalues to file '{}' ...".format(output)
-        )
+        click.echo(f"Writing kpoints and energy eigenvalues to file '{output}' ...")
     bi.io.save(eigenvalues, output)
     if verbose:
         click.echo("Done!")
