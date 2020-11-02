@@ -10,10 +10,10 @@ Test loading a tight-binding model from Wannier90 files / folders.
 import pytest
 import numpy as np
 
+from parameters import KPT
+
 import tbmodels
 from tbmodels.exceptions import TbmodelsException
-
-from parameters import KPT
 
 
 @pytest.mark.parametrize(

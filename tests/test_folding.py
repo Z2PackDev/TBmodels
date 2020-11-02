@@ -90,13 +90,14 @@ def test_consistency_checks_disabled(
     are disabled.
     """
     model = get_model_pos_outside()
-    model.fold_model(
-        new_unit_cell=model.uc,
-        orbital_labels=["a", "b"],
-        check_orbital_ratio=False,
-        check_uc_volume=False,
-        unmatched_position_threshold=0.0,
-    )
+    with pytest.warns(UserWarning):
+        model.fold_model(
+            new_unit_cell=model.uc,
+            orbital_labels=["a", "b"],
+            check_orbital_ratio=False,
+            check_uc_volume=False,
+            unmatched_position_threshold=0.0,
+        )
 
 
 def test_orbital_number_consistency_check(
@@ -108,9 +109,10 @@ def test_orbital_number_consistency_check(
     """
     model = get_model_pos_outside()
     with pytest.raises(ValueError) as excinfo:
-        model.fold_model(
-            new_unit_cell=model.uc, orbital_labels=["a", "b"], check_uc_volume=False
-        )
+        with pytest.warns(UserWarning):
+            model.fold_model(
+                new_unit_cell=model.uc, orbital_labels=["a", "b"], check_uc_volume=False
+            )
     assert "individual orbital numbers" in str(excinfo.value)
 
 
@@ -123,13 +125,14 @@ def test_unmatched_position_check(
     """
     model = get_model_pos_outside()
     with pytest.raises(ValueError) as excinfo:
-        model.fold_model(
-            new_unit_cell=model.uc,
-            orbital_labels=["a", "b"],
-            check_orbital_ratio=False,
-            check_uc_volume=False,
-            unmatched_position_threshold=1.0,
-        )
+        with pytest.warns(UserWarning):
+            model.fold_model(
+                new_unit_cell=model.uc,
+                orbital_labels=["a", "b"],
+                check_orbital_ratio=False,
+                check_uc_volume=False,
+                unmatched_position_threshold=1.0,
+            )
     assert "does not match any orbital in the new model" in str(excinfo.value)
 
 
@@ -159,9 +162,12 @@ def test_volume_consistency_check(
     """
     model = get_model_pos_outside()
     with pytest.raises(ValueError) as excinfo:
-        model.fold_model(
-            new_unit_cell=model.uc, orbital_labels=["a", "b"], check_orbital_ratio=False
-        )
+        with pytest.warns(UserWarning):
+            model.fold_model(
+                new_unit_cell=model.uc,
+                orbital_labels=["a", "b"],
+                check_orbital_ratio=False,
+            )
     assert "unit cell volume" in str(excinfo.value)
 
 

@@ -8,9 +8,9 @@ import numpy as np
 from numpy.testing import assert_allclose
 import pytest
 
-import tbmodels
-
 from parameters import KPT, T_VALUES
+
+import tbmodels
 
 
 def get_equivalent_k(k, supercell_size):

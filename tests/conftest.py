@@ -46,9 +46,9 @@ def compare_data(test_name):
         file_name_full = os.path.join(cache_dir, file_name)
         try:
             val = load(file_name_full)
-        except OSError:
+        except OSError as exc:
             save(data, file_name_full)
-            raise ValueError("Reference data does not exist.")
+            raise ValueError("Reference data does not exist.") from exc
         else:
             assert compare_fct(val, data)
 

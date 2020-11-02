@@ -76,6 +76,9 @@ class Model(HDF5Enabled):
         given fully (``contains_cc=True``), or the complex conjugate
         should be added for each term to obtain the full model. The
         ``on_site`` parameter is not affected by this.
+    cc_check_tolerance :
+        Tolerance when checking if the complex conjugate values (if
+        given) match.
     sparse :
         Specifies whether the hopping matrices should be saved in sparse
         format.
@@ -92,6 +95,7 @@ class Model(HDF5Enabled):
         pos: ty.Optional[ty.Sequence[ty.Sequence[float]]] = None,
         uc: ty.Optional[np.ndarray] = None,
         contains_cc: bool = True,
+        cc_check_tolerance: float = 1e-12,
         sparse: bool = False,
     ):
         if hop is None:
@@ -112,7 +116,13 @@ class Model(HDF5Enabled):
         self.uc = None if uc is None else np.array(uc)  # implicit copy
 
         # ---- HOPPING TERMS AND POSITIONS ----
-        self._init_hop_pos(on_site=on_site, hop=hop, pos=pos, contains_cc=contains_cc)
+        self._init_hop_pos(
+            on_site=on_site,
+            hop=hop,
+            pos=pos,
+            contains_cc=contains_cc,
+            cc_check_tolerance=cc_check_tolerance,
+        )
 
         # ---- CONSISTENCY CHECK FOR SIZE ----
         self._check_size_hop()
@@ -160,7 +170,7 @@ class Model(HDF5Enabled):
 
         self._zero_vec = tuple([0] * self.dim)
 
-    def _init_hop_pos(self, on_site, hop, pos, contains_cc):
+    def _init_hop_pos(self, on_site, hop, pos, contains_cc, cc_check_tolerance):
         """
         Sets the hopping terms and positions, mapping the positions to the UC (and changing the hoppings accordingly) if necessary.
         """
@@ -187,7 +197,7 @@ class Model(HDF5Enabled):
             )
 
         if contains_cc:
-            hop = self._reduce_hop(hop)
+            hop = self._reduce_hop(hop, cc_check_tolerance=cc_check_tolerance)
         else:
             hop = self._map_hop_positive_R(hop)
         # use partial instead of lambda to allow for pickling
@@ -234,18 +244,28 @@ class Model(HDF5Enabled):
         return new_pos, new_hop
 
     @staticmethod
-    def _reduce_hop(hop):
+    def _reduce_hop(hop, cc_check_tolerance):
         """
         Reduce the full hoppings representation (with cc) to the reduced one (without cc, zero-terms halved).
         """
         # Consistency checks
         failed_R = []
+        res = dict()
         for R, mat in hop.items():
-            diff_norm = la.norm(
-                mat - hop.get(tuple(-x for x in R), np.zeros(mat.shape)).T.conjugate()
-            )
-            if diff_norm > 1e-12:
+            equiv_mat = hop.get(tuple(-x for x in R), np.zeros(mat.shape)).T.conjugate()
+            diff_norm = la.norm(mat - equiv_mat)
+            if diff_norm > cc_check_tolerance:
                 failed_R.append((R, diff_norm))
+
+            avg_mat = (mat + equiv_mat) / 2
+
+            try:
+                if R[np.nonzero(R)[0][0]] > 0:
+                    res[R] = avg_mat
+            # Case R = 0
+            except IndexError:
+                res[R] = avg_mat / 2
+
         if failed_R:
             raise ValueError(
                 "The provided hoppings do not correspond to a hermitian Hamiltonian. hoppings[-R] = hoppings[R].H is not fulfilled for the following values:\n"
@@ -255,16 +275,6 @@ class Model(HDF5Enabled):
                 )
             )
 
-        res = dict()
-        for R, mat in hop.items():
-            try:
-                if R[np.nonzero(R)[0][0]] > 0:
-                    res[R] = mat
-                else:
-                    continue
-            # zero case
-            except IndexError:
-                res[R] = 0.5 * mat
         return res
 
     def _map_hop_positive_R(self, hop: HoppingType) -> HoppingType:
@@ -347,10 +357,10 @@ class Model(HDF5Enabled):
         if size is None:
             try:
                 size = len(kwargs["on_site"])
-            except KeyError:
+            except KeyError as exc:
                 raise ValueError(
                     "No on-site energies and no size given. The size of the system cannot be determined."
-                )
+                ) from exc
 
         class _hop:
             """
@@ -887,16 +897,18 @@ class Model(HDF5Enabled):
                     continue
                 kwant_sys[
                     kwant.builder.HoppingKind(
-                        self._zero_vec, kwant_sublattices[i], kwant_sublattices[j],
+                        self._zero_vec,
+                        kwant_sublattices[i],
+                        kwant_sublattices[j],
                     )
                 ] = on_site_mat[np.ix_(s1.indices, s2.indices)]
 
         # R != 0 terms
         for R, mat in self.hop.items():
-            mat = self._array_cast(mat)
             # special case R = 0 handled already
             if R == self._zero_vec:
                 continue
+            mat = self._array_cast(mat)
             minus_R = tuple(-np.array(R))
             for i, s1 in enumerate(sublattices):
                 for j, s2 in enumerate(sublattices):
@@ -1144,7 +1156,11 @@ class Model(HDF5Enabled):
 
     # -------------------MODIFYING THE MODEL ----------------------------#
     def add_hop(
-        self, overlap: complex, orbital_1: int, orbital_2: int, R: ty.Sequence[int],
+        self,
+        overlap: complex,
+        orbital_1: int,
+        orbital_2: int,
+        R: ty.Sequence[int],
     ):
         r"""
         Adds a hopping term with a given overlap (hopping strength) from
@@ -1336,6 +1352,7 @@ class Model(HDF5Enabled):
         self,
         symmetries: ty.Sequence["symmetry_representation.SymmetryOperation"],
         full_group: bool = False,
+        position_tolerance: float = 1e-5,
     ) -> "Model":
         """
         Returns a model which is symmetrized w.r.t. the given
@@ -1350,13 +1367,25 @@ class Model(HDF5Enabled):
             Specifies whether the given symmetries represent the full
             symmetry group, or only a subset from which the full
             symmetry group is generated.
+        position_tolerance :
+            Absolute tolerance (in reduced coordinates) when matching
+            positions after a symmetry has been applied to existing
+            positions.
         """
         if full_group:
-            new_model = self._apply_operation(symmetries[0])
+            new_model = self._apply_operation(
+                symmetries[0], position_tolerance=position_tolerance
+            )
             return (
                 1
                 / len(symmetries)
-                * sum((self._apply_operation(s) for s in symmetries[1:]), new_model,)
+                * sum(
+                    (
+                        self._apply_operation(s, position_tolerance=position_tolerance)
+                        for s in symmetries[1:]
+                    ),
+                    new_model,
+                )
             )
         else:
             new_model = self
@@ -1365,15 +1394,17 @@ class Model(HDF5Enabled):
                 sym_pow = sym
                 tmp_model = new_model
                 for _ in range(1, order):
-                    tmp_model += new_model._apply_operation(  # pylint: disable=protected-access
-                        sym_pow
+                    tmp_model += (
+                        new_model._apply_operation(  # pylint: disable=protected-access
+                            sym_pow, position_tolerance=position_tolerance
+                        )
                     )
                     sym_pow @= sym
                 new_model = 1 / order * tmp_model
             return new_model
 
     def _apply_operation(  # pylint: disable=too-many-locals
-        self, symmetry_operation
+        self, symmetry_operation, position_tolerance
     ) -> "Model":
         """
         Helper function to apply a symmetry operation to the model.
@@ -1395,7 +1426,8 @@ class Model(HDF5Enabled):
             for T in itertools.product(range(-1, 2), repeat=self.dim):
                 shift = nearest_R + T
                 if any(
-                    np.isclose(new_pos - shift, latt.pos).all() for latt in sublattices
+                    np.isclose(new_pos - shift, latt.pos, atol=position_tolerance).all()
+                    for latt in sublattices
                 ):
                     valid_shifts.append(tuple(shift))
             if not valid_shifts:
@@ -1424,7 +1456,8 @@ class Model(HDF5Enabled):
         new_hop: HoppingType = co.defaultdict(self._empty_matrix)
         for R, mat in self.hop.items():
             R_transformed = np.array(
-                np.rint(np.dot(symmetry_operation.rotation_matrix, R)), dtype=int,
+                np.rint(np.dot(symmetry_operation.rotation_matrix, R)),
+                dtype=int,
             )
             for shift, (idx1, idx2) in hop_shifts_idx.items():
                 new_R = tuple(np.array(R_transformed) + np.array(shift))
@@ -1693,7 +1726,7 @@ class Model(HDF5Enabled):
             )
         )
 
-    def fold_model(  # pylint: disable=too-many-locals # noqa:C001
+    def fold_model(  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         self,
         *,
         new_unit_cell: ty.Sequence[ty.Sequence[float]],
@@ -1797,12 +1830,21 @@ class Model(HDF5Enabled):
         # Check and warn if positions are at the edge of the new unit cell.
         at_uc_edge_indices = list(
             np.argwhere(
-                np.all(
-                    np.logical_or(
-                        np.isclose(pos_reduced_new, 0, rtol=0),
-                        np.isclose(pos_reduced_new, 1, rtol=0),
+                np.logical_and(
+                    np.any(
+                        np.logical_or(
+                            np.isclose(pos_reduced_new, 0, rtol=0, atol=2 * eps),
+                            np.isclose(pos_reduced_new, 1, rtol=0, atol=2 * eps),
+                        ),
+                        axis=-1,
                     ),
-                    axis=-1,
+                    np.all(
+                        np.logical_and(
+                            pos_reduced_new >= -2 * eps,
+                            pos_reduced_new <= 1 + 2 * eps,
+                        ),
+                        axis=-1,
+                    ),
                 )
             ).flatten()
         )
@@ -1817,7 +1859,10 @@ class Model(HDF5Enabled):
             )
 
         in_uc_indices = np.argwhere(
-            np.all(np.logical_and(pos_reduced_new >= 0, pos_reduced_new < 1), axis=-1,)
+            np.all(
+                np.logical_and(pos_reduced_new >= 0, pos_reduced_new < 1),
+                axis=-1,
+            )
         ).flatten()
         if target_indices is not None:
             if not np.all(target_indices == in_uc_indices):
@@ -1848,7 +1893,9 @@ class Model(HDF5Enabled):
         if check_uc_volume:
             uc_volume_change_factor = la.det(self.uc) / la.det(new_uc)
             if not np.isclose(
-                uc_volume_change_factor, total_orbital_ratio, atol=uc_volume_tolerance,
+                uc_volume_change_factor,
+                total_orbital_ratio,
+                atol=uc_volume_tolerance,
             ):
                 raise ValueError(
                     f"The unit cell volume decreased by a factor {uc_volume_change_factor}, "
