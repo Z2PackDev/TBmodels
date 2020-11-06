@@ -5,8 +5,6 @@
 # Be verbose, and stop with error as soon there's one
 set -ev
 
-cd ${TRAVIS_BUILD_DIR}
-
 pip install codecov
 pip install -U setuptools wheel
 
