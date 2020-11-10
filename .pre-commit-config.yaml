@@ -4,15 +4,12 @@ repos:
     hooks:
       - id: pyupgrade
         args: [--py36-plus]
+
   - repo: https://github.com/psf/black
     rev: 20.8b1
     hooks:
       - id: black
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v0.782
-    hooks:
-      - id: mypy
-        exclude: "^(doc/)|(examples/)|(playground/)"
+
   - repo: local
     hooks:
       - id: pylint
@@ -21,6 +18,17 @@ repos:
         language: system
         types: [python]
         exclude: "^(doc/)|(examples/)|(playground/)|(utils/)"
+
+      - id: mypy
+        name: mypy
+        entry: mypy
+        language: python
+        types: [python]
+        #args: [--scripts-are-modules]
+        require_serial: true
+        exclude: "^(doc/)|(examples/)|(playground/)"
+        args: []
+
       - id: interpolate-workflows
         name: Interpolate Github workflows
         entry: python ./utils/interpolate_yaml_anchors.py
