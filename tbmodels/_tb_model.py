@@ -1635,7 +1635,7 @@ class Model(HDF5Enabled):
         for R, hop_mat in self.hop.items():
             new_R = la.solve(uc_reduced.T, R)
             assert np.allclose(np.round(new_R), new_R)
-            new_R = tuple(new_R.astype(int))
+            new_R = tuple(np.round(new_R).astype(int))
             new_hop[new_R] = hop_mat
 
         return Model(
