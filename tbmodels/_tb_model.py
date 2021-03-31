@@ -633,13 +633,15 @@ class Model(HDF5Enabled):
                 wannier_pos_cartesian = np.array(wannier_pos_list_cartesian)
                 atom_pos_cartesian = np.array([a.pos for a in atom_list_cartesian])
                 if pos_kind == "wannier":
-                    pos_cartesian = wannier_pos_cartesian
+                    pos_cartesian: ty.Union[
+                        ty.List[np.ndarray], np.ndarray
+                    ] = wannier_pos_cartesian
                 elif pos_kind == "nearest_atom":
                     if distance_ratio_threshold < 1:
                         raise ValueError(
                             "Invalid value for 'distance_ratio_threshold': must be >= 1."
                         )
-                    pos_cartesian = []
+                    pos_cartesian = ty.cast(ty.List[np.ndarray], [])
                     for p in wannier_pos_cartesian:
                         p_reduced = la.solve(kwargs["uc"].T, np.array(p).T).T
                         T_base = np.floor(p_reduced)
@@ -1130,7 +1132,7 @@ class Model(HDF5Enabled):
             H = pos_exponential.conjugate().transpose((0, 2, 1)) * H * pos_exponential
 
         if single_point:
-            return H[0]
+            return ty.cast(np.ndarray, H[0])
         return H
 
     def eigenval(
@@ -1149,7 +1151,7 @@ class Model(HDF5Enabled):
         hamiltonians = self.hamilton(k)
         if hamiltonians.ndim == 3:
             return [la.eigvalsh(ham) for ham in hamiltonians]
-        return la.eigvalsh(hamiltonians)
+        return ty.cast(np.ndarray, la.eigvalsh(hamiltonians))
 
     # -------------------MODIFYING THE MODEL ----------------------------#
     def add_hop(
@@ -1272,8 +1274,8 @@ class Model(HDF5Enabled):
                 "determine the cartesian distance between orbitals."
             )
         pos_cart = (self.uc.T @ self.pos.T).T
-        pos_offset_cart = pos_cart.reshape(1, -1, self.dim) - pos_cart.reshape(
-            -1, 1, self.dim
+        pos_offset_cart = pos_cart.reshape((1, -1, self.dim)) - pos_cart.reshape(
+            (-1, 1, self.dim)
         )
 
         # Cast to list because the dictionary is modified in the loop.
@@ -1320,7 +1322,7 @@ class Model(HDF5Enabled):
         # change existing matrices
         with contextlib.suppress(AttributeError):
             for k, v in self.hop.items():
-                self.hop[k] = self._matrix_type(v)
+                self.hop[k] = self._matrix_type(v)  # type: ignore
 
     # If Python 3.4 support is dropped this could be made more straightforwardly
     # However, for now the default pickle protocol (and thus multiprocessing)
@@ -1592,7 +1594,7 @@ class Model(HDF5Enabled):
                 )
             # convert to reduced coordinates
             if uc is None:
-                new_uc = self.uc
+                new_uc: ty.Optional[np.ndarray] = self.uc
                 uc_reduced = np.eye(self.dim)
             else:
                 new_uc = np.array(uc)
@@ -1635,7 +1637,7 @@ class Model(HDF5Enabled):
         for R, hop_mat in self.hop.items():
             new_R = la.solve(uc_reduced.T, R)
             assert np.allclose(np.round(new_R), new_R)
-            new_R = tuple(new_R.astype(int))
+            new_R = tuple(np.round(new_R).astype(int))
             new_hop[new_R] = hop_mat
 
         return Model(
