@@ -17,7 +17,7 @@ def matrix_to_hop(
     orbitals: ty.Optional[ty.Sequence[int]] = None,
     R: ty.Sequence[int] = (0, 0, 0),
     multiplier: float = 1.0,
-) -> ty.List[ty.List[ty.Union[complex, int, np.ndarray]]]:
+) -> ty.List[ty.Tuple[complex, int, int, np.ndarray]]:
     r"""
     Turns a square matrix into a series of hopping terms.
 
@@ -40,11 +40,11 @@ def matrix_to_hop(
     for i, row in enumerate(mat):
         for j, x in enumerate(row):
             hop.append(
-                [
+                (
                     multiplier * x,
                     orbitals[i],
                     orbitals[j],
                     np.array(R, dtype=int),
-                ]
+                )
             )
     return hop

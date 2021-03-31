@@ -68,13 +68,16 @@ class KdotpModel(SimpleHDF5Mapping):
         else:
             single_point = False
 
-        ham: np.ndarray = sum(
-            np.prod(k_array ** k_powers, axis=-1).reshape(-1, 1, 1)
-            * mat[np.newaxis, :, :]
-            for k_powers, mat in self.taylor_coefficients.items()
+        ham = ty.cast(
+            np.ndarray,
+            sum(
+                np.prod(k_array ** k_powers, axis=-1).reshape(-1, 1, 1)
+                * mat[np.newaxis, :, :]
+                for k_powers, mat in self.taylor_coefficients.items()
+            ),
         )
         if single_point:
-            return ham[0]
+            return ty.cast(np.ndarray, ham[0])
         return ham
 
     def eigenval(
@@ -93,4 +96,4 @@ class KdotpModel(SimpleHDF5Mapping):
         hamiltonians = self.hamilton(k)
         if hamiltonians.ndim == 3:
             return [la.eigvalsh(ham) for ham in hamiltonians]
-        return la.eigvalsh(hamiltonians)
+        return ty.cast(np.ndarray, la.eigvalsh(hamiltonians))
