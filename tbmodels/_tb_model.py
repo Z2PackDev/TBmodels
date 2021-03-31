@@ -1274,8 +1274,8 @@ class Model(HDF5Enabled):
                 "determine the cartesian distance between orbitals."
             )
         pos_cart = (self.uc.T @ self.pos.T).T
-        pos_offset_cart = pos_cart.reshape(1, -1, self.dim) - pos_cart.reshape(
-            -1, 1, self.dim
+        pos_offset_cart = pos_cart.reshape((1, -1, self.dim)) - pos_cart.reshape(
+            (-1, 1, self.dim)
         )
 
         # Cast to list because the dictionary is modified in the loop.
