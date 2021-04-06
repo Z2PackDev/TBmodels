@@ -6,6 +6,8 @@
 Implements the Model class, which describes a tight-binding model.
 """
 
+from __future__ import annotations
+
 import re
 import os
 import copy
@@ -24,6 +26,8 @@ from fsc.export import export
 from fsc.hdf5_io import subscribe_hdf5, HDF5Enabled
 
 if ty.TYPE_CHECKING:
+    # Replace with typing.Literal once Python 3.7 support is dropped.
+    from typing_extensions import Literal
     import symmetry_representation  # pylint: disable=unused-import
 
 from .kdotp import KdotpModel
@@ -334,7 +338,7 @@ class Model(HDF5Enabled):
         hop_list: ty.Iterable[ty.Tuple[complex, int, int, ty.Tuple[int, ...]]] = (),
         size: ty.Optional[int] = None,
         **kwargs,
-    ) -> "Model":
+    ) -> Model:
         """
         Create a :class:`.Model` from a list of hopping terms.
 
@@ -529,7 +533,7 @@ class Model(HDF5Enabled):
     @classmethod
     def from_wannier_folder(
         cls, folder: str = ".", prefix: str = "wannier", **kwargs
-    ) -> "Model":
+    ) -> Model:
         """
         Create a :class:`.Model` instance from Wannier90 output files,
         given the folder containing the files and file prefix.
@@ -573,7 +577,7 @@ class Model(HDF5Enabled):
         pos_kind: str = "wannier",
         distance_ratio_threshold: float = 3.0,
         **kwargs,
-    ) -> "Model":
+    ) -> Model:
         """
         Create a :class:`.Model` instance from Wannier90 output files.
 
@@ -988,7 +992,7 @@ class Model(HDF5Enabled):
     @classmethod
     def from_hdf5_file(  # pylint: disable=arguments-differ
         cls, hdf5_file: str, **kwargs
-    ) -> "Model":
+    ) -> Model:
         """
         Returns a :class:`.Model` instance read from a file in HDF5
         format.
@@ -1013,7 +1017,7 @@ class Model(HDF5Enabled):
     @classmethod
     def from_hdf5(  # pylint: disable=arguments-differ
         cls, hdf5_handle, **kwargs
-    ) -> "Model":
+    ) -> Model:
         # For compatibility with a development version which created a top-level
         # 'tb_model' attribute.
         try:
@@ -1349,10 +1353,10 @@ class Model(HDF5Enabled):
 
     def symmetrize(
         self,
-        symmetries: ty.Sequence["symmetry_representation.SymmetryOperation"],
+        symmetries: ty.Sequence[symmetry_representation.SymmetryOperation],
         full_group: bool = False,
         position_tolerance: float = 1e-5,
-    ) -> "Model":
+    ) -> Model:
         """
         Returns a model which is symmetrized w.r.t. the given
         symmetries. This is done by performing a group average over the
@@ -1404,7 +1408,7 @@ class Model(HDF5Enabled):
 
     def _apply_operation(  # pylint: disable=too-many-locals
         self, symmetry_operation, position_tolerance
-    ) -> "Model":
+    ) -> Model:
         """
         Helper function to apply a symmetry operation to the model.
         """
@@ -1473,7 +1477,7 @@ class Model(HDF5Enabled):
 
         return Model(**co.ChainMap(dict(hop=new_hop), self._input_kwargs))
 
-    def slice_orbitals(self, slice_idx: ty.List[int]) -> "Model":
+    def slice_orbitals(self, slice_idx: ty.List[int]) -> Model:
         """
         Returns a new model with only the orbitals as given in the
         ``slice_idx``. This can also be used to re-order the orbitals.
@@ -1491,7 +1495,7 @@ class Model(HDF5Enabled):
         return Model(**co.ChainMap(dict(hop=new_hop, pos=new_pos), self._input_kwargs))
 
     @classmethod
-    def join_models(cls, *models: "Model") -> "Model":
+    def join_models(cls, *models: Model) -> Model:
         """
         Creates a tight-binding model which contains all orbitals of the
         given input models. The orbitals are ordered by model, such that
@@ -1559,7 +1563,7 @@ class Model(HDF5Enabled):
         uc: ty.Optional[ty.Sequence[ty.Sequence[float]]] = None,
         offset: ty.Sequence[float] = (0, 0, 0),
         cartesian: bool = False,
-    ) -> "Model":
+    ) -> Model:
         """Return a model with a different unit cell of the same volume.
 
         Creates a model with a changed unit cell - with a different
@@ -1646,7 +1650,7 @@ class Model(HDF5Enabled):
 
     def supercell(  # pylint: disable=too-many-locals
         self, size: ty.Sequence[int]
-    ) -> "Model":
+    ) -> Model:
         """Generate a model for a supercell of the current unit cell.
 
         Parameters
@@ -1738,7 +1742,8 @@ class Model(HDF5Enabled):
         check_uc_volume: bool = True,
         uc_volume_tolerance: float = 1e-6,
         check_orbital_ratio: bool = True,
-    ) -> "Model":
+        order_by: Literal["label", "index"] = "label",
+    ) -> Model:
         """
         Returns a model with a smaller unit cell. Orbitals which are related
         by a lattice vector of the new unit cell are "folded" into a single
@@ -1789,6 +1794,15 @@ class Model(HDF5Enabled):
             should be checked to be the same as the initial ratio. If
             this is set to False, the resulting model will always
             have ``occ=None``.
+        order_by :
+            Determines how the orbitals in the new model are ordered.
+            For ``order_by="index"``, the orbitals are ordered exactly the
+            same as in the original model. Note that this order will
+            depend on which orbitals end up inside the unit cell.
+            For ``order_by="label"``, the orbitals are ordered
+            according to the **occurrence** (not the value) of the
+            labels in the ``orbital_labels`` input. Orbitals with the
+            same label are again ordered by index.
         """
         if len(orbital_labels) != self.size:
             raise ValueError(
@@ -1863,6 +1877,24 @@ class Model(HDF5Enabled):
                 axis=-1,
             )
         ).flatten()
+        if order_by == "label":
+            idx = 0
+            orbital_sort_idx = {}
+            for label in orbital_labels:
+                if label not in orbital_sort_idx:
+                    orbital_sort_idx[label] = idx
+                    idx += 1
+            in_uc_sort_idx = [
+                orbital_sort_idx[orbital_labels[i]] for i in in_uc_indices
+            ]
+            in_uc_indices = in_uc_indices[
+                np.argsort(in_uc_sort_idx, kind="mergesort")  # need stable sorting
+            ]
+        else:
+            if order_by != "index":
+                raise ValueError(
+                    f"Invalid input '{order_by}' for 'order_by', must be either 'label' or 'index'."
+                )
         if target_indices is not None:
             if not np.all(target_indices == in_uc_indices):
                 raise ValueError(
@@ -2001,7 +2033,7 @@ class Model(HDF5Enabled):
             )
         )
 
-    def __add__(self, model: "Model") -> "Model":
+    def __add__(self, model: Model) -> Model:
         """
         Adds two models together by adding their hopping terms.
         """
@@ -2059,19 +2091,19 @@ class Model(HDF5Enabled):
         # -------------------
         return Model(**co.ChainMap(dict(hop=new_hop), self._input_kwargs))
 
-    def __sub__(self, model: "Model") -> "Model":
+    def __sub__(self, model: Model) -> Model:
         """
         Substracts one model from another by substracting all hopping terms.
         """
         return self + -model
 
-    def __neg__(self) -> "Model":
+    def __neg__(self) -> Model:
         """
         Changes the sign of all hopping terms.
         """
         return -1 * self
 
-    def __mul__(self, x: float) -> "Model":
+    def __mul__(self, x: float) -> Model:
         """
         Multiplies hopping terms by x.
         """
@@ -2081,13 +2113,13 @@ class Model(HDF5Enabled):
 
         return Model(**co.ChainMap(dict(hop=new_hop), self._input_kwargs))
 
-    def __rmul__(self, x: float) -> "Model":
+    def __rmul__(self, x: float) -> Model:
         """
         Multiplies hopping terms by x.
         """
         return self.__mul__(x)
 
-    def __truediv__(self, x: float) -> "Model":
+    def __truediv__(self, x: float) -> Model:
         """
         Divides hopping terms by x.
         """
