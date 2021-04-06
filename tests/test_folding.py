@@ -204,15 +204,13 @@ def test_new_unit_cell_check(get_model):
     assert "new unit cell is not contained" in str(excinfo.value)
 
 
-def test_fold_by_label_order(get_model, sparse, models_close):
+def test_fold_by_label_order(get_model, models_close):
     """
-    Test that creating a supercell model and then folding it back creates
-    the same model.
+    Test that the ``order_by`` input creates the expected result.
     """
     model = get_model(
         0.1,
         0.4,
-        sparse=sparse,
         uc=[[1, 0, 0.5], [0.1, 0.4, 0.0], [0.0, 0.0, 1.2]],
         pos=[[0.1, 0.05, 0.2], [0.62, 0.3, 0.7]],
     )
@@ -239,3 +237,21 @@ def test_fold_by_label_order(get_model, sparse, models_close):
     )
     assert models_close(model.slice_orbitals([1, 0]), folded_model_by_index)
     assert models_close(model, folded_model_by_label)
+
+
+def test_invalid_order_by(get_model):
+    """Test that passing an invalid ``order_by`` raises."""
+    model = get_model(
+        0.1,
+        0.3,
+        uc=np.diag([1, 2, 3]),
+        pos=[[0.5, 0.5, 0.5], [0.5, 0.5, 0.5]],
+    )
+    supercell_model = model.supercell(size=(1, 1, 2))
+    with pytest.raises(ValueError) as excinfo:
+        supercell_model.fold_model(
+            new_unit_cell=model.uc, orbital_labels=["a", "b"] * 2, order_by="spam"
+        )
+    assert "Invalid input" in str(excinfo.value)
+    assert "order_by" in str(excinfo.value)
+    assert "spam" in str(excinfo.value)
