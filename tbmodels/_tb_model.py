@@ -866,7 +866,7 @@ class Model(HDF5Enabled):
         pos_abs = np.dot(np.array([sl.pos for sl in sublattices]), uc)
         return kwant.lattice.general(prim_vecs=uc, basis=pos_abs)
 
-    def add_hoppings_kwant(self, kwant_sys):
+    def add_hoppings_kwant(self, kwant_sys, kwant_sublattices=None):
         """
         Sets the on-site energies and hopping terms for an existing kwant system to those of the :class:`.Model`.
 
@@ -875,7 +875,8 @@ class Model(HDF5Enabled):
         import kwant  # pylint: disable=import-outside-toplevel
 
         sublattices = self._get_sublattices()
-        kwant_sublattices = self.to_kwant_lattice().sublattices
+        if kwant_sublattices is None:
+            kwant_sublattices = self.to_kwant_lattice().sublattices
 
         # handle R = 0 case (on-site)
         on_site_mat = copy.deepcopy(self._array_cast(self.hop[self._zero_vec]))
@@ -894,10 +895,7 @@ class Model(HDF5Enabled):
 
         # R = 0 terms between different sublattices
         for i, s1 in enumerate(sublattices):
-            for j, s2 in enumerate(sublattices):
-                if i == j:
-                    # handled above
-                    continue
+            for j, s2 in enumerate(sublattices[i + 1 :], start=i + 1):
                 kwant_sys[
                     kwant.builder.HoppingKind(
                         self._zero_vec,
@@ -908,10 +906,10 @@ class Model(HDF5Enabled):
 
         # R != 0 terms
         for R, mat in self.hop.items():
+            mat = self._array_cast(mat)
             # special case R = 0 handled already
             if R == self._zero_vec:
                 continue
-            mat = self._array_cast(mat)
             minus_R = tuple(-np.array(R))
             for i, s1 in enumerate(sublattices):
                 for j, s2 in enumerate(sublattices):
@@ -922,11 +920,6 @@ class Model(HDF5Enabled):
                             minus_R, kwant_sublattices[i], kwant_sublattices[j]
                         )
                     ] = sub_matrix
-                    kwant_sys[
-                        kwant.builder.HoppingKind(
-                            R, kwant_sublattices[j], kwant_sublattices[i]
-                        )
-                    ] = np.transpose(np.conj(sub_matrix))
         return kwant_sys
 
     def _get_sublattices(self):
