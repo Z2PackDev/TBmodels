@@ -806,6 +806,7 @@ class Model(HDF5Enabled):
         and returns a mapping of its content.
         """
         lines = (l.split("!")[0] for l in iterator)
+        lines = (l.split("#")[0] for l in lines)
         lines = (l.strip() for l in lines)
         lines = (l for l in lines if l)
         lines = (l.lower() for l in lines)
