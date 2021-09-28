@@ -20,6 +20,7 @@ import collections as co
 
 import h5py
 import numpy as np
+import numpy.typing as npt
 import scipy.linalg as la
 from scipy.special import factorial
 from fsc.export import export
@@ -96,7 +97,7 @@ class Model(HDF5Enabled):
         dim: ty.Optional[int] = None,
         occ: ty.Optional[int] = None,
         pos: ty.Optional[ty.Sequence[ty.Sequence[float]]] = None,
-        uc: ty.Optional[np.ndarray] = None,
+        uc: ty.Optional[npt.ArrayLike] = None,
         contains_cc: bool = True,
         cc_check_tolerance: float = 1e-12,
         sparse: bool = False,
@@ -638,14 +639,14 @@ class Model(HDF5Enabled):
                 atom_pos_cartesian = np.array([a.pos for a in atom_list_cartesian])
                 if pos_kind == "wannier":
                     pos_cartesian: ty.Union[
-                        ty.List[np.ndarray], np.ndarray
+                        ty.List[npt.NDArray[np.float_]], npt.NDArray[np.float_]
                     ] = wannier_pos_cartesian
                 elif pos_kind == "nearest_atom":
                     if distance_ratio_threshold < 1:
                         raise ValueError(
                             "Invalid value for 'distance_ratio_threshold': must be >= 1."
                         )
-                    pos_cartesian = ty.cast(ty.List[np.ndarray], [])
+                    pos_cartesian = ty.cast(ty.List[npt.NDArray[np.float_]], [])
                     for p in wannier_pos_cartesian:
                         p_reduced = la.solve(kwargs["uc"].T, np.array(p).T).T
                         T_base = np.floor(p_reduced)
@@ -1079,7 +1080,7 @@ class Model(HDF5Enabled):
         self,
         k: ty.Union[ty.Sequence[float], ty.Sequence[ty.Sequence[float]]],
         convention: int = 2,
-    ) -> np.ndarray:
+    ) -> npt.NDArray[np.complex_]:
         """
         Calculates the Hamilton matrix for a given k-point or list of
         k-points.
@@ -1130,12 +1131,12 @@ class Model(HDF5Enabled):
             H = pos_exponential.conjugate().transpose((0, 2, 1)) * H * pos_exponential
 
         if single_point:
-            return ty.cast(np.ndarray, H[0])
+            return ty.cast(npt.NDArray[np.complex_], H[0])
         return H
 
     def eigenval(
         self, k: ty.Union[ty.Sequence[float], ty.Sequence[ty.Sequence[float]]]
-    ) -> ty.Union[np.ndarray, ty.List[np.ndarray]]:
+    ) -> ty.Union[npt.NDArray[np.float_], ty.List[npt.NDArray[np.float_]]]:
         """
         Returns the eigenvalues at a given k point, or list of k-points.
 
@@ -1149,7 +1150,7 @@ class Model(HDF5Enabled):
         hamiltonians = self.hamilton(k)
         if hamiltonians.ndim == 3:
             return [la.eigvalsh(ham) for ham in hamiltonians]
-        return ty.cast(np.ndarray, la.eigvalsh(hamiltonians))
+        return ty.cast(npt.NDArray[np.float_], la.eigvalsh(hamiltonians))
 
     # -------------------MODIFYING THE MODEL ----------------------------#
     def add_hop(
@@ -1442,12 +1443,12 @@ class Model(HDF5Enabled):
             ty.Tuple[int, ...], ty.Tuple[ty.List[int], ty.List[int]]
         ] = co.defaultdict(lambda: ([], []))
         for (i, Ti), (j, Tj) in itertools.product(enumerate(uc_shift), repeat=2):
-            shift = tuple(np.array(Tj) - np.array(Ti))
+            shift_tuple = tuple(np.array(Tj) - np.array(Ti))
             for idx1, idx2 in itertools.product(
                 sublattices[i].indices, sublattices[j].indices
             ):
-                hop_shifts_idx[shift][0].append(idx1)
-                hop_shifts_idx[shift][1].append(idx2)
+                hop_shifts_idx[shift_tuple][0].append(idx1)
+                hop_shifts_idx[shift_tuple][1].append(idx2)
 
         # create hoppings with shifted R (by uc_shift[j] - uc_shift[i])
         new_hop: HoppingType = co.defaultdict(self._empty_matrix)
@@ -1456,8 +1457,8 @@ class Model(HDF5Enabled):
                 np.rint(np.dot(symmetry_operation.rotation_matrix, R)),
                 dtype=int,
             )
-            for shift, (idx1, idx2) in hop_shifts_idx.items():
-                new_R = tuple(np.array(R_transformed) + np.array(shift))
+            for shift_tuple, (idx1, idx2) in hop_shifts_idx.items():
+                new_R = tuple(np.array(R_transformed) + np.array(shift_tuple))
                 new_hop[new_R][idx1, idx2] += mat[idx1, idx2]
 
         # apply D(g) ... D(g)^-1 (since D(g) is unitary: D(g)^-1 == D(g)^H)
@@ -1592,7 +1593,7 @@ class Model(HDF5Enabled):
                 )
             # convert to reduced coordinates
             if uc is None:
-                new_uc: ty.Optional[np.ndarray] = self.uc
+                new_uc: ty.Optional[npt.NDArray[np.float_]] = self.uc
                 uc_reduced = np.eye(self.dim)
             else:
                 new_uc = np.array(uc)
@@ -1668,7 +1669,7 @@ class Model(HDF5Enabled):
             new_uc = (self.uc.T * size_array).T
 
         # the new positions, normalized to the supercell
-        new_pos: ty.List[np.ndarray] = []
+        new_pos: ty.List[npt.NDArray[np.float_]] = []
         reduced_pos = np.array([p / size_array for p in self.pos])
         uc_offsets = list(
             np.array(offset)
