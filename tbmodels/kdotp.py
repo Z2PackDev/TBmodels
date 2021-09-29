@@ -8,6 +8,7 @@ Defines the :class:`.KdotpModel` class for k.p models.
 import typing as ty
 
 import numpy as np
+import numpy.typing as npt
 import scipy.linalg as la
 
 from fsc.export import export
@@ -49,7 +50,7 @@ class KdotpModel(SimpleHDF5Mapping):
 
     def hamilton(
         self, k: ty.Union[ty.Sequence[float], ty.Sequence[ty.Sequence[float]]]
-    ) -> np.ndarray:
+    ) -> npt.NDArray[np.complex_]:
         """
         Calculates the Hamilton matrix for a given k-point or list of
         k-points.
@@ -69,7 +70,7 @@ class KdotpModel(SimpleHDF5Mapping):
             single_point = False
 
         ham = ty.cast(
-            np.ndarray,
+            npt.NDArray[np.complex_],
             sum(
                 np.prod(k_array ** k_powers, axis=-1).reshape(-1, 1, 1)
                 * mat[np.newaxis, :, :]
@@ -77,12 +78,12 @@ class KdotpModel(SimpleHDF5Mapping):
             ),
         )
         if single_point:
-            return ty.cast(np.ndarray, ham[0])
+            return ty.cast(npt.NDArray[np.complex_], ham[0])
         return ham
 
     def eigenval(
         self, k: ty.Union[ty.Sequence[float], ty.Sequence[ty.Sequence[float]]]
-    ) -> ty.Union[np.ndarray, ty.List[np.ndarray]]:
+    ) -> ty.Union[npt.NDArray[np.float_], ty.List[npt.NDArray[np.float_]]]:
         """
         Returns the eigenvalues at a given k point, or list of k-points.
 
@@ -96,4 +97,4 @@ class KdotpModel(SimpleHDF5Mapping):
         hamiltonians = self.hamilton(k)
         if hamiltonians.ndim == 3:
             return [la.eigvalsh(ham) for ham in hamiltonians]
-        return ty.cast(np.ndarray, la.eigvalsh(hamiltonians))
+        return ty.cast(npt.NDArray[np.float_], la.eigvalsh(hamiltonians))

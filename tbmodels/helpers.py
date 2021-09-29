@@ -8,6 +8,8 @@ This module contains a helper function to create a list of hoppings from a given
 import typing as ty
 
 import numpy as np
+
+import numpy.typing as npt
 from fsc.export import export
 
 
@@ -17,7 +19,7 @@ def matrix_to_hop(
     orbitals: ty.Optional[ty.Sequence[int]] = None,
     R: ty.Sequence[int] = (0, 0, 0),
     multiplier: float = 1.0,
-) -> ty.List[ty.Tuple[complex, int, int, np.ndarray]]:
+) -> ty.List[ty.Tuple[complex, int, int, npt.NDArray[np.int_]]]:
     r"""
     Turns a square matrix into a series of hopping terms.
 
