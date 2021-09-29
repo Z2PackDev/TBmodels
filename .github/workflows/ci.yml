@@ -70,12 +70,12 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7, 3.8]
+        python-version: [3.7, 3.8, 3.9]
         install-type: [dev]
         include:
-        - python-version: 3.8
+        - python-version: 3.9
           install-type: dev_sdist
-        - python-version: 3.8
+        - python-version: 3.9
           install-type: dev_bdist_wheel
     steps:
     - name: Checkout code
