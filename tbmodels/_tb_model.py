@@ -531,6 +531,57 @@ class Model(HDF5Enabled):
                 )
         return lines
 
+    @staticmethod
+    def _read_tb(iterator, ignore_orbital_order=False):
+        """Reads the content of a seedname_tb.dat file"""
+        next(iterator)  # skip comment line
+
+        lattice = np.zeros((3, 3))
+        for i in range(3):
+            lattice[i, :] = np.fromstring(next(iterator), sep=' ')
+
+        num_wann = int(next(iterator))
+
+        nrpts = int(next(iterator))
+
+        # degeneracy of Wigner-Seitz grid points, 15 entries per line
+        deg_pts = []
+        # order in zip important because else the next data element is consumed
+        for _, line in zip(range(int(np.ceil(nrpts / 15))), iterator):
+            deg_pts.extend(int(x) for x in line.split())
+        assert len(deg_pts) == nrpts
+
+        # <0n|H|Rm>
+        hop_list = []
+        for ir in range(nrpts):
+            next(iterator) # skip empty
+            r_vec = [int(_) for _ in next(iterator).strip().split()]
+            for j in range(num_wann):
+                for i in range(num_wann):
+                    line = next(iterator).strip().split()
+                    iw, jw = [int(_) for _ in line[:2]]
+                    if not ignore_orbital_order and (iw != i + 1 or jw != j + 1):
+                        raise ValueError(f"Inconsistent orbital numbers in line '{line}'")
+                    ham = (float(line[2]) + 1j * float(line[3])) / deg_pts[ir]
+                    hop_list.append([ham, i, j, r_vec])
+
+        # <0n|r|Rm>
+        r_list = []
+        for ir in range(nrpts):
+            next(iterator) # skip empty
+            r_vec = [int(_) for _ in next(iterator).strip().split()]
+            for j in range(num_wann):
+                for i in range(num_wann):
+                    line = next(iterator).strip().split()
+                    iw, jw = [int(_) for _ in line[:2]]
+                    if not ignore_orbital_order and (iw != i + 1 or jw != j + 1):
+                        raise ValueError(f"Inconsistent orbital numbers in line '{line}'")
+                    r = np.array([float(_) for _ in line[2:]])
+                    r = r[::2] + 1j * r[1::2]
+                    r_list.append([r, i, j, r_vec])
+
+        return lattice, num_wann, nrpts, deg_pts, hop_list, r_list
+
     @classmethod
     def from_wannier_folder(
         cls, folder: str = ".", prefix: str = "wannier", **kwargs
@@ -716,6 +767,98 @@ class Model(HDF5Enabled):
                     )
 
             return cls.from_hop_list(size=num_wann, hop_list=hop_entries, **kwargs)
+
+    @classmethod  # noqa: MC0001
+    def from_wannier_tb_file(  # pylint: disable=too-many-locals
+        cls,
+        *,
+        tb_file: str,
+        wsvec_file: str,
+        **kwargs,
+    ) -> Model:
+        """
+        Create a :class:`.Model` instance from Wannier90 output files.
+
+        Parameters
+        ----------
+        tb_file :
+            Path of the ``*_tb.dat`` file. Together with the
+            ``*_wsvec.dat`` file, this determines the hopping terms.
+        wsvec_file :
+            Path of the ``*_wsvec.dat`` file. This file determines the
+            remapping of hopping terms when ``use_ws_distance`` is used
+            in the Wannier90 calculation.
+        kwargs :
+            :class:`.Model` keyword arguments.
+        """
+
+        if "uc" in kwargs:
+            raise ValueError(
+                "Ambiguous unit cell: It can be given either via 'uc' or the 'tb_file' keywords, but not both."
+            )
+        if "pos" in kwargs:
+            raise ValueError(
+                "Ambiguous orbital positions: The positions can be given either via the 'pos' or the 'xyz_file' keywords, but not both."
+            )
+
+        with open(tb_file) as f:
+            lattice, num_wann, nrpts, deg_pts, hop_list, r_list = cls._read_tb(f)
+        
+        kwargs["uc"] = lattice
+
+        def get_centers(r_list: list) -> list:
+            centers = [None for _ in range(num_wann)]
+            for r, i, j, r_vec in r_list:
+                if r_vec != [0, 0, 0]:
+                    continue
+                if i != j:
+                    continue
+                r = np.array(r)
+                if not np.allclose(np.abs(r.imag), 0):
+                    raise ValueError(f'Center should be real: WF {i+1}, center = {r}')
+                centers[i] = r.real
+            return centers
+
+        pos_cartesian: ty.Union[
+            ty.List[npt.NDArray[np.float_]], npt.NDArray[np.float_]
+        ] = get_centers(r_list)
+
+        kwargs["pos"] = la.solve(kwargs["uc"].T, np.array(pos_cartesian).T).T
+
+        # hop_entries = (hop for hop in hop_entries if abs(hop[0]) > h_cutoff)
+        hop_entries = hop_list
+
+        with open(wsvec_file) as f:
+            wsvec_generator = cls._async_parse(
+                cls._read_wsvec(f), chunksize=num_wann
+            )
+
+            def remap_hoppings(hop_entries):
+                for t, orbital_1, orbital_2, R in hop_entries:
+                    # Step _async_parse to where it accepts
+                    # a new key.
+                    # The _async_parse does not raise StopIteration
+                    next(  # pylint: disable=stop-iteration-return
+                        wsvec_generator
+                    )
+                    T_list = wsvec_generator.send(
+                        (orbital_1, orbital_2, tuple(R))
+                    )
+                    N = len(T_list)
+                    for T in T_list:
+                        # not using numpy here increases performance
+                        yield (
+                            t / N,
+                            orbital_1,
+                            orbital_2,
+                            tuple(r + t for r, t in zip(R, T)),
+                        )
+
+            hop_entries = remap_hoppings(hop_entries)
+
+            return cls.from_hop_list(
+                size=num_wann, hop_list=hop_entries, **kwargs
+            )
 
     @staticmethod
     def _async_parse(iterator, chunksize=1):
