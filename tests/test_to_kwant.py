@@ -13,10 +13,18 @@ import pytest
 import numpy as np
 import scipy.linalg as la
 
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
-    import kwant
-from kwant import wraparound
+pytest.mark.xfail(
+    reason="Kwant tests are disabled since kwant pip installation is broken."
+)
+
+try:
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        import kwant
+    from kwant import wraparound
+except ImportError:
+    # allow test collection
+    pass
 
 from parameters import T_VALUES, KPT
 
