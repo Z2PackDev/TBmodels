@@ -48,7 +48,7 @@ jobs:
       - name: Build documentation
         env:
           READTHEDOCS: "True"
-        run: SPHINXOPTS='-nW' make -C doc html
+        run: make SPHINXOPTS='-nW' -C doc html
       - uses: actions/upload-artifact@v2
         with:
           name: doc-build

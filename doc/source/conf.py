@@ -41,11 +41,13 @@ extensions = [
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
+    "numpy": ("https://numpy.org/devdocs/", None),
     "symmetry-representation": ("http://z2pack.ethz.ch/symmetry-representation/", None),
     "fsc.hdf5-io": ("http://frescolinogroup.github.io/frescolino/pyhdf5io/0.5/", None),
 }
 
 nitpick_ignore = [("py:class", "array")]
+nitpick_ignore_regex = [("py:class", "numpy.*"), ("py:class", "ty.*")]
 ipython_warning_is_error = False
 
 # Add any paths that contain templates here, relative to this directory.
