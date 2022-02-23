@@ -32,7 +32,7 @@ The model is located in the ``examples`` directory of the TBmodels source. You w
 .. ipython::
 
     In [0]: model_nosym =  tbmodels.io.load(
-       ...:     EXAMPLES_DIR / 'symmetrization' / 'nonsymmorphic_Si'/'data' / 'model_nosym.hdf5'
+       ...:     EXAMPLES_DIR / 'symmetrization' / 'nonsymmorphic_Si' / 'data' / 'model_nosym.hdf5'
        ...: )
 
 
@@ -114,14 +114,16 @@ Note that we use the ``numeric=True`` flag here. This keyword is used to switch 
 Next, we use ``pymatgen`` to determine the space group symmetries of our crystal:
 
 .. ipython::
+    :okwarning:
 
-    In [0]: import pymatgen as mg
+    In [0]: from pymatgen.core import Structure
+       ...: from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
-    In [0]: structure = mg.Structure(
+    In [0]: structure = Structure(
        ...:     lattice=model_nosym.uc, species=['Si', 'Si'], coords=np.array(coords)
        ...: )
 
-    In [0]: analyzer = mg.symmetry.analyzer.SpacegroupAnalyzer(structure)
+    In [0]: analyzer = SpacegroupAnalyzer(structure)
 
     In [0]: sym_ops = analyzer.get_symmetry_operations(cartesian=False)
 
