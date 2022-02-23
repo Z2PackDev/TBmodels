@@ -46,8 +46,6 @@ jobs:
       - *PYTHON_SETUP
       - *INSTALL_PROJECT
       - name: Build documentation
-        env:
-          READTHEDOCS: "True"
         run: make SPHINXOPTS='-nW' -C doc html
       - uses: actions/upload-artifact@v2
         with:

@@ -29,8 +29,6 @@ jobs:
         INSTALL_TYPE: ${{ matrix.install-type }}
       run: .ci/install_script.sh
     - name: Build documentation
-      env:
-        READTHEDOCS: 'True'
       run: make SPHINXOPTS='-nW' -C doc html
     - uses: actions/upload-artifact@v2
       with:
