@@ -115,13 +115,14 @@ Next, we use ``pymatgen`` to determine the space group symmetries of our crystal
 
 .. ipython::
 
-    In [0]: import pymatgen as mg
+    In [0]: from pymatgen.core import Structure
+       ...: from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
-    In [0]: structure = mg.Structure(
+    In [0]: structure = Structure(
        ...:     lattice=model_nosym.uc, species=['Si', 'Si'], coords=np.array(coords)
        ...: )
 
-    In [0]: analyzer = mg.symmetry.analyzer.SpacegroupAnalyzer(structure)
+    In [0]: analyzer = SpacegroupAnalyzer(structure)
 
     In [0]: sym_ops = analyzer.get_symmetry_operations(cartesian=False)
 
