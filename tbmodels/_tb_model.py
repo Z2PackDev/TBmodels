@@ -860,7 +860,7 @@ class Model(HDF5Enabled):
 
         .. note :: The TBmodels - Kwant interface is experimental. Use it with caution.
         """
-        import kwant  # pylint: disable=import-outside-toplevel
+        import kwant  # pylint: disable=import-outside-toplevel,import-error
 
         sublattices = self._get_sublattices()
         uc = self.uc if self.uc is not None else np.eye(self.dim)
@@ -874,7 +874,7 @@ class Model(HDF5Enabled):
 
         .. note :: The TBmodels - Kwant interface is experimental. Use it with caution.
         """
-        import kwant  # pylint: disable=import-outside-toplevel
+        import kwant  # pylint: disable=import-outside-toplevel,import-error
 
         sublattices = self._get_sublattices()
         if kwant_sublattices is None:
