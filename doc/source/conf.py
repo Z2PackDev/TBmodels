@@ -42,7 +42,10 @@ extensions = [
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "numpy": ("https://numpy.org/devdocs/", None),
-    "symmetry-representation": ("http://symmetry-representation.greschd.ch//", None),
+    "symmetry-representation": (
+        "http://symmetry-representation.greschd.ch/en/latest",
+        None,
+    ),
     "fsc.hdf5-io": ("http://frescolinogroup.github.io/frescolino/pyhdf5io/0.5/", None),
 }
 
