@@ -13,7 +13,7 @@ import pytest
 import numpy as np
 import scipy.linalg as la
 
-pytest.mark.xfail(
+pytestmark = pytest.mark.xfail(
     reason="Kwant tests are disabled since kwant pip installation is broken."
 )
 
