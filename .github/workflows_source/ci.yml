@@ -1,6 +1,6 @@
 name: Continuous Integration
 
-on: [push, pull_request]
+on: [pull_request]
 
 _anchors:
   checkout: &CHECKOUT
@@ -46,9 +46,7 @@ jobs:
       - *PYTHON_SETUP
       - *INSTALL_PROJECT
       - name: Build documentation
-        env:
-          READTHEDOCS: "True"
-        run: SPHINXOPTS='-nW' make -C doc html
+        run: make SPHINXOPTS='-nW' -C doc html
       - uses: actions/upload-artifact@v2
         with:
           name: doc-build
@@ -72,7 +70,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7, 3.8]
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
         install-type: [dev]
         include:
           - python-version: 3.8
