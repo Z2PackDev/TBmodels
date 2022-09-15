@@ -23,12 +23,11 @@ import numpy as np
 import numpy.typing as npt
 import scipy.linalg as la
 from scipy.special import factorial
-from fsc.export import export
 from fsc.hdf5_io import subscribe_hdf5, HDF5Enabled
 
 if ty.TYPE_CHECKING:
     # Replace with typing.Literal once Python 3.7 support is dropped.
-    from typing_extensions import Literal
+    from typing import Literal
     import symmetry_representation  # pylint: disable=unused-import
 
 from .kdotp import KdotpModel
@@ -45,7 +44,6 @@ __all__ = ("Model",)
 HoppingType = ty.Dict[ty.Tuple[int, ...], ty.Any]
 
 
-@export
 @subscribe_hdf5("tbmodels.model", check_on_load=False)
 class Model(HDF5Enabled):
     """
@@ -88,7 +86,7 @@ class Model(HDF5Enabled):
         format.
     """
 
-    def __init__(
+    def __init__(  # pylint: disable=missing-function-docstring
         self,
         *,
         on_site: ty.Optional[ty.Sequence[float]] = None,
@@ -214,9 +212,8 @@ class Model(HDF5Enabled):
         if on_site is not None:
             if len(on_site) != self.size:
                 raise ValueError(
-                    "The number of on-site energies {} does not match the size of the system {}".format(
-                        len(on_site), self.size
-                    )
+                    f"The number of on-site energies {len(on_site)} does not "
+                    f"match the size of the system {self.size}"
                 )
             self.hop[self._zero_vec] += 0.5 * self._matrix_type(np.diag(on_site))
 
@@ -227,7 +224,7 @@ class Model(HDF5Enabled):
         """
         uc_offsets = [np.array(np.floor(p), dtype=int) for p in pos]
         # ---- common case: already mapped into the UC ----
-        if all([all(o == 0 for o in offset) for offset in uc_offsets]):
+        if all(all(o == 0 for o in offset) for offset in uc_offsets):
             return pos, hop
 
         # ---- uncommon case: handle mapping ----
@@ -416,7 +413,7 @@ class Model(HDF5Enabled):
             deg_pts.extend(int(x) for x in line.split())
         assert len(deg_pts) == nrpts
 
-        num_wann_square = num_wann ** 2
+        num_wann_square = num_wann**2
 
         def to_entry(line, i):
             """Turns a line (string) into a hop_list entry"""
@@ -462,7 +459,7 @@ class Model(HDF5Enabled):
             precision of the hopping strengths. This could lead to
             numerical errors.
         """
-        with open(hr_file, "w") as f:
+        with open(hr_file, "w", encoding="utf-8") as f:
             f.write(self.to_hr())
 
     def to_hr(self) -> str:
@@ -621,7 +618,7 @@ class Model(HDF5Enabled):
                 raise ValueError(
                     "Ambiguous unit cell: It can be given either via 'uc' or the 'win_file' keywords, but not both."
                 )
-            with open(win_file) as f:
+            with open(win_file, encoding="utf-8") as f:
                 kwargs["uc"] = cls._read_win(f)["unit_cell_cart"]
 
         if xyz_file is not None:
@@ -633,7 +630,7 @@ class Model(HDF5Enabled):
                 raise ValueError(
                     "Positions cannot be read from .xyz file without unit cell given: Transformation from cartesian to reduced coordinates not possible. Specify the unit cell using one of the keywords 'uc' or 'win_file'."
                 )
-            with open(xyz_file) as f:
+            with open(xyz_file, encoding="utf-8") as f:
                 wannier_pos_list_cartesian, atom_list_cartesian = cls._read_xyz(f)
                 wannier_pos_cartesian = np.array(wannier_pos_list_cartesian)
                 atom_pos_cartesian = np.array([a.pos for a in atom_list_cartesian])
@@ -677,14 +674,14 @@ class Model(HDF5Enabled):
                     )
                 kwargs["pos"] = la.solve(kwargs["uc"].T, np.array(pos_cartesian).T).T
 
-        with open(hr_file) as f:
+        with open(hr_file, encoding="utf-8") as f:
             num_wann, hop_entries = cls._read_hr(
                 f, ignore_orbital_order=ignore_orbital_order
             )
             hop_entries = (hop for hop in hop_entries if abs(hop[0]) > h_cutoff)
 
             if wsvec_file is not None:
-                with open(wsvec_file) as f:
+                with open(wsvec_file, encoding="utf-8") as f:
                     wsvec_generator = cls._async_parse(
                         cls._read_wsvec(f), chunksize=num_wann
                     )
@@ -1374,7 +1371,8 @@ class Model(HDF5Enabled):
             new_model = self._apply_operation(
                 symmetries[0], position_tolerance=position_tolerance
             )
-            return (
+            return ty.cast(
+                "Model",
                 1
                 / len(symmetries)
                 * sum(
@@ -1383,7 +1381,7 @@ class Model(HDF5Enabled):
                         for s in symmetries[1:]
                     ),
                     new_model,
-                )
+                ),
             )
         else:
             new_model = self
@@ -1530,7 +1528,8 @@ class Model(HDF5Enabled):
         if any(occ is None for occ in occ_list):
             new_occ = None
         else:
-            new_occ = sum(occ_list)
+            # mypy doesn't understand the if/else clause -> cast
+            new_occ = sum(ty.cast(ty.List[int], occ_list))
 
         # combine hop
         all_R: ty.Set[ty.Tuple[int, ...]] = set()
@@ -1912,8 +1911,8 @@ class Model(HDF5Enabled):
                         "are not consistent with the change in total orbital number:\n"
                         f"Total: {len(in_uc_indices)}/{len(self.pos)}\n"
                         + "\n".join(
-                            f"Orbital '{key}': { orbital_counts_new.get(key, 0)}/{orbital_counts_initial[key]}"
-                            for key in orbital_counts_initial.keys()
+                            f"Orbital '{key}': { orbital_counts_new.get(key, 0)}/{value}"
+                            for key, value in orbital_counts_initial.items()
                         )
                     )
         if check_uc_volume:
@@ -2033,9 +2032,7 @@ class Model(HDF5Enabled):
         Adds two models together by adding their hopping terms.
         """
         if not isinstance(model, Model):
-            raise ValueError(
-                "Invalid argument type for Model.__add__: {}".format(type(model))
-            )
+            raise ValueError(f"Invalid argument type for Model.__add__: {type(model)}")
 
         # ---- CONSISTENCY CHECKS ----
         # check if the occupation number matches

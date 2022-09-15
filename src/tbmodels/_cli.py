@@ -95,10 +95,10 @@ def _write_output(model, output, sparsity, verbose):
     help="Which position to use for the orbitals.",
 )
 @click.option("--distance-ratio-threshold", type=click.FloatRange(min=1.0), default=3.0)
-@_SPARSITY_OPTION  # pylint: disable=too-many-arguments
+@_SPARSITY_OPTION
 @_VERBOSE_OPTION
 @_get_output_option(default="model.hdf5", help="Path of the output file.")
-def parse(
+def parse(  # pylint: disable=too-many-arguments
     folder,
     prefix,
     output,
@@ -111,9 +111,7 @@ def parse(
     Parse Wannier90 output files and create an HDF5 file containing the tight-binding model.
     """
     if verbose:
-        click.echo(
-            "Parsing output files '{}*' ...".format(os.path.join(folder, prefix))
-        )
+        click.echo(f"Parsing output files '{os.path.join(folder, prefix)}*' ...")
     model = Model.from_wannier_folder(
         folder=folder,
         prefix=prefix,
@@ -182,11 +180,9 @@ def symmetrize(
         if full_group is None:
             full_group = sym.full_group
         click.echo(
-            "Symmetrizing model with {} symmetr{}, full_group={} ...".format(
-                len(symmetries),
-                "y" if len(symmetries) == 1 else "ies",
-                full_group,
-            )
+            f"Symmetrizing model with {len(symmetries)} "
+            f"symmetr{'y' if len(symmetries) == 1 else 'ies'}, "
+            f"full_group={full_group} ..."
         )
         return model.symmetrize(symmetries=symmetries, full_group=full_group)
 
