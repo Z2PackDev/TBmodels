@@ -9,6 +9,8 @@ repos:
     rev: 20.8b1
     hooks:
       - id: black
+        additional_dependencies:
+        - click<8.1
 
   - repo: local
     hooks:
