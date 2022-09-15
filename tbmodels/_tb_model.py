@@ -538,7 +538,7 @@ class Model(HDF5Enabled):
 
         lattice = np.zeros((3, 3))
         for i in range(3):
-            lattice[i, :] = np.fromstring(next(iterator), sep=' ')
+            lattice[i, :] = np.fromstring(next(iterator), sep=" ")
 
         num_wann = int(next(iterator))
 
@@ -554,28 +554,32 @@ class Model(HDF5Enabled):
         # <0n|H|Rm>
         hop_list = []
         for ir in range(nrpts):
-            next(iterator) # skip empty
+            next(iterator)  # skip empty
             r_vec = [int(_) for _ in next(iterator).strip().split()]
             for j in range(num_wann):
                 for i in range(num_wann):
                     line = next(iterator).strip().split()
                     iw, jw = [int(_) for _ in line[:2]]
                     if not ignore_orbital_order and (iw != i + 1 or jw != j + 1):
-                        raise ValueError(f"Inconsistent orbital numbers in line '{line}'")
+                        raise ValueError(
+                            f"Inconsistent orbital numbers in line '{line}'"
+                        )
                     ham = (float(line[2]) + 1j * float(line[3])) / deg_pts[ir]
                     hop_list.append([ham, i, j, r_vec])
 
         # <0n|r|Rm>
         r_list = []
         for ir in range(nrpts):
-            next(iterator) # skip empty
+            next(iterator)  # skip empty
             r_vec = [int(_) for _ in next(iterator).strip().split()]
             for j in range(num_wann):
                 for i in range(num_wann):
                     line = next(iterator).strip().split()
                     iw, jw = [int(_) for _ in line[:2]]
                     if not ignore_orbital_order and (iw != i + 1 or jw != j + 1):
-                        raise ValueError(f"Inconsistent orbital numbers in line '{line}'")
+                        raise ValueError(
+                            f"Inconsistent orbital numbers in line '{line}'"
+                        )
                     r = np.array([float(_) for _ in line[2:]])
                     r = r[::2] + 1j * r[1::2]
                     r_list.append([r, i, j, r_vec])
@@ -769,7 +773,7 @@ class Model(HDF5Enabled):
             return cls.from_hop_list(size=num_wann, hop_list=hop_entries, **kwargs)
 
     @classmethod  # noqa: MC0001
-    def from_wannier_tb_file(  # pylint: disable=too-many-locals
+    def from_wannier_tb_files(  # pylint: disable=too-many-locals
         cls,
         *,
         tb_file: str,
@@ -803,11 +807,11 @@ class Model(HDF5Enabled):
 
         with open(tb_file) as f:
             lattice, num_wann, nrpts, deg_pts, hop_list, r_list = cls._read_tb(f)
-        
+
         kwargs["uc"] = lattice
 
-        def get_centers(r_list: list) -> list:
-            centers = [None for _ in range(num_wann)]
+        def get_centers(r_list: ty.List[ty.Any]) -> ty.List[npt.NDArray[np.float_]]:
+            centers = [np.zeros(3) for _ in range(num_wann)]
             for r, i, j, r_vec in r_list:
                 if r_vec != [0, 0, 0]:
                     continue
@@ -815,7 +819,7 @@ class Model(HDF5Enabled):
                     continue
                 r = np.array(r)
                 if not np.allclose(np.abs(r.imag), 0):
-                    raise ValueError(f'Center should be real: WF {i+1}, center = {r}')
+                    raise ValueError(f"Center should be real: WF {i+1}, center = {r}")
                 centers[i] = r.real
             return centers
 
@@ -829,21 +833,15 @@ class Model(HDF5Enabled):
         hop_entries = hop_list
 
         with open(wsvec_file) as f:
-            wsvec_generator = cls._async_parse(
-                cls._read_wsvec(f), chunksize=num_wann
-            )
+            wsvec_generator = cls._async_parse(cls._read_wsvec(f), chunksize=num_wann)
 
             def remap_hoppings(hop_entries):
                 for t, orbital_1, orbital_2, R in hop_entries:
                     # Step _async_parse to where it accepts
                     # a new key.
                     # The _async_parse does not raise StopIteration
-                    next(  # pylint: disable=stop-iteration-return
-                        wsvec_generator
-                    )
-                    T_list = wsvec_generator.send(
-                        (orbital_1, orbital_2, tuple(R))
-                    )
+                    next(wsvec_generator)  # pylint: disable=stop-iteration-return
+                    T_list = wsvec_generator.send((orbital_1, orbital_2, tuple(R)))
                     N = len(T_list)
                     for T in T_list:
                         # not using numpy here increases performance
@@ -856,9 +854,7 @@ class Model(HDF5Enabled):
 
             hop_entries = remap_hoppings(hop_entries)
 
-            return cls.from_hop_list(
-                size=num_wann, hop_list=hop_entries, **kwargs
-            )
+            return cls.from_hop_list(size=num_wann, hop_list=hop_entries, **kwargs)
 
     @staticmethod
     def _async_parse(iterator, chunksize=1):
