@@ -49,7 +49,9 @@ def test_fold_inexact_positions(get_model, models_close):
     supercell_model = model.supercell(size=(8, 1, 1))
     orbital_labels = ["a", "b"] * 8
     np.random.seed(42)
-    for i in range(len(supercell_model.pos)):
+    for i in range(  # pylint: disable=consider-using-enumerate
+        len(supercell_model.pos)
+    ):
         # do not move positions around "base" unit cell
         if i in range(3, 7):
             continue

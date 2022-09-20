@@ -10,10 +10,10 @@ import typing as ty
 import numpy as np
 
 import numpy.typing as npt
-from fsc.export import export
+
+__all__ = ("matrix_to_hop",)
 
 
-@export
 def matrix_to_hop(
     mat: ty.Sequence[ty.Sequence[complex]],
     orbitals: ty.Optional[ty.Sequence[int]] = None,
