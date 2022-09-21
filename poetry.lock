@@ -1237,23 +1237,24 @@ tests = ["cython", "littleutils", "pygments", "pytest", "typeguard"]
 
 [[package]]
 name = "symmetry-representation"
-version = "0.2.0"
+version = "0.3.3"
 description = "Provides an interface to describe symmetry representations."
 category = "main"
 optional = false
-python-versions = "*"
+python-versions = ">=3.6"
 
 [package.dependencies]
-click = "*"
+click = ">=7.0"
 "fsc.export" = "*"
-"fsc.hdf5-io" = ">=0.3"
+"fsc.hdf5-io" = ">=0.6"
 h5py = "*"
 numpy = "*"
 pymatgen = "*"
 sympy = "*"
 
 [package.extras]
-dev = ["pre-commit", "prospector", "pylint", "pytest", "pytest-cov", "sphinx", "sphinx-click", "sphinx-rtd-theme", "yapf (==0.24)"]
+dev = ["ipython (>=6.2)", "pre-commit", "prospector (==1.2.0)", "pylint (==2.4.4)", "pytest", "pytest-cov", "sphinx", "sphinx-click", "sphinx-rtd-theme", "yapf (==0.29)"]
+doc = ["ipython (>=6.2)", "sphinx", "sphinx-click", "sphinx-rtd-theme"]
 
 [[package]]
 name = "sympy"
@@ -1437,7 +1438,7 @@ kwant = ["kwant"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8,<3.12"
-content-hash = "5f86b01eabe6c173eb955f3c40c250275a5fd75827f92c9d903cb1a05a98be34"
+content-hash = "a9b02cffc9d220d37f5239f8fb102fd4a6c59f1c9b00a6d910ce56dc3484d8bb"
 
 [metadata.files]
 alabaster = [
@@ -2326,7 +2327,7 @@ stack-data = [
     {file = "stack_data-0.5.0.tar.gz", hash = "sha256:715c8855fbf5c43587b141e46cc9d9339cc0d1f8d6e0f98ed0d01c6cb974e29f"},
 ]
 symmetry-representation = [
-    {file = "symmetry-representation-0.2.0.tar.gz", hash = "sha256:9fee2f89839730788d74808182c67555e7e49e35a725f04eb8d3f2cfe3a1e37b"},
+    {file = "symmetry-representation-0.3.3.tar.gz", hash = "sha256:c1839f5c1563b9b33023fab914df0e729664b511fe1b50a91e6aa52f8899806b"},
 ]
 sympy = [
     {file = "sympy-1.11.1-py3-none-any.whl", hash = "sha256:938f984ee2b1e8eae8a07b884c8b7a1146010040fccddc6539c54f401c8f6fcf"},
