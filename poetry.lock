@@ -1626,13 +1626,13 @@ six = ">=1.5"
 
 [[package]]
 name = "pythtb"
-version = "1.7.2"
+version = "1.8.0"
 description = "Simple solver for tight binding models for use in condensed matter physics and materials science."
 category = "dev"
 optional = false
 python-versions = "*"
 files = [
-    {file = "pythtb-1.7.2.tar.gz", hash = "sha256:83b24b1ae26b00ea97dac43cd33add2e5b7bf7a89e412b5fce19bba21517dc46"},
+    {file = "pythtb-1.8.0.tar.gz", hash = "sha256:1881996ebfd12c6ff0d30f0e30e3af3310aea3e50355d8f29e81695e4e5968d8"},
 ]
 
 [package.dependencies]
