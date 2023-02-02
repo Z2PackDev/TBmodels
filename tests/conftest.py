@@ -48,8 +48,7 @@ def compare_data(test_name):
         except OSError as exc:
             save(data, file_name_full)
             raise ValueError("Reference data does not exist.") from exc
-        else:
-            assert compare_fct(val, data)
+        assert compare_fct(val, data)
 
     return inner
 
