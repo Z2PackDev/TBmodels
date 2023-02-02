@@ -2,7 +2,9 @@
 # Author: Dominik Gresch <greschd@gmx.ch>
 """A tool for creating / loading and manipulating tight-binding models."""
 
-__version__ = "1.4.3"
+import importlib.metadata
+
+__version__ = importlib.metadata.version(__name__.replace(".", "-"))
 
 # import order is important due to circular imports
 from . import helpers

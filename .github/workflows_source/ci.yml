@@ -7,17 +7,17 @@ _anchors:
     name: Checkout code
     uses: actions/checkout@v2
 
-  apt-dependencies: &APT_DEPENDENCIES
-    name: Install apt dependencies
-    run: |
-      sudo apt update -qq
-      sudo apt install -qq liblapack3 liblapack-dev
+  # apt-dependencies: &APT_DEPENDENCIES
+  #   name: Install apt dependencies
+  #   run: |
+  #     sudo apt update -qq
+  #     sudo apt install -qq liblapack3 liblapack-dev
 
   pip-cache: &PIP_CACHE
     uses: actions/cache@v2
     with:
       path: ~/.cache/pip
-      key: pip-${{ matrix.python-version }}-${{ matrix.install-type }}-${{ hashFiles('**/setup.json') }}
+      key: pip-${{ matrix.python-version }}-${{ matrix.install-type }}-${{ hashFiles('**/poetry.lock') }}
       restore-keys: pip-${{ matrix.python-version }}-${{ matrix.install-type }}
 
   python-setup: &PYTHON_SETUP
@@ -41,12 +41,12 @@ jobs:
         install-type: [dev]
     steps:
       - *CHECKOUT
-      - *APT_DEPENDENCIES
+      # - *APT_DEPENDENCIES
       - *PIP_CACHE
       - *PYTHON_SETUP
       - *INSTALL_PROJECT
       - name: Build documentation
-        run: make SPHINXOPTS='-nW' -C doc html
+        run: poetry run make SPHINXOPTS='-nW' -C doc html
       - uses: actions/upload-artifact@v2
         with:
           name: doc-build
@@ -60,17 +60,17 @@ jobs:
         install-type: [dev]
     steps:
       - *CHECKOUT
-      - *APT_DEPENDENCIES
+      # - *APT_DEPENDENCIES
       - *PIP_CACHE
       - *PYTHON_SETUP
       - *INSTALL_PROJECT
       - name: Run pre-commit
-        run: pre-commit run --all-files || ( git status --short ; git diff ; exit 1 )
+        run: poetry run pre-commit run --all-files || ( git status --short ; git diff ; exit 1 )
   tests:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.7", "3.8", "3.9", "3.10"]
+        python-version: ["3.8", "3.9", "3.10"]
         install-type: [dev]
         include:
           - python-version: 3.8
@@ -79,11 +79,15 @@ jobs:
             install-type: dev_bdist_wheel
     steps:
       - *CHECKOUT
-      - *APT_DEPENDENCIES
+      # - *APT_DEPENDENCIES
       - *PIP_CACHE
       - *PYTHON_SETUP
       - *INSTALL_PROJECT
       - name: Run pytest
+        run: poetry run pytest --cov=tbmodels --cov-config=.coveragerc
+        if: matrix.install-type == 'dev'
+      - name: Run pytest
         run: pytest --cov=tbmodels --cov-config=.coveragerc
+        if: matrix.install-type != 'dev'
       - name: Run codecov
         run: codecov

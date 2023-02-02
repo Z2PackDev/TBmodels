@@ -215,8 +215,8 @@ def test_wannier_hr_wsvec_xyz(hr_name, wsvec_name, xyz_name, sample):
             "nearest_atom",
         ),
     ],
-)  # pylint: disable=too-many-arguments
-def test_wannier_all(
+)
+def test_wannier_all(  # pylint: disable=too-many-arguments
     compare_isclose,
     hr_name,
     wsvec_name,

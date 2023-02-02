@@ -11,11 +11,11 @@ import numpy as np
 import numpy.typing as npt
 import scipy.linalg as la
 
-from fsc.export import export
 from fsc.hdf5_io import subscribe_hdf5, SimpleHDF5Mapping
 
+__all__ = ("KdotpModel",)
 
-@export
+
 @subscribe_hdf5("tbmodels.kdotp_model", check_on_load=False)
 class KdotpModel(SimpleHDF5Mapping):
     """
@@ -35,7 +35,7 @@ class KdotpModel(SimpleHDF5Mapping):
 
     HDF5_ATTRIBUTES = ["taylor_coefficients"]
 
-    def __init__(
+    def __init__(  # pylint: disable=missing-function-docstring
         self, taylor_coefficients: ty.Mapping[ty.Tuple[int, ...], ty.Any]
     ) -> None:
         for mat in taylor_coefficients.values():
@@ -72,7 +72,7 @@ class KdotpModel(SimpleHDF5Mapping):
         ham = ty.cast(
             npt.NDArray[np.complex_],
             sum(
-                np.prod(k_array ** k_powers, axis=-1).reshape(-1, 1, 1)
+                np.prod(k_array**k_powers, axis=-1).reshape(-1, 1, 1)
                 * mat[np.newaxis, :, :]
                 for k_powers, mat in self.taylor_coefficients.items()
             ),

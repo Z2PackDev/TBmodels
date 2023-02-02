@@ -106,6 +106,7 @@ Creating symmetry operations
 Having created the orbitals which describe our system, we can immediately generate the symmetry operation for time-reversal symmetry:
 
 .. ipython::
+    :okwarning:
 
     In [0]: time_reversal = sr.get_time_reversal(orbitals=orbitals, numeric=True)
 
@@ -132,6 +133,7 @@ Next, we use ``pymatgen`` to determine the space group symmetries of our crystal
 Again, we can use a helper function from the ``symmetry-representation`` code to construct the symmetry operations automatically. Note that we need both the cartesian *and* the reduced symmetry operations:
 
 .. ipython::
+    :okwarning:
 
     In [0]: symmetries = []
 

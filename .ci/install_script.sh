@@ -6,18 +6,22 @@
 set -ev
 
 pip install codecov
-pip install -U setuptools wheel
+pip install -U setuptools wheel poetry
 
 case "$INSTALL_TYPE" in
     dev)
-        pip install -e .[dev]
+        poetry install
         ;;
     dev_sdist)
-        python setup.py sdist
-        ls -1 dist/ | xargs -I % pip install dist/%[dev]
+        poetry build
+        poetry export --only=dev > requirements_test.txt
+        pip install dist/*.tar.gz
+        pip install -r requirements_test.txt
         ;;
     dev_bdist_wheel)
-        python setup.py bdist_wheel
-        ls -1 dist/ | xargs -I % pip install dist/%[dev]
+        poetry build
+        poetry export --only=dev > requirements_test.txt
+        pip install dist/*.whl
+        pip install -r requirements_test.txt
         ;;
 esac
