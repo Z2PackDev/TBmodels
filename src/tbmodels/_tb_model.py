@@ -799,7 +799,7 @@ class Model(HDF5Enabled):
             )
         if "pos" in kwargs:
             raise ValueError(
-                "Ambiguous orbital positions: The positions can be given either via the 'pos' or the 'xyz_file' keywords, but not both."
+                "Ambiguous orbital positions: The positions can be given either via the 'pos' or the 'tb_file' keywords, but not both."
             )
 
         with open(tb_file, encoding="utf-8") as f:
