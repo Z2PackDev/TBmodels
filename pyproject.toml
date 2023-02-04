@@ -56,7 +56,7 @@ black = "^22.0"
 pre-commit = "^2.20"
 pylint = "^2.15"
 isort = "^5.10"
-mypy = "^0.971"
+mypy = "^0"
 "ruamel.yaml" = "^0.17.21"
 typing-extensions = "^4.3"
 

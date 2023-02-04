@@ -5,6 +5,7 @@
 # Be verbose, and stop with error as soon there's one
 set -ev
 
+pip install -U pip
 pip install codecov
 pip install -U setuptools wheel poetry
 
