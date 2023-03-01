@@ -17,7 +17,7 @@ jobs:
           }}
         restore-keys: pip-${{ matrix.python-version }}-${{ matrix.install-type }}
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install the python project
@@ -46,7 +46,7 @@ jobs:
           }}
         restore-keys: pip-${{ matrix.python-version }}-${{ matrix.install-type }}
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install the python project
@@ -77,7 +77,7 @@ jobs:
           }}
         restore-keys: pip-${{ matrix.python-version }}-${{ matrix.install-type }}
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install the python project
