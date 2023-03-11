@@ -84,11 +84,16 @@ jobs:
       env:
         INSTALL_TYPE: ${{ matrix.install-type }}
       run: .ci/install_script.sh
+      # When loading pythtb for the first time within a pytest run, its
+      # invalid esacpe sequences (which should be a DeprecationWarning) turn
+      # into a SyntaxError. Importing it first (and therefore compiling the code
+      # to .pyc) alleviates this.
     - name: Run pytest
-      run: poetry run pytest --cov=tbmodels --cov-config=.coveragerc
+      run: poetry run python -c 'import pythtb' && poetry run pytest --cov=tbmodels
+        --cov-config=.coveragerc
       if: matrix.install-type == 'dev'
     - name: Run pytest
-      run: pytest --cov=tbmodels --cov-config=.coveragerc
+      run: python -c 'import pythtb' && pytest --cov=tbmodels --cov-config=.coveragerc
       if: matrix.install-type != 'dev'
     - name: Run codecov
       run: codecov
