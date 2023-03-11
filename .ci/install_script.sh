@@ -11,7 +11,7 @@ pip install -U setuptools wheel poetry
 
 case "$INSTALL_TYPE" in
     dev)
-        poetry install
+        poetry install --with=dev
         ;;
     dev_sdist)
         poetry build
