@@ -907,12 +907,12 @@ files = [
 
 [[package]]
 name = "kwant"
-version = "1.4.3"
+version = "1.4.4"
 description = "Package for numerical quantum transport calculations (Python 3 version)"
 optional = true
 python-versions = "*"
 files = [
-    {file = "kwant-1.4.3.tar.gz", hash = "sha256:3219d2512fcee55fa225328360574897e9f6049cfbae921bda0640a3a79dbd9f"},
+    {file = "kwant-1.4.4.tar.gz", hash = "sha256:6cf76cc09166714a46644a8127b82b386b1a8e76b8c836c95281f6f8be72ac30"},
 ]
 
 [package.dependencies]
