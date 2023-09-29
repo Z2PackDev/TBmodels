@@ -26,7 +26,7 @@ jobs:
       run: .ci/install_script.sh
     - name: Build documentation
       run: poetry run make SPHINXOPTS='-nW' -C doc html
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: doc-build
         path: doc/build/html
