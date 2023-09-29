@@ -10,7 +10,7 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       with:
         path: ~/.cache/pip
         key: pip-${{ matrix.python-version }}-${{ matrix.install-type }}-${{ hashFiles('**/poetry.lock')
@@ -39,7 +39,7 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       with:
         path: ~/.cache/pip
         key: pip-${{ matrix.python-version }}-${{ matrix.install-type }}-${{ hashFiles('**/poetry.lock')
@@ -70,7 +70,7 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       with:
         path: ~/.cache/pip
         key: pip-${{ matrix.python-version }}-${{ matrix.install-type }}-${{ hashFiles('**/poetry.lock')
