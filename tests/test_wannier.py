@@ -46,6 +46,43 @@ def test_wannier_hr_wsvec(compare_isclose, hr_name, wsvec_name, sample):
     compare_isclose(hamiltonian_list)
 
 
+def test_wannier_tb_wsvec(compare_isclose, sample):
+    """
+    Test loading a tight-binding model from *_hr.dat and *_wsvec.dat files.
+    """
+    tb_name = "silicontb_tb.dat"
+    wsvec_name = "silicontb_wsvec.dat"
+    pos = np.array(
+        [
+            [0.08535238, -0.2560827, 0.08537313],
+            [0.08535997, 0.08535219, 0.08536146],
+            [0.08536072, 0.08533922, -0.25606733],
+            [-0.25607529, 0.08534608, 0.08536831],
+            [-0.33535794, 1.00606788, -0.33535794],
+            [-0.33536053, 0.66462428, -0.33534386],
+            [-0.33535645, 0.66463613, 0.00608419],
+            [0.00607585, 0.66462594, -0.33534923],
+        ]
+    )
+    uc = np.array(
+        [
+            [-2.6988, 0.0000, 2.6988],
+            [0.0000, 2.6988, 2.6988],
+            [-2.6988, 2.6988, 0.0000],
+        ]
+    )
+
+    model = tbmodels.Model.from_wannier_tb_files(
+        tb_file=sample(tb_name), wsvec_file=sample(wsvec_name)
+    )
+    hamiltonian_list = np.array([model.hamilton(k) for k in KPT])
+
+    compare_isclose(hamiltonian_list)
+
+    assert np.allclose(model.pos, pos % 1, atol=1e-6)
+    assert np.allclose(model.uc, uc, atol=1e-6)
+
+
 @pytest.mark.parametrize(
     "hr_name, wsvec_name, xyz_name",
     [
