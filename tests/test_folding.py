@@ -6,6 +6,8 @@ import pytest
 
 from parameters import T_VALUES
 
+import tbmodels
+
 
 @pytest.mark.parametrize("t_values", T_VALUES)
 @pytest.mark.parametrize("supercell_size", [(1, 1, 1), (2, 1, 1), (2, 1, 3)])
@@ -257,3 +259,20 @@ def test_invalid_order_by(get_model):
     assert "Invalid input" in str(excinfo.value)
     assert "order_by" in str(excinfo.value)
     assert "spam" in str(excinfo.value)
+
+
+@pytest.mark.parametrize("dim", [1, 2])
+def test_fold_lower_dim_supercell(dim, sparse, models_close):
+    """The default origin permits supercell/folding roundtrips in 1D and 2D."""
+    model = tbmodels.Model(
+        dim=dim,
+        pos=[[0.2] * dim, [0.7] * dim],
+        uc=np.diag(np.arange(1, dim + 1)),
+        on_site=[-0.4, 0.4],
+        occ=1,
+        sparse=sparse,
+    )
+    model.add_hop(0.3 + 0.1j, 0, 1, [1] + [0] * (dim - 1))
+    supercell = model.supercell([2] + [1] * (dim - 1))
+    folded = supercell.fold_model(new_unit_cell=model.uc, orbital_labels=["a", "b"] * 2)
+    assert models_close(model, folded)
