@@ -1618,10 +1618,13 @@ class Model(HDF5Enabled):
                 f"but in reduced coordinates it is:\n{uc_reduced}"
             )
         uc_reduced = np.round(uc_reduced).astype(int)
-        if la.det(uc_reduced) != 1:
+        determinant = la.det(uc_reduced)
+        # LU factorization can round the determinant of an integer
+        # unimodular cell, so avoid exact floating-point equality.
+        if not np.isclose(determinant, 1, rtol=0, atol=1e-8):
             raise ValueError(
                 "The determinant of the unit cell in reduced coordinates must "
-                f"be 1, but it is {la.det(uc_reduced)} instead."
+                f"be 1, but it is {determinant} instead."
             )
 
         # apply offset to positions

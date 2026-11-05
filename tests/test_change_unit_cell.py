@@ -193,3 +193,48 @@ def test_equivalent_uc_shape(get_model, models_close):
         model1,
         model2.change_unit_cell(uc=[[1, 0, 0], [-1, 1, 0], [0, 0, 1]], cartesian=False),
     )
+
+
+@pytest.mark.parametrize("cartesian", [True, False])
+def test_unimodular_uc_roundoff_band_invariance(
+    get_model, sparse, cartesian, models_close
+):
+    """
+    Ensure that a valid unimodular unit-cell transformation whose floating-point
+    determinant suffers small round-off error (e.g. det = 1 + 4.2e-15) is accepted
+    and preserves the physical energy eigenvalues under k_new = k_old @ U.T.
+    Also verify roundtrip transformation recovers the original model.
+    """
+    # SL(3, Z) matrix with exact integer determinant 1
+    U = np.array([[1, -5, -5], [-2, 11, 4], [2, -10, -9]])
+    model = get_model(
+        t1=0.1,
+        t2=0.7,
+        sparse=sparse,
+        uc=np.eye(3),
+        pos=[(0.01, 0.02, 0.03), (0.5, 0.5, 0.5)],
+    )
+    model_transformed = model.change_unit_cell(
+        uc=U, cartesian=cartesian, offset=np.zeros(3)
+    )
+
+    # Physical eigenvalues must match at k_new = k_old @ U.T
+    k_old = np.array(
+        [
+            [0.1, 0.2, 0.3],
+            [-0.25, 0.4, 0.1],
+            [0.0, 0.0, 0.0],
+            [0.5, -0.3, 0.2],
+        ]
+    )
+    k_new = k_old @ U.T
+    eigenvals_old = np.array(model.eigenval(k_old))
+    eigenvals_new = np.array(model_transformed.eigenval(k_new))
+    np.testing.assert_allclose(eigenvals_old, eigenvals_new, atol=1e-12)
+
+    # Roundtrip transformation using inverse operation
+    revert_uc = np.eye(3) if cartesian else np.linalg.inv(U)
+    model_reverted = model_transformed.change_unit_cell(
+        uc=revert_uc, cartesian=cartesian, offset=np.zeros(3)
+    )
+    assert models_close(model, model_reverted)

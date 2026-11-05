@@ -8,6 +8,16 @@ What's new
 
 The following is a short summary of the most important changes in new releases of TBmodels, starting *after* version 1.1.
 
+Unreleased
+----------
+
+Bug fixes
+'''''''''
+
+- ``Model.change_unit_cell`` now tolerates floating-point determinant
+  roundoff for integer, determinant-one lattice transformations instead
+  of rejecting valid changes of basis.
+
 What's new in TBmodels 1.4
 --------------------------
 
