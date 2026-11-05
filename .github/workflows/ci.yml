@@ -10,7 +10,7 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
-    - uses: actions/cache@v2
+    - uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: pip-${{ matrix.python-version }}-${{ matrix.install-type }}-${{ hashFiles('**/poetry.lock')
@@ -26,7 +26,7 @@ jobs:
       run: .ci/install_script.sh
     - name: Build documentation
       run: poetry run make SPHINXOPTS='-nW' -C doc html
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v4
       with:
         name: doc-build
         path: doc/build/html
@@ -39,7 +39,7 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
-    - uses: actions/cache@v2
+    - uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: pip-${{ matrix.python-version }}-${{ matrix.install-type }}-${{ hashFiles('**/poetry.lock')
@@ -70,7 +70,7 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
-    - uses: actions/cache@v2
+    - uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: pip-${{ matrix.python-version }}-${{ matrix.install-type }}-${{ hashFiles('**/poetry.lock')
