@@ -8,6 +8,15 @@ What's new
 
 The following is a short summary of the most important changes in new releases of TBmodels, starting *after* version 1.1.
 
+Unreleased
+----------
+
+Bug fixes
+'''''''''
+
+- Default origins in ``change_unit_cell`` and ``fold_model`` now match the
+  model dimension, allowing 1D and 2D models to use the zero-origin default.
+
 What's new in TBmodels 1.4
 --------------------------
 

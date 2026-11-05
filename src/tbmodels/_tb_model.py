@@ -1555,7 +1555,7 @@ class Model(HDF5Enabled):
         self,
         *,
         uc: ty.Optional[ty.Sequence[ty.Sequence[float]]] = None,
-        offset: ty.Sequence[float] = (0, 0, 0),
+        offset: ty.Optional[ty.Sequence[float]] = None,
         cartesian: bool = False,
     ) -> Model:
         """Return a model with a different unit cell of the same volume.
@@ -1572,7 +1572,7 @@ class Model(HDF5Enabled):
             current unit cell shape is kept.
         offset :
             The position of the new unit cell origin, relative to the old
-            one.
+            one. If omitted, a zero vector of the model dimension is used.
         cartesian :
             Specifies if the offset and unit cell are in cartesian or
             reduced coordinates. Reduced coordinates are with respect to
@@ -1584,6 +1584,7 @@ class Model(HDF5Enabled):
             raise ValueError(
                 "Cannot change the unit cell: model positions are not defined."
             )
+        offset_array = np.zeros(self.dim) if offset is None else np.array(offset)
 
         if cartesian:
             if self.uc is None:
@@ -1597,7 +1598,7 @@ class Model(HDF5Enabled):
             else:
                 new_uc = np.array(uc)
                 uc_reduced = la.solve(self.uc.T, new_uc.T).T
-            offset_reduced = la.solve(self.uc.T, np.array(offset).T).T
+            offset_reduced = la.solve(self.uc.T, offset_array.T).T
         else:
             if uc is None:
                 uc_reduced = np.eye(self.dim)
@@ -1607,7 +1608,7 @@ class Model(HDF5Enabled):
                 new_uc = None
             else:
                 new_uc = (self.uc.T @ uc_reduced.T).T
-            offset_reduced = np.array(offset)
+            offset_reduced = offset_array
 
         # check that the reduced unit cell is compatible with the
         # current lattice
@@ -1727,7 +1728,7 @@ class Model(HDF5Enabled):
         self,
         *,
         new_unit_cell: ty.Sequence[ty.Sequence[float]],
-        unit_cell_offset: ty.Sequence[float] = (0, 0, 0),
+        unit_cell_offset: ty.Optional[ty.Sequence[float]] = None,
         position_tolerance: float = 1e-3,
         unmatched_position_threshold: float = float("inf"),
         orbital_labels: ty.Sequence[ty.Hashable],
@@ -1754,7 +1755,7 @@ class Model(HDF5Enabled):
             lie completely within the old unit cell.
         unit_cell_offset :
             Position (in cartesian coordinates) at which the new unit cell
-            is based.
+            is based. If omitted, a zero vector of the model dimension is used.
         position_tolerance :
             Tolerance used when determining if a position mapped into the
             new unit cell is the same as an existing orbital position.
@@ -1809,9 +1810,14 @@ class Model(HDF5Enabled):
                 "Unit cell and positions must be specified for model folding."
             )
 
+        offset_array = (
+            np.zeros(self.dim)
+            if unit_cell_offset is None
+            else np.array(unit_cell_offset)
+        )
         new_uc = np.array(new_unit_cell)
         # Check that the new unit cell lies within the current one
-        new_uc_vertices = unit_cell_offset + np.array(
+        new_uc_vertices = offset_array + np.array(
             [
                 sum(mult * a_i for mult, a_i in zip(multipliers, new_uc))
                 for multipliers in itertools.product([0, 1], repeat=self.dim)
@@ -1831,7 +1837,7 @@ class Model(HDF5Enabled):
             )
 
         positions_cartesian = (self.uc.T @ self.pos.T).T
-        pos_cartesian_relative = positions_cartesian - unit_cell_offset
+        pos_cartesian_relative = positions_cartesian - offset_array
         pos_reduced_new = la.solve(new_uc.T, pos_cartesian_relative.T).T
 
         # Check and warn if positions are at the edge of the new unit cell.

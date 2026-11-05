@@ -8,6 +8,8 @@ import numpy as np
 
 from parameters import T_VALUES
 
+import tbmodels
+
 # pylint: disable=invalid-name
 
 
@@ -193,3 +195,20 @@ def test_equivalent_uc_shape(get_model, models_close):
         model1,
         model2.change_unit_cell(uc=[[1, 0, 0], [-1, 1, 0], [0, 0, 1]], cartesian=False),
     )
+
+
+@pytest.mark.parametrize("dim", [1, 2])
+@pytest.mark.parametrize("cartesian", [True, False])
+def test_default_origin_lower_dimensions(dim, cartesian, sparse, models_close):
+    """Omitting the origin preserves a lower-dimensional model."""
+    model = tbmodels.Model(
+        dim=dim,
+        pos=[[0.2] * dim, [0.7] * dim],
+        uc=np.diag(np.arange(1, dim + 1)),
+        on_site=[-0.4, 0.4],
+        occ=1,
+        sparse=sparse,
+    )
+    model.add_hop(0.3 + 0.1j, 0, 1, [1] + [0] * (dim - 1))
+    changed = model.change_unit_cell(cartesian=cartesian)
+    assert models_close(model, changed)
